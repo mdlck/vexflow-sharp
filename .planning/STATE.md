@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-23 after v1.0 milestone)
 
 Phase: 6 of 6 (complete)
 Status: Milestone v1.0 archived
-Last activity: 2026-03-28 - Completed quick task 260328-c1d: clean up project for GitHub publishing: remove unnecessary files, commit pending changes
+Last activity: 2026-03-28 - Completed quick task 260328-cv5: Update README.md to reflect all current features, new features, examples, instructions, and project structure
 
 Progress: [██████████] 100%
 
@@ -191,6 +191,7 @@ None yet.
 | 260327-u9h | copy common dll to unity plugins directory on build | 2026-03-27 | 26373ce | [260327-u9h-copy-common-dll-to-unity-plugins-directo](./quick/260327-u9h-copy-common-dll-to-unity-plugins-directo/) |
 | 260328-bo5 | fix dotnet build errors for iOS/macCatalyst/Android on Linux | 2026-03-28 | 500e471 | [260328-bo5-fix-dotnet-build-errors-for-ios-and-macc](./quick/260328-bo5-fix-dotnet-build-errors-for-ios-and-macc/) |
 | 260328-c1d | clean up project for GitHub publishing — delete debug scripts, update .gitignore, commit pending changes | 2026-03-28 | 165658d | [260328-c1d-clean-up-project-for-github-publishing-r](./quick/260328-c1d-clean-up-project-for-github-publishing-r/) |
+| 260328-cv5 | Update README.md to reflect all current features, new features, examples, instructions, and project structure | 2026-03-28 | 73b8629 | [260328-cv5-update-readme-md-to-reflect-all-current-](./quick/260328-cv5-update-readme-md-to-reflect-all-current-/) |
 
 ## Session Continuity
 
