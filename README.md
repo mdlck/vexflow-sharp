@@ -6,6 +6,8 @@ A (AI-assisted) C# port of [VexFlow](https://github.com/0xfe/vexflow) — the op
 
 VexFlowSharp brings VexFlow's music notation rendering to C# environments, including Unity via UI Toolkit. It targets the same class hierarchy and rendering pipeline as VexFlow v4.x, with method names translated to PascalCase and object literals replaced by C# structs. If you already know VexFlow JS, the C# API will feel immediately familiar.
 
+> **Note:** This port is currently based on VexFlow **4.2.6**.
+
 Current status: 546 NUnit tests passing (554 total, 8 skipped), approximately 27,000 lines of C#.
 
 ## Project Structure
