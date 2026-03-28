@@ -1,6 +1,6 @@
 # VexFlowSharp
 
-A (AI-assisted) C# port of [VexFlow](https://github.com/0xfe/vexflow) — the open-source music notation rendering library — designed to mimic the VexFlow API as closely as possible.
+An (AI-assisted) C# port of [VexFlow](https://github.com/0xfe/vexflow) — the open-source music notation rendering library — designed to mimic the VexFlow API as closely as possible.
 
 ## Overview
 
