@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>9.0</LangVersion>
+    <RootNamespace>VexFlowSharp</RootNamespace>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Typography.OpenFont" Version="1.0.0" />
+  </ItemGroup>
+
+  <Target Name="CopyToUnityPlugins" AfterTargets="Build">
+    <PropertyGroup>
+      <UnityPluginsDir>$(MSBuildThisFileDirectory)../VexFlowSharp.Unity/Runtime/Plugins/</UnityPluginsDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(UnityPluginsDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(UnityPluginsDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(UnityPluginsDir)" SkipUnchangedFiles="true" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+    <Copy SourceFiles="@(ReferenceCopyLocalPaths)" DestinationFolder="$(UnityPluginsDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

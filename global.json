@@ -1,0 +1,12 @@
+{
+  "sdk": {
+    "version": "10.0.104",
+    "rollForward": "latestPatch"
+  },
+  "tools": {
+    "dotnet": "10.0.104"
+  },
+  "features": {
+    "testingPlatform": true
+  }
+}

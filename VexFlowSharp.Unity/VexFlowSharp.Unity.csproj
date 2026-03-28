@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>9.0</LangVersion>
+    <RootNamespace>VexFlowSharp.Unity</RootNamespace>
+    <!-- Redirect build artifacts outside the UPM package folder so Unity
+         doesn't find a DLL with the same name as the .asmdef assembly. -->
+    <BaseIntermediateOutputPath>../build/VexFlowSharp.Unity/obj/</BaseIntermediateOutputPath>
+    <BaseOutputPath>../build/VexFlowSharp.Unity/bin/</BaseOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../VexFlowSharp.Common/VexFlowSharp.Common.csproj" />
+  </ItemGroup>
+
+</Project>

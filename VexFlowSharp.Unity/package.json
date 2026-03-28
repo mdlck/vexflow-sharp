@@ -1,0 +1,13 @@
+{
+  "name": "com.vexflowsharp.unity",
+  "version": "1.0.0",
+  "displayName": "VexFlowSharp Unity",
+  "description": "VexFlow sheet music renderer for Unity UI Toolkit via UIElements Painter2D",
+  "unity": "2022.3",
+  "documentationUrl": "",
+  "dependencies": {},
+  "keywords": ["music", "notation", "vexflow", "sheet-music"],
+  "author": {
+    "name": "VexFlowSharp"
+  }
+}

@@ -1,0 +1,28 @@
+# .NET build artifacts
+**/bin/
+**/obj/
+
+# Redirected build output (kept outside UPM package folders)
+build/
+
+# Node
+node_modules/
+
+# VexFlow submodule build output
+vexflow/
+
+# Unity
+*.meta
+
+# Unity precompiled plugin DLLs (copied by MSBuild post-build)
+VexFlowSharp.Unity/Runtime/Plugins/*.dll
+VexFlowSharp.Unity/Runtime/Plugins/*.pdb
+VexFlowSharp.Unity/Runtime/Plugins/*.meta
+
+# Claude Code IDE settings
+.claude/
+
+# Comparison-Output
+VexFlowSharp.Tests/reference-images/
+VexFlowSharp.Tests/Comparison/Output/
+VexFlowSharp.Tests/Infrastructure/ReferenceImages/

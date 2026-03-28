@@ -1,0 +1,18 @@
+Complex Notation Demo Setup (Unity 2022.3+):
+1. Create a new Unity scene
+2. Add a UI Document: GameObject > UI Toolkit > UI Document
+3. Create empty GameObject "VexFlowController"
+4. Add ComplexNotationDemoController component to VexFlowController
+5. Drag the UI Document object to the "UI Document" field in the Inspector
+6. Enter Play Mode -- the complex notation score should render in the Game view
+
+What you should see:
+  - A single treble stave with 4/4 time signature
+  - A dotted 8th C4 with a double sharp (x) accidental
+  - A 16th D4 with a flat accidental, beamed to the dotted 8th
+  - Two quarter E4 notes connected by a tie
+  - A final quarter G4
+
+Note: ComplexNotationDemoScene.unity is a best-effort pre-built scene.
+If Unity cannot parse it (e.g. script GUIDs do not match), follow the
+manual steps above instead. Unity will regenerate all fileIDs on import.

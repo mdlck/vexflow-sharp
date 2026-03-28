@@ -1,0 +1,11 @@
+Grand Staff Demo Setup (Unity 2022.3+):
+1. Create a new Unity scene
+2. Add a UI Document: GameObject > UI Toolkit > UI Document
+3. Create empty GameObject "VexFlowController"
+4. Add GrandStaffDemoController component to VexFlowController
+5. Drag the UI Document object to the "UI Document" field in the Inspector
+6. Enter Play Mode -- the grand staff should render in the Game view
+
+Note: GrandStaffDemoScene.unity is a best-effort pre-built scene.
+If Unity cannot parse it (e.g. script GUIDs do not match), follow the
+manual steps above instead. Unity will regenerate all fileIDs on import.

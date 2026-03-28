@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>VexFlowSharp.Skia</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ANDROID_HOME)' != '' OR '$(ANDROID_SDK_ROOT)' != ''">
+    <TargetFramework>net10.0-android</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ANDROID_HOME)' == '' AND '$(ANDROID_SDK_ROOT)' == ''">
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(ANDROID_HOME)' != '' OR '$(ANDROID_SDK_ROOT)' != ''">
+    <PackageReference Include="SkiaSharp.NativeAssets.Android" Version="2.88.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../VexFlowSharp.Skia/VexFlowSharp.Skia.csproj" />
+  </ItemGroup>
+
+</Project>
