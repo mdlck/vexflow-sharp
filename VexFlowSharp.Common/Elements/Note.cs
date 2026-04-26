@@ -1,3 +1,5 @@
+#nullable enable annotations
+
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -176,6 +178,7 @@ namespace VexFlowSharp
                 totalTicks += currentTicks;
             }
             ticks = new Fraction(totalTicks, 1);
+            intrinsicTicks = totalTicks;
 
             // Get glyph props
             glyphProps = Tables.GetGlyphProps(duration, noteType);
@@ -196,6 +199,8 @@ namespace VexFlowSharp
 
         /// <summary>Get the duration string (e.g., "4", "8").</summary>
         public string GetDuration() => duration;
+
+        public override int GetIntrinsicTicks() => intrinsicTicks;
 
         /// <summary>Get the note type (e.g., "n", "r", "x").</summary>
         public string GetNoteType() => noteType;

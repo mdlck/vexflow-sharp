@@ -1,3 +1,5 @@
+#nullable enable annotations
+
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -82,6 +84,7 @@ namespace VexFlowSharp
         private double xPos  = 100;
         private double yPos  = 16;
         private double tupletWidth = 200;
+        private const double BeamedTupletYOffset = 8;
 
         // Pre-resolved glyph lists for numerator and denominator digits
         private readonly List<Glyph> numeratorGlyphs = new List<Glyph>();
@@ -236,6 +239,11 @@ namespace VexFlowSharp
                         yBase = Math.Min(topY, yBase);
                     }
                 }
+
+                if (!bracketed)
+                {
+                    yBase -= BeamedTupletYOffset;
+                }
             }
             else
             {
@@ -256,6 +264,11 @@ namespace VexFlowSharp
                             : extents.TopY  + 5;
                         if (botY > yBase) yBase = botY;
                     }
+                }
+
+                if (!bracketed)
+                {
+                    yBase += BeamedTupletYOffset;
                 }
             }
 
@@ -297,13 +310,13 @@ namespace VexFlowSharp
             // Determine y position
             yPos = GetYPosition();
 
-            // Calculate total glyph width for centering
-            double glyphWidth = SumGlyphWidths(numeratorGlyphs);
-            if (ratioed)
-                glyphWidth += SumGlyphWidths(denomGlyphs) + point * 0.32;
+            // Calculate visual glyph bounds for centering. Glyph render origins are not
+            // necessarily their visual left edges, so account for XMin/XMax bearings.
+            var glyphSpan = CalculateGlyphSpan();
+            double glyphWidth = glyphSpan.Width;
 
             double centerX        = xPos + tupletWidth / 2;
-            double notationStartX = centerX - glyphWidth / 2;
+            double notationStartX = centerX - glyphSpan.Center;
 
             // Draw bracket (filled rectangles like VexFlow)
             if (bracketed)
@@ -359,6 +372,43 @@ namespace VexFlowSharp
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
+
+        private (double Left, double Right, double Width, double Center) CalculateGlyphSpan()
+        {
+            double cursor = 0;
+            double left = double.PositiveInfinity;
+            double right = double.NegativeInfinity;
+
+            AddGlyphSpan(numeratorGlyphs, ref cursor, ref left, ref right);
+            if (ratioed)
+            {
+                cursor += point * 0.32;
+                AddGlyphSpan(denomGlyphs, ref cursor, ref left, ref right);
+            }
+
+            if (double.IsInfinity(left) || double.IsInfinity(right))
+            {
+                double width = SumGlyphWidths(numeratorGlyphs)
+                    + (ratioed ? SumGlyphWidths(denomGlyphs) + point * 0.32 : 0);
+                return (0, width, width, width / 2);
+            }
+
+            return (left, right, right - left, (left + right) / 2);
+        }
+
+        private static void AddGlyphSpan(List<Glyph> glyphs, ref double cursor, ref double left, ref double right)
+        {
+            foreach (var glyph in glyphs)
+            {
+                var metrics = glyph.GetMetrics();
+                if (metrics != null)
+                {
+                    left = Math.Min(left, cursor + metrics.XMin);
+                    right = Math.Max(right, cursor + metrics.XMax);
+                    cursor += metrics.Width;
+                }
+            }
+        }
 
         private static double SumGlyphWidths(List<Glyph> glyphs)
         {

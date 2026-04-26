@@ -1,3 +1,5 @@
+#nullable enable annotations
+
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
