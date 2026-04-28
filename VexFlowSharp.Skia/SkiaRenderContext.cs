@@ -26,6 +26,137 @@ namespace VexFlowSharp.Skia
         private string _fontStyle = "normal";
         private string _shadowColor = "transparent";
         private double _shadowBlur = 0;
+        private SKTypeface? _typeface;
+        private static readonly Dictionary<string, SKTypeface?> _typefaceCache =
+            new Dictionary<string, SKTypeface?>(StringComparer.OrdinalIgnoreCase);
+
+        private static float FontSizeToPixels(double sizeInPoints)
+            => (float)(sizeInPoints * Metrics.GetDouble("TextFormatter.ptToPx"));
+
+        private static SKTypeface? ResolveTypeface(string familyList, string weight, string style)
+        {
+            var families = familyList
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(NormalizeFamilyName)
+                .ToArray();
+
+            if (families.Length > 1)
+            {
+                families = families
+                    .OrderBy(IsLikelyMusicFontFamily)
+                    .ToArray();
+            }
+
+            foreach (var normalized in families)
+            {
+                var cacheKey = $"{normalized}|{weight}|{style}";
+                if (_typefaceCache.TryGetValue(cacheKey, out var cached))
+                    return cached;
+
+                foreach (var path in GetFontFileCandidates(normalized, weight, style))
+                {
+                    if (!File.Exists(path)) continue;
+                    var typeface = SKTypeface.FromFile(path);
+                    _typefaceCache[cacheKey] = typeface;
+                    return typeface;
+                }
+
+                var fallback = SKTypeface.FromFamilyName(normalized, BuildFontStyle(weight, style));
+                if (fallback != null)
+                {
+                    _typefaceCache[cacheKey] = fallback;
+                    return fallback;
+                }
+
+                _typefaceCache[cacheKey] = null;
+            }
+
+            return null;
+        }
+
+        private static bool IsLikelyMusicFontFamily(string family)
+        {
+            var lower = family.ToLowerInvariant();
+            return lower is "bravura" or "petaluma" or "gonville" or "gootville" or "leland" or "leipzig" or "musejazz" or "sebastian"
+                || lower.StartsWith("finale", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeFamilyName(string family)
+        {
+            var trimmed = family.Trim();
+            if (trimmed.Length >= 2
+                && ((trimmed[0] == '\'' && trimmed[trimmed.Length - 1] == '\'')
+                    || (trimmed[0] == '"' && trimmed[trimmed.Length - 1] == '"')))
+            {
+                return trimmed.Substring(1, trimmed.Length - 2).Trim();
+            }
+
+            return trimmed;
+        }
+
+        private static SKFontStyle BuildFontStyle(string weight, string style)
+        {
+            var skWeight = weight.IndexOf("bold", StringComparison.OrdinalIgnoreCase) >= 0
+                ? SKFontStyleWeight.Bold
+                : SKFontStyleWeight.Normal;
+            var slant = style.IndexOf("italic", StringComparison.OrdinalIgnoreCase) >= 0
+                ? SKFontStyleSlant.Italic
+                : SKFontStyleSlant.Upright;
+            return new SKFontStyle((int)skWeight, (int)SKFontStyleWidth.Normal, slant);
+        }
+
+        private static IEnumerable<string> GetFontFileCandidates(string family, string weight, string style)
+        {
+            var bold = weight.IndexOf("bold", StringComparison.OrdinalIgnoreCase) >= 0;
+            var fileNames = family.ToLowerInvariant() switch
+            {
+                "academico" => bold
+                    ? new[] { "academico-bold.otf", "academico-bold.woff2", "academico.otf", "academico.woff2" }
+                    : new[] { "academico.otf", "academico.woff2" },
+                "bravura" => new[] { "Bravura.otf", "bravura.otf", "Bravura.woff2", "bravura.woff2" },
+                "bravura text" => new[] { "BravuraText.otf", "bravuratext.otf", "BravuraText.woff2", "bravuratext.woff2" },
+                "petaluma script" => new[] { "petalumascript.otf", "petalumascript.woff2" },
+                "roboto slab" => bold
+                    ? new[] { "robotoslab-bold-700.otf", "robotoslab-bold-700.woff2", "robotoslab-medium-500.otf", "robotoslab-regular-400.otf" }
+                    : new[] { "robotoslab-regular-400.otf", "robotoslab-regular-400.woff2" },
+                _ => Array.Empty<string>(),
+            };
+
+            if (fileNames.Length == 0) yield break;
+
+            foreach (var root in GetSearchRoots())
+            {
+                foreach (var fileName in fileNames)
+                {
+                    foreach (var path in GetCandidatePaths(root, family, fileName))
+                        yield return path;
+                }
+            }
+        }
+
+        private static IEnumerable<string> GetSearchRoots()
+        {
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var start in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
+            {
+                var dir = new DirectoryInfo(start);
+                while (dir != null)
+                {
+                    if (seen.Add(dir.FullName))
+                        yield return dir.FullName;
+                    dir = dir.Parent;
+                }
+            }
+        }
+
+        private static IEnumerable<string> GetCandidatePaths(string root, string family, string fileName)
+        {
+            var package = family.ToLowerInvariant().Replace(" ", "");
+            yield return Path.Combine(root, "vexflow", "node_modules", "@vexflow-fonts", package, fileName);
+            yield return Path.Combine(root, "fonts", "bravura-redist", "otf", fileName);
+            yield return Path.Combine(root, "fonts", "bravura-redist", "woff", fileName);
+            yield return Path.Combine(root, "VexFlowSharp.Unity", "Runtime", "Fonts", fileName);
+        }
 
         // Paint state stack — SKCanvas.Save/Restore only saves transform/clip,
         // not paint colors. We maintain our own stack to mirror HTML5 canvas semantics.
@@ -40,9 +171,10 @@ namespace VexFlowSharp.Skia
                                 double fontSize,
                                 string fontWeight,
                                 string fontStyle,
+                                SKTypeface? typeface,
                                 string shadowColor,
                                 double shadowBlur)> _paintStack
-            = new Stack<(SKColor, string, SKColor, string, float, SKStrokeCap, SKPathEffect?, string, double, string, string, string, double)>();
+            = new Stack<(SKColor, string, SKColor, string, float, SKStrokeCap, SKPathEffect?, string, double, string, string, SKTypeface?, string, double)>();
 
         public SkiaRenderContext(int width, int height)
         {
@@ -76,6 +208,7 @@ namespace VexFlowSharp.Skia
                               _fontSize,
                               _fontWeight,
                               _fontStyle,
+                              _typeface,
                               _shadowColor,
                               _shadowBlur));
             return this;
@@ -97,6 +230,7 @@ namespace VexFlowSharp.Skia
                      fontSize,
                      fontWeight,
                      fontStyle,
+                     typeface,
                      shadowColor,
                      shadowBlur) = _paintStack.Pop();
                 _fillPaint.Color = fillColor;
@@ -110,7 +244,9 @@ namespace VexFlowSharp.Skia
                 _fontSize = fontSize;
                 _fontWeight = fontWeight;
                 _fontStyle = fontStyle;
-                _fillPaint.TextSize = (float)fontSize;
+                _typeface = typeface;
+                _fillPaint.Typeface = typeface;
+                _fillPaint.TextSize = FontSizeToPixels(fontSize);
                 _shadowColor = shadowColor;
                 _shadowBlur = shadowBlur;
             }
@@ -329,7 +465,9 @@ namespace VexFlowSharp.Skia
             _fontSize = size;
             _fontWeight = weight;
             _fontStyle = style;
-            _fillPaint.TextSize = (float)size;
+            _typeface = ResolveTypeface(family, weight, style);
+            _fillPaint.Typeface = _typeface;
+            _fillPaint.TextSize = FontSizeToPixels(size);
             return this;
         }
 

@@ -44,8 +44,8 @@ namespace VexFlowSharp.Tests.Modifiers
         }
 
         [Test]
-        public void FontSize_ComesFromMetrics()
-            => Assert.That(Metrics.GetDouble("Tremolo.fontSize"), Is.EqualTo(35));
+        public void FontSize_FallsBackToRootMetric()
+            => Assert.That(Metrics.GetDouble("Tremolo.fontSize"), Is.EqualTo(30));
 
         [Test]
         public void Draw_UsesMetricSpacingFromStemTip()

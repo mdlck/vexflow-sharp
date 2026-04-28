@@ -145,13 +145,43 @@ namespace VexFlowSharp.Tests.StaveTests
         {
             var ks = new KeySignature("D");
             var (code, _) = Tables.AccidentalCodes("#");
-            double scale = (Tables.NOTATION_FONT_SCALE * 72.0) / (BravuraGlyphs.Data.Resolution * 100.0);
+            double scale = Glyph.GetScale(Tables.NOTATION_FONT_SCALE, BravuraGlyphs.Data);
             Assert.That(BravuraGlyphs.Data.Glyphs.TryGetValue(code, out var glyph), Is.True);
 
             double glyphWidth = (glyph!.XMax - glyph.XMin) * scale;
             double expected = glyphWidth * 2 + Metrics.GetDouble("KeySignature.accidentalSpacing");
 
             Assert.That(ks.GetWidth(), Is.EqualTo(expected).Within(0.0001));
+        }
+
+        [Test]
+        public void KeySignature_PetalumaWidthUsesFontSpecificGlyphScale()
+        {
+            try
+            {
+                Font.ClearRegistry();
+                VexFlow.LoadFonts("Petaluma", "Petaluma Script");
+                VexFlow.SetFonts("Petaluma", "Petaluma Script");
+
+                var ks = new KeySignature("D");
+                var (code, _) = Tables.AccidentalCodes("#");
+                Assert.That(PetalumaGlyphs.Data.Glyphs.TryGetValue(code, out var glyph), Is.True);
+
+                double width = glyph!.XMax - glyph.XMin;
+                double expected = width * Glyph.GetScale(Tables.NOTATION_FONT_SCALE, PetalumaGlyphs.Data) * 2
+                    + Metrics.GetDouble("KeySignature.accidentalSpacing");
+                double legacyBravuraOnlyWidth = width * (Tables.NOTATION_FONT_SCALE * 0.72 / PetalumaGlyphs.Data.Resolution) * 2
+                    + Metrics.GetDouble("KeySignature.accidentalSpacing");
+
+                Assert.That(ks.GetWidth(), Is.EqualTo(expected).Within(0.0001));
+                Assert.That(ks.GetWidth(), Is.GreaterThan(legacyBravuraOnlyWidth * 1.2));
+            }
+            finally
+            {
+                Font.ClearRegistry();
+                Font.Load("Bravura", BravuraGlyphs.Data);
+                VexFlow.SetFonts("Bravura", "Academico");
+            }
         }
 
         [Test]

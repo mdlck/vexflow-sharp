@@ -317,6 +317,32 @@ namespace VexFlowSharp.Tests.Note
         }
 
         [Test]
+        public void StaveNote_DrawLedgerLines_UsesVexFlowLedgerOffset()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 60, 380);
+            var note = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/6" },
+                Clef = "treble",
+            });
+
+            note.SetStave(stave);
+            note.SetX(80);
+            note.SetContext(ctx);
+            note.DrawLedgerLines();
+
+            var move = ctx.GetCall("MoveTo").Args;
+            var line = ctx.GetCall("LineTo").Args;
+            double headWidth = note.GetNoteHeadEndX() - note.GetNoteHeadBeginX();
+            double expectedWidth = headWidth + StaveNote.LEDGER_LINE_OFFSET * 2;
+
+            Assert.That(StaveNote.LEDGER_LINE_OFFSET, Is.EqualTo(3.0));
+            Assert.That(line[0] - move[0], Is.EqualTo(expectedWidth).Within(0.001));
+        }
+
+        [Test]
         public void StaveNote_GetBoundingBox_AfterDrawIncludesNoteheadAndStem()
         {
             using var ctx = new SkiaRenderContext(400, 250);

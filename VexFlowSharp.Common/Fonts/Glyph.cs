@@ -70,18 +70,22 @@ namespace VexFlowSharp
         /// <param name="code">Glyph name key (e.g., "gClef", "noteheadBlack").</param>
         /// <param name="point">Point size. Used to compute scale = point / fontData.Resolution.</param>
         /// <param name="fontData">
-        /// Font data to look up the glyph in. If null, uses BravuraGlyphs.Data.
+        /// Font data to look up the glyph in. If null, uses the active VexFlow font stack.
         /// </param>
         public Glyph(string code, double point, FontData? fontData = null)
         {
             _code = code;
-            var data = fontData ?? BravuraGlyphs.Data;
-            // VexFlow scale formula: (point * 72) / (resolution * 100) — matches glyph.ts Glyph.render()
-            _scale = (point * 72.0) / (data.Resolution * 100.0);
+            var data = fontData ?? (Font.HasAnyFonts() ? Font.ResolveGlyphFontData(code) : BravuraGlyphs.Data);
+            _scale = GetScale(point, data);
             data.Glyphs.TryGetValue(code, out _metrics);
         }
 
         public override string GetCategory() => CATEGORY;
+
+        public static double GetScale(double point, FontData data)
+        {
+            return point * data.GlyphScale / data.Resolution;
+        }
 
         /// <summary>
         /// Walk the pre-parsed integer outline array and draw a filled path via the RenderContext.
@@ -92,7 +96,7 @@ namespace VexFlowSharp
         /// </summary>
         /// <param name="ctx">Render context to draw into.</param>
         /// <param name="outline">Pre-parsed int[] outline array from FontGlyph.CachedOutline.</param>
-        /// <param name="scale">Scale factor = point / resolution.</param>
+        /// <param name="scale">Scale factor from <see cref="GetScale(double, FontData)"/>.</param>
         /// <param name="xPos">X origin in screen coordinates.</param>
         /// <param name="yPos">Y origin in screen coordinates (screen-space, Y increases down).</param>
         public static void RenderOutline(RenderContext ctx, int[] outline, double scale, double xPos, double yPos)
@@ -142,26 +146,25 @@ namespace VexFlowSharp
         /// Compute the rendered width of a glyph at the given point size.
         ///
         /// Port of VexFlow's Glyph.getWidth(code, point, category) from glyph.ts.
-        /// VexFlow computes: bbox.getW() * (point * 72) / (resolution * 100)
-        /// where bbox.getW() is the maximum x extent of all outline control points.
+        /// Legacy VexFlow outline tables compute: bbox.getW() * (point * 72) / (resolution * 100).
+        /// Generated raw OTF outline tables compute: bbox.getW() * point / resolution.
         ///
-        /// This uses the same scale formula: (point * 72) / (resolution * 100).
+        /// The font data's GlyphScale selects the correct formula for its outline coordinate space.
         /// The bbox width is approximated by scanning all x values in the outline.
         /// </summary>
         /// <param name="code">Glyph name key (e.g., "gClef").</param>
         /// <param name="point">Point size (e.g., Tables.NOTATION_FONT_SCALE = 39).</param>
-        /// <param name="fontData">Font data to use (defaults to BravuraGlyphs.Data).</param>
+        /// <param name="fontData">Font data to use (defaults to the active VexFlow font stack).</param>
         public static double GetWidth(string code, double point, FontData? fontData = null)
         {
-            var data = fontData ?? BravuraGlyphs.Data;
+            var data = fontData ?? (Font.HasAnyFonts() ? Font.ResolveGlyphFontData(code) : BravuraGlyphs.Data);
             if (!data.Glyphs.TryGetValue(code, out var fg) || fg.CachedOutline == null)
             {
                 // Fallback: use nominal XMax-XMin with VexFlow scale
                 return 0.0;
             }
 
-            // VexFlow scale formula: (point * 72) / (resolution * 100)
-            double scale = (point * 72.0) / (data.Resolution * 100.0);
+            double scale = GetScale(point, data);
 
             // Scan all x coordinates in the outline to find the rendered bounding box.
             // The outline format: [cmd, x, y, ...] where cmd 0=move, 1=line, 3=bezier.

@@ -73,6 +73,9 @@ namespace VexFlowSharp.Tests.Comparison
             ctx.SavePng(outPath);
             Assert.That(File.Exists(outPath), Is.True, $"Output PNG must exist at {outPath}");
             Assert.That(new FileInfo(outPath).Length, Is.GreaterThan(0), "Output PNG must be non-zero bytes");
+
+            string referenceFilename = filename.Replace("-vfsharp.png", "-vexflow.png");
+            ComparisonOutput.CopyReferenceImage(ReferenceImagesDir, OutputDir, referenceFilename);
         }
 
         private static void FillWhiteBackground(SkiaRenderContext ctx, double width, double height)

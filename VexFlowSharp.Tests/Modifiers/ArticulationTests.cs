@@ -220,5 +220,35 @@ namespace VexFlowSharp.Tests.Modifiers
 
             Assert.That(ctx.HasCall("Fill"), Is.True);
         }
+
+        [Test]
+        public void Draw_CentersGlyphOnModifierStartX()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 20, 300);
+            stave.SetContext(ctx);
+            var note = new StaveNote(new StaveNoteStruct
+            {
+                Keys = new[] { "c/5" },
+                Duration = "4",
+                StemDirection = Stem.DOWN,
+            });
+            var art = new Articulation("a>");
+            note.SetStave(stave);
+            note.SetContext(ctx);
+            note.AddModifier(art);
+            note.PreFormat();
+            art.SetContext(ctx);
+
+            var start = note.GetModifierStartXY(ModifierPosition.Above, 0);
+            string code = Tables.ArticulationCodes["a>"].AboveCode!;
+            var metrics = new Glyph(code, Tables.NOTATION_FONT_SCALE).GetMetrics()!;
+            double firstOutlineX = metrics.Outline![1] * metrics.Scale;
+
+            art.Draw();
+
+            var moveTo = ctx.GetCall("MoveTo");
+            Assert.That(moveTo.Args[0], Is.EqualTo(start.X - metrics.Width / 2.0 + firstOutlineX).Within(0.001));
+        }
     }
 }

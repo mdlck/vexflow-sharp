@@ -98,8 +98,9 @@ namespace VexFlowSharp
 
         private double GetSpecialGlyphWidth(string code)
         {
-            double scale = (Point * 72.0) / (BravuraGlyphs.Data.Resolution * 100.0);
-            if (BravuraGlyphs.Data.Glyphs.TryGetValue(code, out var fg))
+            var data = Font.HasAnyFonts() ? Font.ResolveGlyphFontData(code) : BravuraGlyphs.Data;
+            double scale = Glyph.GetScale(Point, data);
+            if (data.Glyphs.TryGetValue(code, out var fg))
                 return (fg.XMax - fg.XMin) * scale;
             return 20.0;  // fallback
         }
@@ -131,9 +132,10 @@ namespace VexFlowSharp
             {
                 // Render single common/cut time glyph
                 double drawY = stave.GetYForLine(Line);
-                double scale = (Point * 72.0) / (BravuraGlyphs.Data.Resolution * 100.0);
+                var data = Font.HasAnyFonts() ? Font.ResolveGlyphFontData(specialCode) : BravuraGlyphs.Data;
+                double scale = Glyph.GetScale(Point, data);
 
-                if (BravuraGlyphs.Data.Glyphs.TryGetValue(specialCode, out var fg)
+                if (data.Glyphs.TryGetValue(specialCode, out var fg)
                     && fg.CachedOutline != null)
                 {
                     Glyph.RenderOutline(ctx, fg.CachedOutline, scale, drawX, drawY);

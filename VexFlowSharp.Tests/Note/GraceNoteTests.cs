@@ -106,6 +106,34 @@ namespace VexFlowSharp.Tests.Note
             Assert.That(n.GetStemExtension(), Is.EqualTo(Stem.HEIGHT * GraceNote.SCALE - Stem.HEIGHT).Within(1e-9));
         }
 
+        [Test]
+        public void GraceNote_DrawFlag_UsesGraceGlyphFontScale()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 60, 380);
+            var note = new GraceNote(new GraceNoteStruct
+            {
+                Duration = "8",
+                Keys = new[] { "b/4" },
+                StemDirection = Stem.UP,
+            });
+            note.SetStave(stave);
+            note.SetX(80);
+            note.SetContext(ctx);
+
+            note.DrawFlag();
+
+            var firstMove = ctx.GetCall("MoveTo").Args;
+            var metrics = new Glyph("flag8thUp", Tables.NOTATION_FONT_SCALE * GraceNote.SCALE).GetMetrics()!;
+            var outline = BravuraGlyphs.Data.Glyphs["flag8thUp"].CachedOutline!;
+            double expectedX = note.GetStemX() - Stem.WIDTH / 2.0 + outline[1] * metrics.Scale;
+            double expectedY = note.GetNoteHeadBounds().YBottom - note.CheckStem().GetHeight()
+                + metrics.ActualBoundingBoxAscent - outline[2] * metrics.Scale;
+
+            Assert.That(firstMove[0], Is.EqualTo(Math.Round(expectedX, 3)).Within(0.001));
+            Assert.That(firstMove[1], Is.EqualTo(Math.Round(expectedY, 3)).Within(0.001));
+        }
+
         // ── Width ──────────────────────────────────────────────────────────────
 
         /// <summary>

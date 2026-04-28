@@ -112,9 +112,26 @@ namespace VexFlowSharp
 
         private static double MeasureText(RenderContext ctx, string text, MetricsFontInfo font)
         {
+            if (IsPedalGlyph(text))
+                return Glyph.GetWidth(text, font.Size);
+
             double measured = ctx.MeasureText(text).Width;
             if (measured > 0) return measured;
             return TextFormatter.Create(font.Family, font.Size).GetWidthForTextInPx(text);
+        }
+
+        private static bool IsPedalGlyph(string text)
+            => text == PedalDepressGlyph || text == PedalReleaseGlyph;
+
+        private static void DrawPedalText(RenderContext ctx, string text, double x, double y, MetricsFontInfo font)
+        {
+            if (IsPedalGlyph(text))
+            {
+                new Glyph(text, font.Size).Render(ctx, x, y);
+                return;
+            }
+
+            ctx.FillText(text, x, y);
         }
 
         private static double GetNoteEndX(StaveNote note)
@@ -163,7 +180,7 @@ namespace VexFlowSharp
                     if (type == PedalMarkingType.Mixed && !prevNoteIsSame)
                     {
                         double textWidth = MeasureText(ctx, depressText, font);
-                        ctx.FillText(depressText, x, y);
+                        DrawPedalText(ctx, depressText, x, y, font);
                         xShift = textWidth + RenderOptions.TextMarginRight;
                     }
                     else
@@ -204,12 +221,12 @@ namespace VexFlowSharp
 
                 if (isPedalDepressed)
                 {
-                    ctx.FillText(depressText, x, y);
+                    DrawPedalText(ctx, depressText, x, y, font);
                 }
                 else
                 {
                     double textWidth = MeasureText(ctx, releaseText, font);
-                    ctx.FillText(releaseText, GetNoteEndX(note) - textWidth, y);
+                    DrawPedalText(ctx, releaseText, GetNoteEndX(note) - textWidth, y, font);
                 }
             }
         }

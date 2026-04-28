@@ -124,8 +124,8 @@ namespace VexFlowSharp
             },
             ["KeySignature"] = new Dictionary<string, object?>
             {
-                ["accidentalSpacing"] = 10.0,
-                ["naturalCollisionSpacing"] = 20.0,
+                ["accidentalSpacing"] = 1.0,
+                ["naturalCollisionSpacing"] = 2.0,
                 ["flatFallbackWidth"] = 8.0,
                 ["sharpFallbackWidth"] = 10.0,
             },
@@ -179,7 +179,7 @@ namespace VexFlowSharp
             },
             ["Stave"] = new Dictionary<string, object?>
             {
-                ["strokeStyle"] = "#999999",
+                ["strokeStyle"] = "black",
                 ["fontSize"] = 8.0,
                 ["numLines"] = 5.0,
                 ["spacingBetweenLinesPx"] = Tables.STAVE_LINE_DISTANCE,
@@ -341,7 +341,7 @@ namespace VexFlowSharp
                 ["labelYShift"] = -1.0,
                 ["slideEndpointOffset"] = 3.0,
             },
-            ["Tremolo"] = new Dictionary<string, object?> { ["fontSize"] = 35.0, ["spacing"] = 7.0 },
+            ["Tremolo"] = new Dictionary<string, object?> { ["spacing"] = 7.0 },
             ["Tuplet"] = new Dictionary<string, object?>
             {
                 ["pointerRect"] = true,

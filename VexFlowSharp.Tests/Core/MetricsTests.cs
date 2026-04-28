@@ -23,7 +23,7 @@ namespace VexFlowSharp.Tests.Core
             Assert.That(Metrics.GetDouble("Tuplet.bracket.lineWidth"), Is.EqualTo(1));
             Assert.That(Metrics.GetDouble("Tuplet.bracket.legLength"), Is.EqualTo(10));
             Assert.That(Metrics.GetDouble("Stroke.spacing"), Is.EqualTo(5));
-            Assert.That(Metrics.GetDouble("Tremolo.fontSize"), Is.EqualTo(35));
+            Assert.That(Metrics.GetDouble("Tremolo.fontSize"), Is.EqualTo(30));
             Assert.That(Metrics.GetDouble("Barline.repeat.dotRadius"), Is.EqualTo(2));
             Assert.That(Metrics.GetDouble("Barline.repeat.dotOffset"), Is.EqualTo(4));
             Assert.That(Metrics.GetDouble("Accidental.parenLeftPadding"), Is.EqualTo(2));
@@ -97,8 +97,8 @@ namespace VexFlowSharp.Tests.Core
             Assert.That(Metrics.GetDouble("StringNumber.extensionDash"), Is.EqualTo(3));
             Assert.That(Metrics.GetDouble("StringNumber.extensionGap"), Is.EqualTo(3));
             Assert.That(Metrics.GetDouble("StringNumber.legLength"), Is.EqualTo(10));
-            Assert.That(Metrics.GetDouble("KeySignature.accidentalSpacing"), Is.EqualTo(10));
-            Assert.That(Metrics.GetDouble("KeySignature.naturalCollisionSpacing"), Is.EqualTo(20));
+            Assert.That(Metrics.GetDouble("KeySignature.accidentalSpacing"), Is.EqualTo(1));
+            Assert.That(Metrics.GetDouble("KeySignature.naturalCollisionSpacing"), Is.EqualTo(2));
             Assert.That(Metrics.GetDouble("KeySignature.flatFallbackWidth"), Is.EqualTo(8));
             Assert.That(Metrics.GetDouble("KeySignature.sharpFallbackWidth"), Is.EqualTo(10));
             Assert.That(Metrics.GetDouble("Ornament.accidentalUpperPadding"), Is.EqualTo(3));

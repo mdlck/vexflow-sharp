@@ -55,6 +55,20 @@ namespace VexFlowSharp.Tests.Modifiers
         }
 
         [Test]
+        public void SuperSubscriptOffsets_UseVexFlowPixelFontSize()
+        {
+            var chord = new ChordSymbol().SetFontSize(12)
+                .AddTextSuperscript("9")
+                .AddTextSubscript("11");
+            var superscript = chord.GetSymbolBlocks()[0];
+            var subscript = chord.GetSymbolBlocks()[1];
+            double fontSizeInPixels = 12 * Metrics.GetDouble("TextFormatter.ptToPx");
+
+            Assert.That(superscript.GetYShift(), Is.EqualTo(ChordSymbol.SuperscriptOffset * fontSizeInPixels).Within(0.001));
+            Assert.That(subscript.GetYShift(), Is.EqualTo(ChordSymbol.SubscriptOffset * fontSizeInPixels).Within(0.001));
+        }
+
+        [Test]
         public void Draw_RendersEachBlockAsText()
         {
             var ctx = new RecordingRenderContext();

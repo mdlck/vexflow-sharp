@@ -83,6 +83,46 @@ namespace VexFlowSharp.Tests.Fonts
             Assert.That(glyph.GetCategory(), Is.EqualTo(Glyph.CATEGORY));
         }
 
+        [Test]
+        public void GetWidth_LegacyOutlineScale_PreservesBravuraSizing()
+        {
+            var data = new FontData
+            {
+                Resolution = 1000,
+                Glyphs =
+                {
+                    ["testGlyph"] = new FontGlyph { CachedOutline = new[] { 0, 0, 0, 1, 1000, 0 } },
+                },
+            };
+
+            Assert.That(Glyph.GetWidth("testGlyph", 100, data), Is.EqualTo(72).Within(0.001));
+        }
+
+        [Test]
+        public void GetWidth_RawOtfOutlineScale_UsesPointSizeOverResolution()
+        {
+            var data = new FontData
+            {
+                Resolution = 1000,
+                GlyphScale = 1.0,
+                Glyphs =
+                {
+                    ["testGlyph"] = new FontGlyph { CachedOutline = new[] { 0, 0, 0, 1, 1000, 0 } },
+                },
+            };
+
+            Assert.That(Glyph.GetWidth("testGlyph", 100, data), Is.EqualTo(100).Within(0.001));
+        }
+
+        [Test]
+        public void GeneratedMusicFonts_UseRawOtfOutlineScale()
+        {
+            Assert.That(PetalumaGlyphs.Data.GlyphScale, Is.EqualTo(1.0));
+            Assert.That(LelandGlyphs.Data.GlyphScale, Is.EqualTo(1.0));
+            Assert.That(MuseJazzGlyphs.Data.GlyphScale, Is.EqualTo(1.0));
+            Assert.That(BravuraGlyphs.Data.GlyphScale, Is.EqualTo(0.72));
+        }
+
         /// <summary>
         /// Test 1: Y-inversion correctness.
         /// MOVE to (100,200) then LINE to (300,400) with scale=1.0, origin=(0,0)

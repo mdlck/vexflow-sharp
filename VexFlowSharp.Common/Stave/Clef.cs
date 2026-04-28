@@ -54,6 +54,7 @@ namespace VexFlowSharp
         private string size;
         private string? annotation;
         private ClefType clefInfo;
+        private const double TabClefHorizontalScale = 1.45;
 
         /// <summary>
         /// Get rendering point size for a clef.
@@ -75,15 +76,14 @@ namespace VexFlowSharp
             if (!Types.TryGetValue(type, out clefInfo!))
                 throw new VexFlowException("BadArguments", $"Unknown clef type: {type}");
 
-            // Compute actual glyph width using VexFlow's scale formula:
-            // bbox.getW() * (point * 72) / (resolution * 100)
-            // This matches Glyph.getWidth(code, point, category) in VexFlow glyph.ts.
-            SetWidth(Glyph.GetWidth(clefInfo.Code, GetPoint(size)));
+            double glyphWidth = Glyph.GetWidth(clefInfo.Code, GetPoint(size));
+            SetWidth(glyphWidth > 0 ? glyphWidth : GetDefaultWidth(type, size));
         }
 
-        private static double GetDefaultWidth(string sz)
+        private static double GetDefaultWidth(string type, string sz)
         {
             // Fallback width when Glyph.GetWidth cannot compute from font data.
+            if (type == "tab") return 30.0;
             return sz == "default" ? 27.0 : 20.0;
         }
 
@@ -103,7 +103,8 @@ namespace VexFlowSharp
             if (!Types.TryGetValue(type, out clefInfo!))
                 throw new VexFlowException("BadArguments", $"Unknown clef type: {type}");
 
-            SetWidth(Glyph.GetWidth(clefInfo.Code, GetPoint(size)));
+            double glyphWidth = Glyph.GetWidth(clefInfo.Code, GetPoint(size));
+            SetWidth(glyphWidth > 0 ? glyphWidth : GetDefaultWidth(type, size));
             return this;
         }
 
@@ -119,13 +120,25 @@ namespace VexFlowSharp
             double drawX = x + xShift;
             double drawY = stave.GetYForLine(clefInfo.Line);
             double point = GetPoint(size);
-            double scale = (point * 72.0) / (BravuraGlyphs.Data.Resolution * 100.0);
+            var data = Font.HasAnyFonts() ? Font.ResolveGlyphFontData(clefInfo.Code) : BravuraGlyphs.Data;
+            double scale = Glyph.GetScale(point, data);
 
-            if (BravuraGlyphs.Data.Glyphs.TryGetValue(clefInfo.Code, out var fg)
+            if (data.Glyphs.TryGetValue(clefInfo.Code, out var fg)
                 && fg.CachedOutline != null)
             {
+                if (clefTypeName == "tab")
+                {
+                    ctx.Save();
+                    ctx.Scale(TabClefHorizontalScale, 1.0);
+                    Glyph.RenderOutline(ctx, fg.CachedOutline, scale, drawX / TabClefHorizontalScale, drawY);
+                    ctx.Restore();
+                    return;
+                }
+
                 Glyph.RenderOutline(ctx, fg.CachedOutline, scale, drawX, drawY);
+                return;
             }
+
         }
     }
 }

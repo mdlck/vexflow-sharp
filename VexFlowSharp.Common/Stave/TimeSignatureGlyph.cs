@@ -18,7 +18,6 @@ namespace VexFlowSharp
     public class TimeSignatureGlyph
     {
         private readonly TimeSignature timeSignature;
-        private readonly double scale;
         private readonly double compositeWidth;
         private readonly double topStartX;
         private readonly double botStartX;
@@ -40,7 +39,7 @@ namespace VexFlowSharp
         public TimeSignatureGlyph(TimeSignature timeSig, string topDigits, string botDigits, double point)
         {
             timeSignature = timeSig;
-            scale         = (point * 72.0) / (BravuraGlyphs.Data.Resolution * 100.0);
+            var musicFont = Font.HasAnyFonts() ? Tables.CurrentMusicFont() : BravuraGlyphs.Data;
 
             topGlyphs = new List<(FontGlyph?, double)>();
             botGlyphs = new List<(FontGlyph?, double)>();
@@ -54,7 +53,9 @@ namespace VexFlowSharp
             for (int i = 0; i < topDigits.Length; i++)
             {
                 string digitCode = MapDigitToCode(topDigits[i], hasBotRow: botDigits.Length > 0);
-                BravuraGlyphs.Data.Glyphs.TryGetValue(digitCode, out var fg);
+                var data = Font.HasAnyFonts() ? Font.ResolveGlyphFontData(digitCode) : musicFont;
+                double scale = Glyph.GetScale(point, data);
+                data.Glyphs.TryGetValue(digitCode, out var fg);
                 topGlyphs.Add((fg, scale));
                 double gw = Glyph.GetWidth(digitCode, point);
                 if (gw <= 0 && fg != null) gw = (fg.XMax - fg.XMin) * scale; // fallback
@@ -67,7 +68,9 @@ namespace VexFlowSharp
             for (int i = 0; i < botDigits.Length; i++)
             {
                 string digitCode = MapBotDigitToCode(botDigits[i]);
-                BravuraGlyphs.Data.Glyphs.TryGetValue(digitCode, out var fg);
+                var data = Font.HasAnyFonts() ? Font.ResolveGlyphFontData(digitCode) : musicFont;
+                double scale = Glyph.GetScale(point, data);
+                data.Glyphs.TryGetValue(digitCode, out var fg);
                 botGlyphs.Add((fg, scale));
                 double gw = Glyph.GetWidth(digitCode, point);
                 if (gw <= 0 && fg != null) gw = (fg.XMax - fg.XMin) * scale; // fallback

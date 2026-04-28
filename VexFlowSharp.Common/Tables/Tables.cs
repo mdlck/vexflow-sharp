@@ -784,9 +784,10 @@ namespace VexFlowSharp
                 props.Code     = codeHead;
             }
 
-            // Compute actual head width from glyph data using VexFlow's scale formula.
+            // Compute actual head width from glyph data using the active font's scale.
             // VexFlow: getWidth = () => Glyph.getWidth(code_head, NOTATION_FONT_SCALE)
-            // Port: Glyph.GetWidth(code, NOTATION_FONT_SCALE) uses (point*72)/(resolution*100) * bbox.getW()
+            // Port: Glyph.GetWidth(code, NOTATION_FONT_SCALE) applies FontData.GlyphScale
+            // so legacy Bravura and generated OTF outlines use their own coordinate-space scale.
             if (!string.IsNullOrEmpty(props.CodeHead))
             {
                 double w = Glyph.GetWidth(props.CodeHead, NOTATION_FONT_SCALE);
@@ -952,13 +953,8 @@ namespace VexFlowSharp
         // ── Font ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Return the current music font data (Bravura).
+        /// Return the current music font data.
         /// </summary>
-        public static FontData CurrentMusicFont()
-        {
-            if (!Font.HasFont("Bravura"))
-                throw new VexFlowException("NoFonts", "Bravura font not loaded. Call Font.Load(\"Bravura\", ...) first.");
-            return Font.GetData("Bravura");
-        }
+        public static FontData CurrentMusicFont() => Font.ResolveMusicFont();
     }
 }

@@ -895,6 +895,21 @@ namespace VexFlowSharp.Tests.Api
 
         [Test]
         [Category("Unit")]
+        public void FactoryChordSymbol_DefaultsToVexFlowJustification()
+        {
+            var factory = new Factory(new RecordingRenderContext(), 500, 200);
+
+            var chord = factory.ChordSymbol(fontSize: 14);
+            var optionsChord = factory.ChordSymbol(new FactoryChordSymbolOptions { FontSize = 14 });
+
+            Assert.That(chord.GetHorizontal(), Is.EqualTo(ChordSymbolHorizontalJustify.Center));
+            Assert.That(chord.GetVertical(), Is.EqualTo(ChordSymbolVerticalJustify.Top));
+            Assert.That(optionsChord.GetHorizontal(), Is.EqualTo(ChordSymbolHorizontalJustify.Center));
+            Assert.That(optionsChord.GetVertical(), Is.EqualTo(ChordSymbolVerticalJustify.Top));
+        }
+
+        [Test]
+        [Category("Unit")]
         public void FactoryCreatesMultiMeasureRestAndTextBracket()
         {
             var ctx = new RecordingRenderContext();

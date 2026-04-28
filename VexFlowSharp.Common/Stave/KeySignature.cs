@@ -131,8 +131,9 @@ namespace VexFlowSharp
 
         private double GetAccidentalGlyphWidth(string code)
         {
-            double scale = (glyphFontScale * 72.0) / (BravuraGlyphs.Data.Resolution * 100.0);
-            if (BravuraGlyphs.Data.Glyphs.TryGetValue(code, out var fg))
+            var data = Font.HasAnyFonts() ? Font.ResolveGlyphFontData(code) : BravuraGlyphs.Data;
+            double scale = Glyph.GetScale(glyphFontScale, data);
+            if (data.Glyphs.TryGetValue(code, out var fg))
                 return (fg.XMax - fg.XMin) * scale;
             // Fallback widths matching VexFlow defaults
             return code.Contains("Flat")
@@ -149,15 +150,16 @@ namespace VexFlowSharp
             if (!formatted) Format();
 
             double curX  = x + xShift;
-            double scale = (glyphFontScale * 72.0) / (BravuraGlyphs.Data.Resolution * 100.0);
 
             (string Type, double Line)? previous = null;
             foreach (var acc in accList)
             {
                 var (code, _) = Tables.AccidentalCodes(acc.Type);
                 double lineY  = stave.GetYForLine(acc.Line);
+                var data = Font.HasAnyFonts() ? Font.ResolveGlyphFontData(code) : BravuraGlyphs.Data;
+                double scale = Glyph.GetScale(glyphFontScale, data);
 
-                if (BravuraGlyphs.Data.Glyphs.TryGetValue(code, out var fg)
+                if (data.Glyphs.TryGetValue(code, out var fg)
                     && fg.CachedOutline != null)
                 {
                     Glyph.RenderOutline(ctx, fg.CachedOutline, scale, curX, lineY);

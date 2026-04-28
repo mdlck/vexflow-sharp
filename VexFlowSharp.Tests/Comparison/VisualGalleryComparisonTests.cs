@@ -57,6 +57,9 @@ namespace VexFlowSharp.Tests.Comparison
 
             Assert.That(File.Exists(outPath), Is.True, $"Output PNG must exist at {outPath}");
             Assert.That(new FileInfo(outPath).Length, Is.GreaterThan(0), "Output PNG must be non-zero bytes");
+
+            string referenceFilename = filename.Replace("-vfsharp.png", "-vexflow.png");
+            ComparisonOutput.CopyReferenceImage(ReferenceImagesDir, OutputDir, referenceFilename);
             return outPath;
         }
 
@@ -187,6 +190,7 @@ namespace VexFlowSharp.Tests.Comparison
             first.AddModifier(new FretHandFinger("1").SetPosition(ModifierPosition.Left), 0);
 
             var chord = new ChordSymbol()
+                .SetHorizontal(ChordSymbolHorizontalJustify.Center)
                 .SetFontSize(14)
                 .AddText("F7")
                 .AddGlyphOrText("b9", SymbolModifiers.Superscript)

@@ -13,7 +13,7 @@ The scoped VexFlow 5 migration is complete for this repository:
 - All generated VexFlow 5 visual comparison scenes run in the normal test suite.
 - No NUnit tests are skipped.
 - The upstream commit audit has no unexplained `remaining` entries for the local `4.2.2..5.0.0` range.
-- Browser/SVG/DOM renderer behavior and alternate upstream music-font runtime assets are documented as out of scope for the current C# rendering model.
+- Browser/SVG/DOM renderer behavior is documented as out of scope for the current C# rendering model. VexFlow font packages are embedded as generated C# data and are loaded with `VexFlow.LoadFonts(...)` rather than the browser `FontFace` API.
 - MusicXML real-score excerpts are retained as C# output/smoke scenes because this repository has no local VexFlow 5 MusicXML reference renderer.
 
 ## Current State
@@ -69,7 +69,7 @@ The migration has already advanced several core behavior areas:
 The test suite is green at the time this plan was last updated:
 
 ```text
-Passed: 938, Failed: 0, Skipped: 0, Total: 938
+Passed: 966, Failed: 0, Skipped: 0, Total: 966
 ```
 
 ## Historical Migration Rule
@@ -98,7 +98,7 @@ Remaining work:
 - Replace the remaining hard-coded layout constants with metric lookups where v5 uses metrics.
 - Audit glyph width, glyph height, ascent, descent, pointer-rectangle defaults, and text measurement paths; StaveNote/Tuplet pointer rectangles, Tuplet bracket metrics, Dot metrics, Curve defaults, StaveTie defaults/close-note control points, Stroke spacing, Tremolo font size/spacing, repeat barline dots, KeySignature spacing, Annotation measured width, TextFormatter fallback sizing, v5-style family-prefix/CSS-list matching, and registry/update cache invalidation, StaveTempo spacing/shifts, cautionary accidental parenthesis padding, and Ornament stacked articulation y-offsets are now covered.
 - Ensure Bravura glyph data is complete enough for v5 glyph names used by migrated features.
-- Decide how multi-font support maps to C#, especially Bravura, Gonville, Petaluma, Leland, text fonts, and custom glyphs.
+- Multi-font support now maps to generated C# `FontData` classes loaded through `VexFlow.LoadFonts(...)`, with comparison coverage for each supported music font stack; browser `FontFace` loading remains out of scope.
 
 Verification:
 

@@ -117,8 +117,8 @@ namespace VexFlowSharp
                 ["rightParenTall"] = ")",
                 ["/"] = "\ue87b",
                 ["over"] = "\ue87b",
-                ["#"] = "\ue87c",
-                ["b"] = "\ue87d",
+                ["#"] = "#",
+                ["b"] = "\u266D",
             };
 
         private readonly List<ChordSymbolBlock> symbolBlocks = new List<ChordSymbolBlock>();
@@ -139,6 +139,9 @@ namespace VexFlowSharp
         public ChordSymbolHorizontalJustify GetHorizontal() => horizontal;
         public ChordSymbolVerticalJustify GetVertical() => vertical;
         public bool GetReportWidth() => reportWidth;
+
+        private static double FontSizeToPixels(double sizeInPoints)
+            => sizeInPoints * Metrics.GetDouble("TextFormatter.ptToPx");
 
         public ChordSymbol SetFontSize(double size)
         {
@@ -192,8 +195,9 @@ namespace VexFlowSharp
                 Style = font.Style,
             };
             var block = new ChordSymbolBlock(text, symbolModifier, blockFont);
-            if (block.IsSubscript()) block.SetYShift(SubscriptOffset * font.Size);
-            if (block.IsSuperscript()) block.SetYShift(SuperscriptOffset * font.Size);
+            double fontSizeInPixels = FontSizeToPixels(font.Size);
+            if (block.IsSubscript()) block.SetYShift(SubscriptOffset * fontSizeInPixels);
+            if (block.IsSuperscript()) block.SetYShift(SuperscriptOffset * fontSizeInPixels);
             return block;
         }
 

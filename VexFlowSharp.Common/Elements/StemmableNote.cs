@@ -91,7 +91,7 @@ namespace VexFlowSharp
 
                 if (!string.IsNullOrEmpty(flagCode))
                 {
-                    double scale = Tables.NOTATION_FONT_SCALE;
+                    double scale = GetFlagGlyphFontScale();
                     try
                     {
                         flag = new Flag(flagCode, scale);
@@ -106,6 +106,9 @@ namespace VexFlowSharp
 
         /// <summary>Whether this note has a flag (has flag props and no beam).</summary>
         public virtual bool HasFlag() => glyphProps.Flag;
+
+        /// <summary>Point size used for standalone flag glyphs.</summary>
+        protected virtual double GetFlagGlyphFontScale() => Tables.NOTATION_FONT_SCALE;
 
         // ── Stem direction ────────────────────────────────────────────────────
 

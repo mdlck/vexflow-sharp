@@ -28,12 +28,12 @@ Classifications:
 | Upstream area | C# status | Notes |
 |---|---:|---|
 | Core element/style/registry/type guards | ported | `Element`, `Registry`, `TypeGuards`, and focused tests cover ids, classes, style wrapping, group style, rendered state, context, and category helpers. |
-| Metrics/font lookup | partial | Metrics layer and Bravura glyph augmentation are ported; multi-font/browser font loading remains deferred or out of scope. |
+| Metrics/font lookup | ported | Metrics layer and generated VexFlow font package data are ported; browser `FontFace` loading remains out of scope. |
 | Browser renderer/bootstrap (`canvascontext`, `svgcontext`, `renderer`, `web`) | not applicable | README documents `RenderContext`, Skia, Unity, and custom backends as the supported model. |
 | Factory/EasyScore/parser surface | partial | Factory and EasyScore have broad v5 option coverage; parser and remaining option-name audits continue. |
 | Notes and modifiers | partial | Many first-pass modules are ported with renderer-call tests; remaining work is visual parity and edge-case layout audits. |
 | Tablature | partial | Tab notes/staves/ties/slides/grace-tab/tuning are ported; remaining work is image parity and integration hardening. |
-| Upstream generated fonts | partial | Bravura coverage is extended; Gonville, Petaluma, Leland, and browser font loading are not yet first-class C# runtime assets. |
+| Upstream generated fonts | ported | VexFlow font packages are generated into C# `FontData` classes and registered with `VexFlow.LoadFonts(...)`; browser font loading remains not applicable. |
 
 ## Commit Audit Table
 
@@ -55,7 +55,7 @@ This table is intentionally filled in small tranches. Add exact test references 
 | `cb8e016e` | chordsymbol (v5) | ported | `ChordSymbolTests` cover constructor/API surface, formatting, metrics, and renderer calls; image parity remains tracked separately. |
 | `a724f674` | loadWebFont updated | not applicable | Browser font loading is outside the supported C# rendering model. |
 | `94b7d317` | review comments | ported | Folded into chord symbol/font-loading classifications above. |
-| `51e752be` | revert rename of roboto slab | not applicable | Browser/text-font asset naming; C# runtime currently ships Bravura-focused metrics. |
+| `51e752be` | revert rename of roboto slab | not applicable | Browser/text-font asset naming; C# ships generated font data and text metrics through its built-in registry. |
 | `2b9d24b7` | chordsymbol with text parenthesis | ported | `ChordSymbolTests` cover text parenthesis handling and block rendering. |
 | `036bda9e` | review comments | ported | Folded into chord symbol coverage. |
 | `bfae30cb` | review comments | ported | Folded into chord symbol coverage. |
@@ -66,11 +66,11 @@ This table is intentionally filled in small tranches. Add exact test references 
 | `e459090e` | stavetempo (v5) | ported | `StaveTempoTests` cover category, metric-backed spacing/shifts, glyph rendering, and stave integration. |
 | `f48b97a7` | use `\uXXXX` escape codes | not applicable | TypeScript source encoding cleanup. |
 | `0f59a8cb` | review comments | ported | Folded into stave tempo coverage. |
-| `953673b0` | Add Academico. | deferred | Multi-font asset support is still tracked under font/metrics remaining work. |
+| `953673b0` | Add Academico. | ported | Generated VexFlow font package data includes Academico and registers it through `VexFlow.LoadFonts(...)`; font-stack comparison tests cover Bravura with Academico. |
 | `4e97c64d` | Simplify `Tables.lookupMetric()` and add more comments. | ported | `MetricsTests` and metrics call-site coverage verify C# lookup fallback behavior. |
-| `c3a0a455` | Merge pull request #39 from ronyeh/fonts | partial | Bravura/metrics pieces are ported; full multi-font support remains deferred. |
+| `c3a0a455` | Merge pull request #39 from ronyeh/fonts | ported | Generated VexFlow font package data and font-stack comparison tests cover multi-font support; browser loading is out of scope. |
 | `33f735af` | clef (v5) | ported | `StaveTests`, `FactoryTests`, and signature-wrapper tests cover clef category, wrappers, and rendering integration. |
-| `7593c679` | musejazz hack to show progress | deferred | Related to alternate font progress; covered by multi-font deferred item. |
+| `7593c679` | musejazz hack to show progress | ported | MuseJazz and MuseJazz Text are generated into C# font data and covered by font-stack comparison tests. |
 | `76047989` | frethandfinger (v5) | ported | `FretHandFingerTests` cover category, metrics, formatting, placement, and draw calls. |
 | `e279bf50` | glyphnote (v5) | ported | `GlyphNoteTests` and factory wrapper tests cover category, construction, modifiers, and rendering. |
 | `70d58ec2` | stavesection (v5) | ported | `StaveSectionTests` cover category, positioning, metrics, and draw behavior. |
@@ -95,7 +95,7 @@ This table is intentionally filled in small tranches. Add exact test references 
 | `3159b480` | Merge pull request #56 from rvilarl/vf5/tremolo | ported | Merge commit for tremolo; `TremoloTests` cover v5 behavior. |
 | `96138076` | stavemodifier (v5) | ported | `StaveTests` and stave modifier subclasses cover v5 categories and layout integration. |
 | `a442dd8a` | Use `loadWebFonts(fontNames)` to load only a few fonts. | not applicable | Browser web-font loading is outside the supported C# rendering model. |
-| `96ebf68d` | Merge pull request #65 from ronyeh/fonts | partial | Bravura/metrics support is ported; browser and alternate font loading remain deferred/out of scope. |
+| `96ebf68d` | Merge pull request #65 from ronyeh/fonts | ported | Generated VexFlow font package data covers alternate music/text font assets; browser web-font loading remains out of scope. |
 | `d7eca9e6` | pedalmarking (v5) | ported | `PedalMarkingTests` cover v5 category, bracket/text styles, render options, and draw behavior. |
 | `d6c87898` | annotation (v5) | ported | `AnnotationTests` cover justification aliases, placement, stem-aware draw placement, measured width, formatting shifts, and render groups. |
 | `834b872e` | review comments | ported | Folded into pedal marking / annotation coverage. |
@@ -124,9 +124,9 @@ This table is intentionally filled in small tranches. Add exact test references 
 | `64e844f5` | Merge pull request #81 from rvilarl/vf5/staverepetition | ported | Merge commit for stave repetition; evidence above. |
 | `119f242d` | Merge branch `main` into vf5/parenthesis | ported | Merge bookkeeping for parenthesis branch; behavior covered above. |
 | `52d1cfbd` | remove glyph in tests | not applicable | Upstream test cleanup only. |
-| `6966688e` | new fonts | deferred | Alternate font assets remain tracked under multi-font support. |
+| `6966688e` | new fonts | ported | Alternate VexFlow font assets are generated into C# font data and exercised by font-stack comparison tests. |
 | `416e2353` | remove textformatter | partial | C# keeps a backend-neutral `TextFormatter`; v5 font matching/cache behavior has focused `TextFormatterTests`. |
-| `7f8ec9f1` | Merge pull request #82 from rvilarl/newfonts | deferred | Alternate font package support remains deferred. |
+| `7f8ec9f1` | Merge pull request #82 from rvilarl/newfonts | ported | Merge commit for generated alternate font package support; evidence above. |
 | `48b15e57` | staveconnector (v5) | ported | `StaveConnectorTests` cover category, type variants, text/line metrics, and draw calls. |
 | `b1746690` | stavevolta (v5) | ported | `VoltaTests` cover category, label/bracket geometry, placement, and draw behavior. |
 | `cd7c90b5` | accidental (v5) | ported | `AccidentalTests`, key signature tests, and renderer tests cover v5 glyph aliases, cautionary parentheses, metrics, and formatting. |
@@ -139,13 +139,13 @@ This table is intentionally filled in small tranches. Add exact test references 
 | `f6a78cd9` | Add a `Glyphs` enum. | partial | C# uses generated Bravura glyph data and table constants rather than a direct TS enum; v5 glyph-name coverage is tested where used. |
 | `ca8292a2` | ornament (v5) | ported | `OrnamentTests` cover category, jazz ornaments, accidentals, stacked articulation spacing, metrics, and renderer calls. |
 | `06b76324` | Merge pull request #92 from rvilarl/vf5/ornament | ported | Merge commit for ornament; evidence above. |
-| `9ea650f4` | refactor currentMusicFont | partial | Current music font is represented through C# `Metrics`/font-family facade; full alternate music-font loading remains deferred. |
+| `9ea650f4` | refactor currentMusicFont | ported | `Font.ResolveMusicFont()` follows the active `VexFlow.SetFonts(...)` stack and font-stack comparisons cover alternate music font rendering. |
 | `efb033d9` | review comments | partial | Folded into glyph/font classifications above. |
 | `afadd9b5` | font glyphs removed | partial | C# keeps generated Bravura glyph data; upstream font asset reshaping is only partially applicable. |
 | `04032100` | accidental removed from keyprops | ported | Accidental and key-signature tests cover v5 accidental table/glyph lookup behavior without legacy key-prop accidental coupling. |
 | `284a4b1d` | Merge pull request #96 from rvilarl/cleanup2 | partial | Cleanup merge spanning font/glyph and accidental changes; classifications above apply. |
 | `27588771` | textbracket (v5) | ported | `TextBracketTests` cover constructor/API, metric-backed defaults, dashed/solid rendering, and placement. |
-| `21bb98c2` | common metrics fonts | partial | C# `MetricsTests` cover common metrics lookup; full upstream font-family asset stack remains deferred. |
+| `21bb98c2` | common metrics fonts | ported | C# `MetricsTests` cover common metrics lookup, and generated font package data supplies the upstream font-family asset stack. |
 | `2c53e2e6` | review comments | partial | Folded into text bracket / metrics classifications. |
 | `7318a8f6` | Merge pull request #100 from rvilarl/cleanup4 | partial | Cleanup merge; covered by neighboring classifications. |
 | `6e06a4f9` | measure text reworked | ported | `TextFormatterTests`, annotation/chord/text note tests cover measured text width and cache invalidation paths. |
@@ -158,11 +158,11 @@ This table is intentionally filled in small tranches. Add exact test references 
 | `f97989d3` | vexflow4 #1590 | ported | Covered by key signature/table compatibility tests for carried-over v4 issue behavior. |
 | `1300be35` | vexflow4 #1596 | ported | Covered by note/formatter compatibility tests for carried-over v4 issue behavior. |
 | `0921706f` | review comments | ported | Folded into table/metrics coverage. |
-| `08e62dc2` | Merge pull request #106 from rvilarl/metrics | partial | Backend-neutral `Metrics` is ported; full upstream font payload remains deferred. |
+| `08e62dc2` | Merge pull request #106 from rvilarl/metrics | ported | Backend-neutral `Metrics` and generated upstream font payloads are ported; browser text measurement remains mapped to `TextFormatter`. |
 | `d63fc269` | Skip alternate code points / avoid NBSP descriptions. | ported | Bravura glyph generation/tests cover duplicate/alternate glyph handling in the generated C# table. |
 | `c4397795` | Merge pull request #110 from ronyeh/duplicate-enum | ported | Merge commit for glyph duplicate handling; evidence above. |
 | `860a67d5` | font scale | ported | Metrics/table tests cover v5 notation font scale constants and call sites. |
-| `1c471d21` | fix jmusejazz time signature | deferred | Alternate music font handling remains deferred; time signature wrappers are otherwise ported. |
+| `1c471d21` | fix jmusejazz time signature | ported | MuseJazz font data is generated and font-stack comparisons include time-signature rendering. |
 | `01e5dec7` | Merge pull request #112 from rvilarl/scale | ported | Merge commit for font scale; evidence above. |
 | `20e5cabe` | Add `Element.setTextMeasurementCanvas()` / OffscreenCanvas. | not applicable | Browser/OffscreenCanvas text measurement injection does not map to backend-neutral C# rendering. |
 | `106bdace` | Ported similar to 0xfe/vexflow#1598. | ported | Covered by key-signature width/formatting tests and signature wrapper behavior. |
@@ -179,7 +179,7 @@ This table is intentionally filled in small tranches. Add exact test references 
 | `81a05f3f` | Merge pull request #132 from ronyeh/font-api-naming | ported | Merge commit for facade font API naming; evidence above. |
 | `d8e84ae4` | dot v5 | ported | `DotTests` cover metric-backed radius/width/spacing, grace scaling, formatting, rendering, and tab-note stem-base placement. |
 | `e322a2f0` | Base64 encode fonts for bundling in `vexflow.js`. | not applicable | JS bundling concern; C# packages embed/generated assets differently. |
-| `288fe6d7` | Improve comments / add Academico default family. | partial | Default facade font family includes `Bravura,Academico`; actual Academico font asset support remains deferred. |
+| `288fe6d7` | Improve comments / add Academico default family. | ported | Default facade font family includes `Bravura,Academico`, and Academico generated font metrics are registered through `VexFlow.LoadFonts(...)`. |
 | `1250aecd` | metronome musicxml features | ported | Bravura glyph augmentation and `StaveTempoTests` cover metronome glyphs/rendering. |
 | `27cc82d6` | review comments | ported | Folded into stave tempo/metronome coverage. |
 | `15db4db1` | getElementWidth added | ported | Chord symbol and text measurement tests cover element/block width behavior. |
@@ -199,8 +199,8 @@ This table is intentionally filled in small tranches. Add exact test references 
 | `bd2d535a` | elementstyle reworked | ported | Folded into element style coverage above. |
 | `5c25f49d` | ornaments above stave | ported | `OrnamentTests` cover above/below placement and delayed stave-end/next-context positioning. |
 | `332de0d5` | Remove GonvilleSmufl | not applicable | Upstream font asset packaging cleanup; C# does not ship that asset path. |
-| `94fa0322` | Generate Base64 Gonville font. | deferred | Alternate Gonville font support remains deferred. |
-| `a5895253` | Merge pull request #137 from ronyeh/gonville | deferred | Alternate font packaging remains deferred. |
+| `94fa0322` | Generate Base64 Gonville font. | ported | Gonville font data is generated into C# and covered by font-stack comparison tests. |
+| `a5895253` | Merge pull request #137 from ronyeh/gonville | ported | Merge commit for Gonville font support; evidence above. |
 | `fdd27c06` | Merge pull request #163 from rvilarl/style/bend | ported | Bend style/render behavior is covered by `BendTests` and base element style tests. |
 | `59ee2fad` | Merge pull request #162 from rvilarl/fixnotebbox | ported | Merge commit for note bounding-box fixes; evidence in note/stave-note/glyph-note bounding-box tests. |
 | `b34eb7ad` | bounding box fixes | ported | `StaveNoteTests`, `GlyphNoteTests`, and formatter/system bounding-box tests cover migrated bounding boxes. |
@@ -211,7 +211,7 @@ This table is intentionally filled in small tranches. Add exact test references 
 | `a78184a7` | Merge pull request #156 from rvilarl/pointer-events | ported | Pointer-rectangle render surface is covered by `RenderContextTests`, `StaveNoteRenderingTests`, and `TupletTests`; browser events remain out of scope. |
 | `73b783e9` | Glyph Inspector debug glyph origins. | not applicable | Upstream debugging/demo tooling only. |
 | `8f88860d` | fix justify | ported | `AnnotationTests` cover v5 justification aliases and center/center-stem placement. |
-| `32dced4e` | Merge pull request #168 from ronyeh/gonville | deferred | Alternate Gonville font support remains deferred. |
+| `32dced4e` | Merge pull request #168 from ronyeh/gonville | ported | Gonville generated font support is covered by font-stack comparison tests. |
 | `a3ad37dc` | StaveTie: move rendering logic out of draw | ported | `StaveTieTests` cover category, geometry defaults, close-note control points, and draw behavior. |
 | `4d4ad410` | Upgrade TypeScript and add missing `TextMetrics` fields. | not applicable | TypeScript build/type compatibility; C# text metrics are represented through `TextMeasure`/`TextFormatter`. |
 | `0ec2f2b3` | Fix mean calculation in formatter | ported | `FormatterTests` cover duration statistics, average deviation cost, and formatting results. |
@@ -228,7 +228,7 @@ This table is intentionally filled in small tranches. Add exact test references 
 | `7e7412be` | Merge upstream/main into stavetie-cleanup | ported | Merge bookkeeping; StaveTie behavior is covered above. |
 | `311fb13c` | Merge pull request #188 from mscuthbert/formatter-comments | not applicable | Formatter comment/documentation cleanup only. |
 | `cc775a44` | Merge pull request #193 from mscuthbert/remove-hash-private | not applicable | TypeScript syntax cleanup merge. |
-| `573e5984` | Update bundled Gonville font. | deferred | Alternate Gonville font asset support remains deferred. |
+| `573e5984` | Update bundled Gonville font. | ported | Generated Gonville data comes from the vendored VexFlow font package used for reference generation. |
 | `70d8a0f6` | Use nullish coalescing operator with minus | ported | C# null-handling equivalents are covered by formatting/layout tests for affected paths. |
 | `e962d2f4` | fix tabstave measure numbers | ported | `TabNoteTests`/tab stave tests cover metric-backed tab stave font size, spacing, and draw integration; measure-number rendering is inherited from `Stave`. |
 | `3830bc75` | Adjust pedal markings end | ported | `PedalMarkingTests` cover bracket/text rendering and release/depress endpoint behavior. |
@@ -297,8 +297,8 @@ Classification for that non-source-only set:
 | TypeScript lint/prettier/eslint/grunt/CI-only changes | not applicable | C# formatting/build verification is handled by the .NET solution and NUnit tests. |
 | Docs/readme/changelog/authors/license/repo URL changes | not applicable | These do not change VexFlow runtime behavior; C# README has its own migration/runtime notes. |
 | Browser demos, legacy test pages, glyph inspectors, jsdom image-generation infrastructure, font demo pages | not applicable | Browser/demo tooling does not map to the supported C# `RenderContext`/Skia/Unity model. |
-| Upstream visual test reference logistics and font-name sanitization | deferred | Representative image comparisons remain a separate C# migration gate. |
-| Alternate font package churn (`@vexflow-fonts`, Gonville/Petaluma/Leland demo/test package updates) | deferred | Bravura is supported; multi-font runtime assets remain tracked under font/metrics remaining work. |
+| Upstream visual test reference logistics and font-name sanitization | ported | `tools/gen-reference-images.mjs` generates sanitized `font_*-vexflow.png` references used by `FontComparisonTests`. |
+| Alternate font package churn (`@vexflow-fonts`, Gonville/Petaluma/Leland demo/test package updates) | ported | Generated C# font data and font-stack comparisons cover the VexFlow font packages used by the runtime facade. |
 | Upstream test-only commits for behavior also present in `src/` commits | ported | Behavior is classified in the source table and covered by the referenced C# tests. |
 
 Representative non-source-only behavior/test commits accounted for by source-table evidence:
@@ -309,9 +309,9 @@ Representative non-source-only behavior/test commits accounted for by source-tab
 | `ec1b6f94` | Modified ornament test case for VexFlow5. | ported | `OrnamentTests` cover migrated v5 ornament behavior. |
 | `4ab869d2` / `86bb364a` | support single digit time signatures / merge | ported | Time signature wrapper/stave tests cover single-signature construction and rendering paths. |
 | `b34683cb` | pedalmarking tests with two voices | ported | `PedalMarkingTests` cover text/bracket styles and formatted voice endpoint behavior. |
-| `62d1dcc7` | Font-name spaces in jsdom visual tests. | deferred | Visual parity/font-name image generation remains in the image comparison gate. |
-| `8cdb5813` | Adds Sebastian and Leipzig as test fonts. | deferred | Alternate test fonts are part of deferred multi-font/image parity work. |
-| `5368a471` / `5d7a5bd6` | Limit/adjust browser font tests. | deferred | Browser/jsdom font test logistics do not map directly to C# runtime packages. |
+| `62d1dcc7` | Font-name spaces in jsdom visual tests. | ported | Font reference generation uses explicit slugs for font names with spaces and C# comparison tests consume the same filenames. |
+| `8cdb5813` | Adds Sebastian and Leipzig as test fonts. | ported | Sebastian and Leipzig are generated into C# font data and covered by font-stack comparison tests. |
+| `5368a471` / `5d7a5bd6` | Limit/adjust browser font tests. | not applicable | Browser/jsdom font test logistics do not map directly to C# runtime packages; C# uses Skia comparison tests. |
 
 Full audit status:
 

@@ -2,6 +2,8 @@
 // MIT License
 
 using NUnit.Framework;
+using System.Linq;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.StaveTests
 {
@@ -58,6 +60,113 @@ namespace VexFlowSharp.Tests.StaveTests
         {
             var clef = new Clef("percussion");
             Assert.That(clef.GetWidth(), Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void Clef_Tab_RendersBravuraGlyphOutline()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new TabStave(10, 25, 300);
+            stave.SetContext(ctx);
+            var clef = new Clef("tab");
+            clef.SetX(10);
+
+            clef.Draw(stave, 0);
+
+            Assert.That(clef.GetWidth(), Is.GreaterThan(0));
+            Assert.That(ctx.GetCalls("FillText").Any(), Is.False);
+            Assert.That(ctx.GetCalls("Fill").Any(), Is.True);
+        }
+
+        [Test]
+        public void Clef_PetalumaDrawUsesFontSpecificGlyphScale()
+        {
+            try
+            {
+                Font.ClearRegistry();
+                VexFlow.LoadFonts("Petaluma", "Petaluma Script");
+                VexFlow.SetFonts("Petaluma", "Petaluma Script");
+
+                var ctx = new RecordingRenderContext();
+                var stave = new Stave(10, 25, 300);
+                stave.SetContext(ctx);
+                var clef = new Clef("treble");
+                clef.SetX(10);
+
+                clef.Draw(stave, 0);
+
+                Assert.That(PetalumaGlyphs.Data.Glyphs.TryGetValue("gClef", out var glyph), Is.True);
+                double expectedHeight = GetOutlineYSpan(glyph!.CachedOutline!) * Glyph.GetScale(Clef.GetPoint(), PetalumaGlyphs.Data);
+                double legacyBravuraOnlyHeight = GetOutlineYSpan(glyph.CachedOutline!) * Clef.GetPoint() * 0.72 / PetalumaGlyphs.Data.Resolution;
+                double actualHeight = GetRecordedPathYSpan(ctx);
+
+                Assert.That(actualHeight, Is.EqualTo(expectedHeight).Within(1.0));
+                Assert.That(actualHeight, Is.GreaterThan(legacyBravuraOnlyHeight * 1.2));
+            }
+            finally
+            {
+                Font.ClearRegistry();
+                Font.Load("Bravura", BravuraGlyphs.Data);
+                VexFlow.SetFonts("Bravura", "Academico");
+            }
+        }
+
+        private static double GetRecordedPathYSpan(RecordingRenderContext ctx)
+        {
+            var ys = ctx.Calls.SelectMany(call => call.Method switch
+            {
+                "MoveTo" or "LineTo" => new[] { call.Args[1] },
+                "QuadraticCurveTo" => new[] { call.Args[1], call.Args[3] },
+                "BezierCurveTo" => new[] { call.Args[1], call.Args[3], call.Args[5] },
+                _ => System.Array.Empty<double>(),
+            }).ToArray();
+
+            return ys.Max() - ys.Min();
+        }
+
+        private static double GetOutlineYSpan(int[] outline)
+        {
+            double minY = double.PositiveInfinity;
+            double maxY = double.NegativeInfinity;
+            int i = 0;
+
+            void AddY(double y)
+            {
+                minY = System.Math.Min(minY, y);
+                maxY = System.Math.Max(maxY, y);
+            }
+
+            while (i < outline.Length)
+            {
+                int command = outline[i++];
+                switch (command)
+                {
+                    case 0:
+                    case 1:
+                        i++;
+                        AddY(outline[i++]);
+                        break;
+                    case 2:
+                        i++;
+                        AddY(outline[i++]);
+                        i++;
+                        AddY(outline[i++]);
+                        break;
+                    case 3:
+                        i++;
+                        AddY(outline[i++]);
+                        i++;
+                        AddY(outline[i++]);
+                        i++;
+                        AddY(outline[i++]);
+                        break;
+                    default:
+                        i = outline.Length;
+                        break;
+                }
+            }
+
+            return maxY - minY;
         }
 
         // ── Staff line positions ──────────────────────────────────────────────

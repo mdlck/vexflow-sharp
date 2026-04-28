@@ -127,9 +127,9 @@ namespace VexFlowSharp
 
         /// <summary>
         /// Ledger line extension beyond notehead edge, in pixels.
-        /// VexFlow default is 3; plan specifies 5.0 for this port.
+        /// VexFlow default is 3.
         /// </summary>
-        public const double LEDGER_LINE_OFFSET = 5.0;
+        public const double LEDGER_LINE_OFFSET = 3.0;
 
         /// <summary>
         /// Minimum padding in pixels added to a note's width when it has no modifiers.
@@ -607,6 +607,8 @@ namespace VexFlowSharp
         {
             return stem != null && HasFlag() && beam == null;
         }
+
+        protected override double GetFlagGlyphFontScale() => renderOptions.GlyphFontScale;
 
         // ── Notehead x bounds ─────────────────────────────────────────────────
 

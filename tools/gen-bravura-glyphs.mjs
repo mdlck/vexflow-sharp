@@ -21,6 +21,7 @@ const svgInputPath = resolve(repoRoot, 'fonts/bravura-redist/svg/Bravura.svg');
 const glyphNamesPath = resolve(repoRoot, 'vexflow/tools/fonts/config/glyphnames.json');
 
 const augmentationGlyphs = [
+  '6stringTabClef',
   'metAugmentationDot',
   'metNote1024thDown',
   'metNote1024thUp',
@@ -382,7 +383,7 @@ function augmentGeneratedCSharp() {
   for (const name of augmentationGlyphs) {
     if (csSource.includes(`["${name}"] =`)) continue;
 
-    const codepoint = glyphNames[name]?.codepoint;
+    const codepoint = augmentationCodepoints[name] ?? glyphNames[name]?.codepoint;
     if (!codepoint) throw new Error(`No codepoint found for ${name}`);
 
     const svgGlyph = svgGlyphs.get(parseCodepoint(codepoint));

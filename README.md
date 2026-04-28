@@ -8,7 +8,7 @@ VexFlowSharp brings VexFlow's music notation rendering to C# environments, inclu
 
 > **Note:** The scoped VexFlow **5.0.0** migration is complete for this repository. The public API is intentionally C#-idiomatic, so TypeScript `camelCase` options are exposed as PascalCase properties while preserving VexFlow's construction patterns where practical.
 
-Current v5 parity baseline: 938 NUnit tests passing (938 total, 0 skipped). Maintainer-facing migration details live in [`docs/vexflow-5-migration.md`](docs/vexflow-5-migration.md), with visual comparison policy in [`docs/vexflow-5-visual-parity.md`](docs/vexflow-5-visual-parity.md) and upstream audit evidence in [`docs/vexflow-5-upstream-audit.md`](docs/vexflow-5-upstream-audit.md).
+Current v5 parity baseline: 966 NUnit tests passing (966 total, 0 skipped). Maintainer-facing migration details live in [`docs/vexflow-5-migration.md`](docs/vexflow-5-migration.md), with visual comparison policy in [`docs/vexflow-5-visual-parity.md`](docs/vexflow-5-visual-parity.md) and upstream audit evidence in [`docs/vexflow-5-upstream-audit.md`](docs/vexflow-5-upstream-audit.md).
 
 ## Project Structure
 
@@ -33,13 +33,20 @@ VexFlowSharp supports the backend-neutral `RenderContext` abstraction plus the c
 
 ## Font Setup
 
-VexFlowSharp uses the Bravura font (SMuFL standard) for all music glyphs. Call `Font.Load` once at startup before constructing any Factory:
+VexFlowSharp includes generated data for the VexFlow font packages. Call `VexFlow.LoadFonts(...)` once at startup before constructing any Factory:
 
 ```csharp
-Font.Load("Bravura", BravuraGlyphs.Data);
+VexFlow.LoadFonts("Bravura", "Academico");
 ```
 
-The Bravura glyph data is compiled into `VexFlowSharp.Common` as a generated C# class — no external font files are needed at runtime.
+To switch to another VexFlow font stack, load and select it the same way VexFlow JS does:
+
+```csharp
+VexFlow.LoadFonts("Petaluma", "Petaluma Script");
+VexFlow.SetFonts("Petaluma", "Petaluma Script");
+```
+
+Calling `VexFlow.LoadFonts()` with no arguments registers all built-in VexFlow fonts embedded in `VexFlowSharp.Common`. No external font files are needed at runtime for music glyph outlines or text measurement metrics.
 
 ## Quick Start (.NET / Console)
 
@@ -50,7 +57,7 @@ using VexFlowSharp.Api;
 using VexFlowSharp.Common.Formatting;
 
 // Load the Bravura music font once at startup
-Font.Load("Bravura", BravuraGlyphs.Data);
+VexFlow.LoadFonts("Bravura", "Academico");
 
 // Create the SkiaSharp render context (width x height in pixels)
 var ctx = new SkiaRenderContext(width: 500, height: 200);
@@ -306,7 +313,7 @@ VexFlowSharp.Common includes ports of the following VexFlow classes:
 ## Known Limitations
 
 - **Cross-stave beaming** is not fully implemented. Beams within a single stave work correctly; beams that span two staves (common in piano music) require additional work.
-- **Bravura only.** The font system is wired to the Bravura SMuFL font. Other fonts (Gonville, Petaluma) are not included.
+- **Browser font loading is not ported.** VexFlowSharp embeds generated C# font data and exposes `VexFlow.LoadFonts(...)`; it does not use the browser `FontFace` API or remote `@vexflow-fonts` URLs at runtime.
 - **Image parity is active for generated VexFlow 5 scenes.** Formatter, grand-staff, complex-notation, percussion, and gallery PNG references now run as normal tests with a documented cross-engine tolerance for SkiaSharp vs. node-canvas rasterization. The local upstream commit audit is complete for the vendored `4.2.2..5.0.0` range. MusicXML real-score excerpts remain C# output/smoke scenes because this repository has no local VexFlow 5 MusicXML reference renderer.
 
 ## Building

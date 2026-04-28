@@ -201,7 +201,7 @@ namespace VexFlowSharp.Tests.StaveTests
             stave.Draw();
 
             var firstLine = ctx.GetCalls("FillRect").First();
-            Assert.That(firstLine.Args, Is.EqualTo(new[] { 10.0, stave.GetYForLine(0) - 2, 300.0, 4.0 }));
+            Assert.That(firstLine.Args, Is.EqualTo(new[] { 10.0, stave.GetYForLine(0), 300.0, 4.0 }));
         }
 
         [Test]

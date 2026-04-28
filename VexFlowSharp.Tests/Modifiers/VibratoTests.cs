@@ -69,7 +69,7 @@ namespace VexFlowSharp.Tests.Modifiers
         }
 
         [Test]
-        public void Draw_RendersTextGlyphRun()
+        public void Draw_RendersOutlineGlyphRun()
         {
             var ctx = new RecordingRenderContext();
             var note = new GhostNote("q").SetX(40);
@@ -81,9 +81,9 @@ namespace VexFlowSharp.Tests.Modifiers
 
             vibrato.Draw();
 
-            Assert.That(ctx.HasCall("FillText"), Is.True);
-            Assert.That(ctx.GetCall("FillText").Args[1], Is.EqualTo(note.GetYForTopText(0) + Metrics.GetDouble("Vibrato.yShift")).Within(0.0001));
-            Assert.That(ctx.HasCall("QuadraticCurveTo"), Is.False);
+            Assert.That(ctx.HasCall("Fill"), Is.True);
+            Assert.That(ctx.HasCall("FillText"), Is.False);
+            Assert.That(ctx.HasCall("BezierCurveTo"), Is.True);
         }
 
         [Test]

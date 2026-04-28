@@ -179,6 +179,11 @@ namespace VexFlowSharp.Tests.Comparison
             var fileInfo = new System.IO.FileInfo(outPath);
             Assert.That(fileInfo.Length, Is.GreaterThan(0),
                 "Output PNG must be non-zero bytes");
+
+            ComparisonOutput.CopyReferenceImage(
+                ReferenceImagesDir,
+                OutputDir,
+                "complex_notation-vexflow.png");
         }
 
         [Test]

@@ -71,5 +71,29 @@ namespace VexFlowSharp.Tests.StaveTests
             Assert.That(ctx.HasCall("FillText"), Is.True);
             Assert.That(ctx.GetCalls("FillRect").ElementAt(1).Args[0], Is.EqualTo(10 + 200 - Metrics.GetDouble("Volta.beginEndAdjustment")).Within(0.0001));
         }
+
+        [Test]
+        public void StaveDraw_ShiftsVoltaAfterBeginModifiers()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new VexFlowSharp.Stave(20, 75, 700);
+            var volta = new Volta(VoltaType.BeginEnd, "1.", stave.GetX(), -20);
+
+            stave
+                .AddModifier(volta)
+                .AddClef("treble")
+                .AddTimeSignature("4/4")
+                .SetContext(ctx)
+                .Draw();
+
+            double expectedX = stave.GetX() + stave.GetModifierXShift((int)StaveModifierPosition.Above);
+            double expectedTopY = stave.GetYForTopText(stave.GetNumLines()) + volta.GetYShift();
+            var leftPost = ctx.GetCalls("FillRect")
+                .First(c => c.Args[2] == Metrics.GetDouble("Volta.lineWidth") &&
+                            c.Args[3] == Metrics.GetDouble("Volta.verticalHeightLines") * stave.GetSpacingBetweenLines() &&
+                            c.Args[1] == expectedTopY);
+
+            Assert.That(leftPost.Args[0], Is.EqualTo(expectedX).Within(0.001));
+        }
     }
 }

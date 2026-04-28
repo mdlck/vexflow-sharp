@@ -56,6 +56,13 @@ namespace VexFlowSharp
         /// </summary>
         public int Resolution { get; set; }
 
+        /// <summary>
+        /// Multiplier used by vector glyph rendering before dividing by Resolution.
+        /// The legacy Bravura outline table is pre-scaled for VexFlow's historical
+        /// point-to-pixel formula, while generated OTF outlines use raw font units.
+        /// </summary>
+        public double GlyphScale { get; set; } = 0.72;
+
         /// <summary>ISO datetime string recording when the data file was generated.</summary>
         public string? GeneratedOn { get; set; }
     }

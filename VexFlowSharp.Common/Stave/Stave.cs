@@ -668,7 +668,7 @@ namespace VexFlowSharp
                 if (i < options.LineConfig.Count && !options.LineConfig[i])
                     continue;  // line hidden
 
-                double lineY = GetYForLine(i) - lineThickness / 2;
+                double lineY = GetYForLine(i);
                 ctx.FillRect(x, lineY, width, lineThickness);
             }
 
@@ -678,8 +678,16 @@ namespace VexFlowSharp
             foreach (var mod in modifiers)
             {
                 mod.SetContext(ctx);
-                mod.Draw(this, 0);
+                mod.Draw(this, GetModifierDrawXShift(mod));
             }
+        }
+
+        private double GetModifierDrawXShift(StaveModifier modifier)
+        {
+            return modifier.GetPosition() == StaveModifierPosition.Above ||
+                   modifier.GetPosition() == StaveModifierPosition.Below
+                ? GetModifierXShift((int)modifier.GetPosition())
+                : 0;
         }
     }
 }

@@ -27,6 +27,7 @@ Default pixel comparison policy:
 | Complex notation PNG comparison | `ComplexNotation_PixelComparison` compares the generated VexFlow/C# PNG pair with the cross-engine tolerance. | active |
 | Gallery PNG comparisons | `GalleryTabNotation_PixelComparison`, `GalleryGraceNotes_PixelComparison`, `GallerySmallModifiers_PixelComparison`, and `GalleryStaveModifiers_PixelComparison` compare generated VexFlow/C# PNG pairs with the cross-engine tolerance. | active |
 | Percussion PNG comparisons | `PercussionClef_PixelComparison`, `PercussionBasic0_PixelComparison`, `PercussionBasic1_PixelComparison`, `PercussionBasic2_PixelComparison`, `PercussionSnare0_PixelComparison`, and `PercussionSnare1_PixelComparison` compare generated VexFlow/C# PNG pairs with the cross-engine tolerance. | active |
+| Font stack PNG comparisons | `FontStack_PixelComparison` renders one notation specimen for each VexFlow-compatible music font stack and compares the generated VexFlow/C# PNG pairs with the cross-engine tolerance. | active |
 | Comparison output scenes | Beethoven, Schubert, complex notation, and percussion comparison tests render C# PNGs into `VexFlowSharp.Tests/Comparison/Output/` for side-by-side inspection. | active output |
 | Grand-staff PNG comparisons | `GrandStaffRenders_PixelComparison`, `FactoryGrandStaffRenders_PixelComparison`, and `EasyScoreGrandStaffRenders` compare generated VexFlow/C# PNG pairs with the cross-engine tolerance. | active |
 | Gallery reference generation | `tools/gen-reference-images.mjs` now emits VexFlow 5 node-canvas references for grand-staff, complex notation, percussion scenes, tab notation, grace notes, small modifiers, and stave modifiers in addition to the formatter references. | generated local |
@@ -50,6 +51,7 @@ The visual parity gate uses these representative scenes with current VexFlow 5 r
 | Grace notes | Grace-note group, beam, slur, modifier spacing. | `gallery_grace_notes-vexflow.png` and `gallery_grace_notes-vfsharp.png`. | generated + C# output |
 | Small modifiers | Tremolo, fret-hand fingering, text bracket, pedal marking, chord symbol, vibrato. | `gallery_small_modifiers-vexflow.png` and `gallery_small_modifiers-vfsharp.png`. | generated + C# output |
 | Stave modifiers | Tempo, text, volta, repetition, section, connectors. | `gallery_stave_modifiers-vexflow.png` and `gallery_stave_modifiers-vfsharp.png`. | generated + C# output |
+| Font stacks | Music font selection, clefs, key signatures, time signatures, accidentals, noteheads, stems, and beams across Bravura, Finale, Gonville, Gootville, Leipzig, Leland, MuseJazz, Petaluma, and Sebastian. | `font_*-vexflow.png` and `font_*-vfsharp.png`. | generated + C# output |
 | MusicXML real score excerpts | Beethoven and Schubert scenes already emit C# outputs. | No local VexFlow 5 MusicXML reference renderer exists in this repository; retained as C# output/smoke scenes. | scoped output |
 
 ## Commands
@@ -66,6 +68,14 @@ Run generated pixel comparisons:
 dotnet test VexFlowSharp.sln --filter "FullyQualifiedName~PixelComparison"
 ```
 
+Run the paired `Comparison/Output` diagnostics:
+
+```sh
+dotnet test VexFlowSharp.sln --filter "FullyQualifiedName~ComparisonOutputDiagnosticsTests"
+```
+
+Set `VEXFLOW_COMPARISON_HEATMAPS=1` to also write `*-diff.png` heatmaps beside the paired output PNGs.
+
 Run full verification:
 
 ```sh
@@ -79,22 +89,20 @@ dotnet test VexFlowSharp.sln
 
 ## Local Diff Snapshot
 
-After normalizing the C# comparison outputs to a white background, a local per-channel-tolerance diff pass reports:
+After normalizing the paired C# comparison outputs to a white background, a local per-channel-tolerance diff pass reports:
 
 | Pair | Dimensions | Diff |
 |---|---:|---:|
-| `complex_notation` | 600x200 | 5.69% |
-| `percussion_clef` | 400x120 | 6.24% |
-| `percussion_basic0` | 500x200 | 6.92% |
-| `percussion_basic1` | 500x200 | 6.04% |
-| `percussion_basic2` | 500x200 | 7.09% |
-| `percussion_snare0` | 500x200 | 6.00% |
-| `percussion_snare1` | 500x200 | 5.81% |
-| `gallery_tab_notation` | 700x190 | 8.20% |
-| `gallery_grace_notes` | 760x170 | 8.23% |
-| `gallery_small_modifiers` | 760x250 | 8.38% |
-| `gallery_stave_modifiers` | 760x230 | 6.14% |
-| `factory_grandstaff` | 600x250 | 10.61% |
-| `easyscore_grandstaff` | 600x250 | 10.20% |
+| `percussion_basic2` | 500x200 | 4.85% |
+| `gallery_small_modifiers` | 760x250 | 4.69% |
+| `percussion_basic0` | 500x200 | 4.66% |
+| `percussion_basic1` | 500x200 | 3.73% |
+| `percussion_snare0` | 500x200 | 3.71% |
+| `percussion_snare1` | 500x200 | 3.50% |
+| `gallery_grace_notes` | 760x170 | 2.93% |
+| `gallery_tab_notation` | 700x190 | 2.23% |
+| `gallery_stave_modifiers` | 760x230 | 2.05% |
+| `complex_notation` | 600x200 | 1.21% |
+| `percussion_clef` | 400x120 | 0.12% |
 
-These are below the current 11.0% cross-engine threshold. Bounding-box diagnostics are within a few pixels for the gallery/percussion scenes; the remaining diff is dominated by SkiaSharp vs. node-canvas ink-density differences.
+These are below the current 11.0% cross-engine threshold, with all paired `Comparison/Output` scenes now under 5%. The `gallery_small_modifiers` scene renders pedal and vibrato glyphs as outlines instead of fallback text boxes, the TAB stave renders a local text fallback for the missing Bravura TAB-clef outline, and stave lines are drawn on pixel-aligned Y coordinates so Skia does not soften them into half-coverage gray. Remaining bounding-box diagnostics are within a few pixels for the paired scenes and are dominated by SkiaSharp vs. node-canvas ink-density differences.

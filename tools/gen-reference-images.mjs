@@ -22,6 +22,8 @@
 //   - gallery_grace_notes-vexflow.png
 //   - gallery_small_modifiers-vexflow.png
 //   - gallery_stave_modifiers-vexflow.png
+// Font parity:
+//   - font_*-vexflow.png
 //
 // Canvas size and stave position must match exactly what FormatterRenderingTests.cs uses.
 // (500x200 px, Stave at x=10, y=40, width=400)
@@ -64,7 +66,56 @@ if (typeof globalThis.document === 'undefined') {
   };
 }
 
-registerFont(path.join(__dirname, '../vexflow/node_modules/@vexflow-fonts/bravura/bravura.otf'), { family: 'Bravura' });
+const VEXFLOW_FONTS_DIR = path.join(__dirname, '../vexflow/node_modules/@vexflow-fonts');
+
+const FONT_FILES = [
+  ['Bravura', 'bravura/bravura.otf'],
+  ['Academico', 'academico/academico.otf'],
+  ['Bravura Text', 'bravuratext/bravuratext.otf'],
+  ['Edwin', 'edwin/edwin-roman.otf'],
+  ['Finale Ash', 'finaleash/finaleash.otf'],
+  ['Finale Ash Text', 'finaleashtext/finaleashtext.otf'],
+  ['Finale Broadway', 'finalebroadway/finalebroadway.otf'],
+  ['Finale Broadway Text', 'finalebroadwaytext/finalebroadwaytext.otf'],
+  ['Finale Jazz', 'finalejazz/finalejazz.otf'],
+  ['Finale Jazz Text', 'finalejazztext/finalejazztext.otf'],
+  ['Finale Maestro', 'finalemaestro/finalemaestro.otf'],
+  ['Finale Maestro Text', 'finalemaestrotext/finalemaestrotext-regular.otf'],
+  ['Gonville', 'gonville/gonville.otf'],
+  ['Gootville', 'gootville/gootville.otf'],
+  ['Gootville Text', 'gootvilletext/gootvilletext.otf'],
+  ['Leipzig', 'leipzig/leipzig.otf'],
+  ['Leland', 'leland/leland.otf'],
+  ['Leland Text', 'lelandtext/lelandtext.otf'],
+  ['MuseJazz', 'musejazz/musejazz.otf'],
+  ['MuseJazz Text', 'musejazztext/musejazztext.otf'],
+  ['Nepomuk', 'nepomuk/nepomuk-regular.otf'],
+  ['Petaluma', 'petaluma/petaluma.otf'],
+  ['Petaluma Script', 'petalumascript/petalumascript.otf'],
+  ['Petaluma Text', 'petalumatext/petalumatext.otf'],
+  ['Roboto Slab', 'robotoslab/robotoslab-regular-400.otf'],
+  ['Sebastian', 'sebastian/sebastian.otf'],
+  ['Sebastian Text', 'sebastiantext/sebastiantext.otf'],
+];
+
+for (const [family, relativePath] of FONT_FILES) {
+  registerFont(path.join(VEXFLOW_FONTS_DIR, relativePath), { family });
+}
+
+const FONT_STACKS = [
+  { slug: 'bravura', fonts: ['Bravura', 'Academico'] },
+  { slug: 'finale_ash', fonts: ['Finale Ash', 'Finale Ash Text'] },
+  { slug: 'finale_broadway', fonts: ['Finale Broadway', 'Finale Broadway Text'] },
+  { slug: 'finale_jazz', fonts: ['Finale Jazz', 'Finale Jazz Text'] },
+  { slug: 'finale_maestro', fonts: ['Finale Maestro', 'Finale Maestro Text'] },
+  { slug: 'gonville', fonts: ['Gonville', 'Academico'] },
+  { slug: 'gootville', fonts: ['Gootville', 'Gootville Text'] },
+  { slug: 'leipzig', fonts: ['Leipzig', 'Academico'] },
+  { slug: 'leland', fonts: ['Leland', 'Leland Text'] },
+  { slug: 'musejazz', fonts: ['MuseJazz', 'MuseJazz Text'] },
+  { slug: 'petaluma', fonts: ['Petaluma', 'Petaluma Script'] },
+  { slug: 'sebastian', fonts: ['Sebastian', 'Sebastian Text'] },
+];
 
 const VF = require('../vexflow/build/cjs/vexflow.js');
 const {
@@ -474,6 +525,39 @@ function generateStaveModifiersReference() {
   writeReference(canvas, 'gallery_stave_modifiers-vexflow.png');
 }
 
+function generateFontStackReference(fontStack) {
+  VF.setFonts(...fontStack.fonts);
+
+  const { canvas, context } = makeSizedCanvas(620, 190);
+  const stave = new Stave(15, 38, 585);
+  stave.addClef('treble').addKeySignature('D').addTimeSignature('4/4').setContext(context).draw();
+
+  const notes = [
+    new StaveNote({ keys: ['c/4'], duration: '8' }),
+    new StaveNote({ keys: ['d#/4'], duration: '8' }).addModifier(new Accidental('#'), 0),
+    new StaveNote({ keys: ['e/4'], duration: 'q' }),
+    new StaveNote({ keys: ['f/4'], duration: 'q' }).addModifier(new Accidental('b'), 0),
+    new StaveNote({ keys: ['g/4'], duration: 'q' }),
+  ];
+
+  const voice = new Voice({ num_beats: 4, beat_value: 4 });
+  voice.addTickables(notes);
+  const beams = Beam.generateBeams(notes.slice(0, 2));
+
+  new Formatter().joinVoices([voice]).formatToStave([voice], stave);
+  voice.draw(context, stave);
+  beams.forEach(beam => beam.setContext(context).draw());
+
+  writeReference(canvas, `font_${fontStack.slug}-vexflow.png`);
+  VF.setFonts('Bravura', 'Academico');
+}
+
+function generateFontStackReferences() {
+  for (const fontStack of FONT_STACKS) {
+    generateFontStackReference(fontStack);
+  }
+}
+
 function generatePercussionClefReference() {
   const { canvas, context } = makeSizedCanvas(400, 120);
   new Stave(10, 10, 300).addClef('percussion').setContext(context).draw();
@@ -735,3 +819,7 @@ generateGraceNotesReference();
 generateSmallModifiersReference();
 generateStaveModifiersReference();
 generateRealScoreReferencePlaceholders();
+
+console.log('');
+console.log('Font parity references:');
+generateFontStackReferences();

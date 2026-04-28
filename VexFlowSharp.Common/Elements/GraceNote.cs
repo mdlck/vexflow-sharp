@@ -92,6 +92,28 @@ namespace VexFlowSharp
 
         public override string GetCategory() => CATEGORY;
 
+        public override double GetStemX()
+        {
+            if (GetNoteType() == "r")
+                return GetAbsoluteX() + xShift + GetRenderedNoteHeadWidth() / 2.0;
+
+            double xBegin = GetAbsoluteX() + xShift;
+            double xEnd = xBegin + GetRenderedNoteHeadWidth();
+            double stemX = GetStemDirection() == Stem.DOWN ? xBegin : xEnd;
+            return stemX + Stem.WIDTH / (2.0 * -GetStemDirection());
+        }
+
+        private double GetRenderedNoteHeadWidth()
+        {
+            if (_noteHeads.Count > 0 && _noteHeads[0] != null)
+            {
+                double width = Glyph.GetWidth(_noteHeads[0].GetGlyphCode(), renderOptions.GlyphFontScale);
+                if (width > 0) return width;
+            }
+
+            return glyphProps.HeadWidth * GetStaveNoteScale();
+        }
+
         public override double GetStemExtension()
         {
             if (stemExtensionOverride.HasValue)
@@ -149,7 +171,7 @@ namespace VexFlowSharp
         {
             int stemDirection = GetStemDirection();
             var noteHeadBounds = GetNoteHeadBounds();
-            double noteHeadWidth = GetGlyphWidth();
+            double noteHeadWidth = GetRenderedNoteHeadWidth();
             double x = stemDirection == Stem.DOWN ? GetAbsoluteX() : GetAbsoluteX() + noteHeadWidth;
             double defaultOffsetY = Tables.STEM_HEIGHT * scale / 2.0;
             double y = stemDirection == Stem.DOWN

@@ -30,6 +30,18 @@ namespace VexFlowSharp
 
         public static VexFlowBuild BUILD { get; } = new VexFlowBuild();
 
+        public static void LoadFonts(params string[] fontNames)
+        {
+            if (fontNames == null || fontNames.Length == 0)
+            {
+                Font.LoadAllBuiltIns();
+                return;
+            }
+
+            foreach (var fontName in fontNames)
+                Font.LoadBuiltIn(fontName);
+        }
+
         public static void SetFonts(params string[] fontNames)
         {
             if (fontNames == null || fontNames.Length == 0)

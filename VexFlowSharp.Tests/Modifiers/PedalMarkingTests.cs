@@ -51,7 +51,7 @@ namespace VexFlowSharp.Tests.Modifiers
         }
 
         [Test]
-        public void Draw_TextMode_RendersDepressAndReleaseText()
+        public void Draw_TextMode_RendersDefaultDepressAndReleaseGlyphs()
         {
             var (ctx, _, notes) = MakeSystem(40, 220);
             var pedal = new PedalMarking(notes);
@@ -60,7 +60,8 @@ namespace VexFlowSharp.Tests.Modifiers
             pedal.Draw();
 
             Assert.That(pedal.IsRendered(), Is.True);
-            Assert.That(ctx.GetCalls("FillText").Count(), Is.EqualTo(2));
+            Assert.That(ctx.GetCalls("Fill").Count(), Is.EqualTo(2));
+            Assert.That(ctx.GetCalls("FillText").Count(), Is.EqualTo(0));
             Assert.That(ctx.HasCall("SetFont"), Is.True);
         }
 

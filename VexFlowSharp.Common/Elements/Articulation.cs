@@ -333,7 +333,9 @@ namespace VexFlowSharp
             if (!string.IsNullOrEmpty(code))
             {
                 var g = new Glyph(code, fontScale);
-                g.Render(ctx, x, y);
+                var metrics = g.GetMetrics();
+                double renderX = metrics != null ? x - metrics.Width / 2.0 : x - GetWidth() / 2.0;
+                g.Render(ctx, renderX, y);
             }
         }
 

@@ -70,6 +70,34 @@ namespace VexFlowSharp.Tests.StaveTests
         }
 
         [Test]
+        public void TimeSignature_PetalumaSpecialGlyphWidthUsesFontSpecificGlyphScale()
+        {
+            try
+            {
+                Font.ClearRegistry();
+                VexFlow.LoadFonts("Petaluma", "Petaluma Script");
+                VexFlow.SetFonts("Petaluma", "Petaluma Script");
+
+                var ts = new TimeSignature("C");
+                const string code = "timeSigCommon";
+                Assert.That(PetalumaGlyphs.Data.Glyphs.TryGetValue(code, out var glyph), Is.True);
+
+                double width = glyph!.XMax - glyph.XMin;
+                double expected = width * Glyph.GetScale(Tables.NOTATION_FONT_SCALE, PetalumaGlyphs.Data);
+                double legacyBravuraOnlyWidth = width * Tables.NOTATION_FONT_SCALE * 0.72 / PetalumaGlyphs.Data.Resolution;
+
+                Assert.That(ts.GetWidth(), Is.EqualTo(expected).Within(0.0001));
+                Assert.That(ts.GetWidth(), Is.GreaterThan(legacyBravuraOnlyWidth * 1.2));
+            }
+            finally
+            {
+                Font.ClearRegistry();
+                Font.Load("Bravura", BravuraGlyphs.Data);
+                VexFlow.SetFonts("Bravura", "Academico");
+            }
+        }
+
+        [Test]
         public void TimeSignature_CutTime_IsNotNumeric()
         {
             var ts = new TimeSignature("C|");

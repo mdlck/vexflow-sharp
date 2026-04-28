@@ -43,6 +43,34 @@ namespace VexFlowSharp.Tests.Core
         }
 
         [Test]
+        public void LoadFontsWithoutArguments_RegistersAllVexFlowBuiltIns()
+        {
+            Font.ClearRegistry();
+
+            VexFlow.LoadFonts();
+
+            Assert.That(Font.HasFont("Bravura"), Is.True);
+            Assert.That(Font.HasFont("Petaluma"), Is.True);
+            Assert.That(Font.HasFont("Petaluma Script"), Is.True);
+            Assert.That(Font.HasFont("Leland"), Is.True);
+            Assert.That(Font.HasFont("Finale Maestro Text"), Is.True);
+        }
+
+        [Test]
+        public void LoadFonts_RegistersRequestedBuiltIns()
+        {
+            Font.ClearRegistry();
+
+            VexFlow.LoadFonts("Petaluma", "Petaluma Script");
+            VexFlow.SetFonts("Petaluma", "Petaluma Script");
+
+            Assert.That(Font.HasFont("Petaluma"), Is.True);
+            Assert.That(Font.HasFont("Petaluma Script"), Is.True);
+            Assert.That(Tables.CurrentMusicFont().FontFamily, Is.EqualTo("Petaluma"));
+            Assert.That(Glyph.GetWidth("gClef", Tables.NOTATION_FONT_SCALE), Is.GreaterThan(0));
+        }
+
+        [Test]
         public void FacadeConstants_ExposeTablesValues()
         {
             Assert.That(VexFlow.RENDER_PRECISION_PLACES, Is.EqualTo(Tables.RENDER_PRECISION_PLACES));

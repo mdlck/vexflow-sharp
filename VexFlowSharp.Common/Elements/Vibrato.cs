@@ -113,14 +113,34 @@ namespace VexFlowSharp
 
         public double GetSegmentWidth()
         {
+            string? glyphName = GetGlyphName(renderOptions.Code);
+            if (glyphName != null)
+            {
+                double width = Glyph.GetWidth(glyphName, font.Size);
+                if (width > 0) return width;
+            }
+
             return TextFormatter.Create(font.Family, font.Size).GetWidthForTextInPx(char.ConvertFromUtf32(renderOptions.Code));
         }
 
         public void RenderText(RenderContext ctx, double x, double y)
         {
+            string? glyphName = GetGlyphName(renderOptions.Code);
+            if (glyphName != null)
+            {
+                double segmentWidth = GetSegmentWidth();
+                int items = Math.Max(1, (int)Math.Round(renderOptions.Width / segmentWidth));
+                for (int i = 0; i < items; i++)
+                    new Glyph(glyphName, font.Size).Render(ctx, x + i * segmentWidth, y);
+                return;
+            }
+
             ctx.SetFont(font.Family, font.Size, font.Weight, font.Style);
             ctx.FillText(text, x, y);
         }
+
+        private static string? GetGlyphName(int code)
+            => code == 0xeab0 ? "wiggleArpeggiatoUp" : null;
 
         // ── Format ────────────────────────────────────────────────────────────
 

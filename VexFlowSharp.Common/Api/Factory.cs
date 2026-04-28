@@ -1365,13 +1365,13 @@ namespace VexFlowSharp.Api
             string? vJustify = null)
         {
             var chordSymbol = new ChordSymbol();
+            chordSymbol.SetHorizontal(hJustify ?? "center");
+            chordSymbol.SetVertical(vJustify ?? "top");
             if (fontSize.HasValue || fontFamily != null || fontWeight != null || fontStyle != null)
             {
                 var font = Metrics.GetFontInfo("ChordSymbol");
                 chordSymbol.SetFont(fontFamily ?? font.Family, fontSize ?? font.Size, fontWeight ?? font.Weight, fontStyle ?? font.Style);
             }
-            if (hJustify != null) chordSymbol.SetHorizontal(hJustify);
-            if (vJustify != null) chordSymbol.SetVertical(vJustify);
             chordSymbol.SetContext(context);
             return chordSymbol;
         }
@@ -1385,6 +1385,8 @@ namespace VexFlowSharp.Api
             options ??= new FactoryChordSymbolOptions();
 
             var chordSymbol = new ChordSymbol();
+            chordSymbol.SetHorizontal("center");
+            chordSymbol.SetVertical("top");
             if (options.FontSize.HasValue || options.FontFamily != null || options.FontWeight != null || options.FontStyle != null)
             {
                 var font = Metrics.GetFontInfo("ChordSymbol");
