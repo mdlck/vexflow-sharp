@@ -162,20 +162,29 @@ Import samples through Unity Package Manager by selecting the `VexFlowSharp.Unit
 
 ## Fonts
 
-Load fonts once at application startup before constructing a `Factory`.
+Font setup has two separate steps:
+
+| Method | What it does | When to call it |
+|---|---|---|
+| `VexFlow.LoadFonts(...)` | Registers built-in VexFlowSharp font data so glyph outlines and font metrics are available. | Call once at application startup before constructing a `Factory` or drawing notation. |
+| `VexFlow.SetFonts(...)` | Selects the active font stack used by layout and rendering. | Call when you want a font stack other than the current/default one, or when switching stacks at runtime. |
+
+For the default VexFlow 5 stack, load Bravura and Academico:
 
 ```csharp
 VexFlow.LoadFonts("Bravura", "Academico");
 ```
 
-To use a different VexFlow font stack, load it and then select it:
+This is enough for normal default rendering because the active stack defaults to `Bravura,Academico`.
+
+To use a different VexFlow font stack, first load the font data and then select that stack:
 
 ```csharp
 VexFlow.LoadFonts("Petaluma", "Petaluma Script");
 VexFlow.SetFonts("Petaluma", "Petaluma Script");
 ```
 
-Calling `VexFlow.LoadFonts()` with no arguments registers all built-in VexFlow fonts embedded in `VexFlowSharp.Common`.
+Calling `VexFlow.LoadFonts()` with no arguments registers all built-in VexFlow fonts embedded in `VexFlowSharp.Common`, but it does not change the active stack. Calling `VexFlow.SetFonts()` with no arguments resets the active stack to the VexFlow 5 default, `Bravura,Academico`.
 
 Embedded font data and bundled Unity font assets keep their upstream licenses. Most VexFlow font packages use the SIL Open Font License 1.1; Roboto Slab uses Apache-2.0; Gonville has its own permissive font-output notice. Keep the third-party notices with redistributions.
 
