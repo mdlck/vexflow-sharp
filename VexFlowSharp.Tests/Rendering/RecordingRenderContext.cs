@@ -12,6 +12,9 @@ namespace VexFlowSharp.Tests.Rendering
     public class RecordingRenderContext : RenderContext
     {
         public List<(string Method, double[] Args)> Calls { get; } = new List<(string, double[])>();
+        public List<(string? Class, string? Id)> Groups { get; } = new List<(string?, string?)>();
+        public string RecordedFillStyle { get; private set; } = "";
+        public string RecordedStrokeStyle { get; private set; } = "";
 
         public override void Clear() => Calls.Add(("Clear", Array.Empty<double>()));
         public override RenderContext Save() { Calls.Add(("Save", Array.Empty<double>())); return this; }
@@ -29,23 +32,31 @@ namespace VexFlowSharp.Tests.Rendering
         public override RenderContext Fill() { Calls.Add(("Fill", Array.Empty<double>())); return this; }
         public override RenderContext Stroke() { Calls.Add(("Stroke", Array.Empty<double>())); return this; }
         public override RenderContext FillText(string text, double x, double y) { Calls.Add(("FillText", new[] { x, y })); return this; }
-        public override RenderContext SetFillStyle(string style) { Calls.Add(("SetFillStyle", Array.Empty<double>())); return this; }
+        public override RenderContext SetFillStyle(string style) { RecordedFillStyle = style; Calls.Add(("SetFillStyle", Array.Empty<double>())); return this; }
         public override RenderContext SetBackgroundFillStyle(string style) { Calls.Add(("SetBackgroundFillStyle", Array.Empty<double>())); return this; }
-        public override RenderContext SetStrokeStyle(string style) { Calls.Add(("SetStrokeStyle", Array.Empty<double>())); return this; }
+        public override RenderContext SetStrokeStyle(string style) { RecordedStrokeStyle = style; Calls.Add(("SetStrokeStyle", Array.Empty<double>())); return this; }
+        public override string FillStyle { get => RecordedFillStyle; set => SetFillStyle(value); }
+        public override string StrokeStyle { get => RecordedStrokeStyle; set => SetStrokeStyle(value); }
         public override RenderContext SetShadowColor(string color) { Calls.Add(("SetShadowColor", Array.Empty<double>())); return this; }
         public override RenderContext SetShadowBlur(double blur) { Calls.Add(("SetShadowBlur", new[] { blur })); return this; }
         public override RenderContext SetLineWidth(double width) { Calls.Add(("SetLineWidth", new[] { width })); return this; }
         public override RenderContext SetLineCap(string capType) { Calls.Add(("SetLineCap", Array.Empty<double>())); return this; }
         public override RenderContext SetLineDash(double[] dashPattern) { Calls.Add(("SetLineDash", dashPattern)); return this; }
         public override RenderContext Scale(double x, double y) { Calls.Add(("Scale", new[] { x, y })); return this; }
+        public override RenderContext OpenRotation(double degrees, double x, double y) { Calls.Add(("OpenRotation", new[] { degrees, x, y })); return this; }
+        public override RenderContext CloseRotation() { Calls.Add(("CloseRotation", Array.Empty<double>())); return this; }
         public override RenderContext Resize(double w, double h) { Calls.Add(("Resize", new[] { w, h })); return this; }
         public override RenderContext Rect(double x, double y, double w, double h) { Calls.Add(("Rect", new[] { x, y, w, h })); return this; }
         public override RenderContext FillRect(double x, double y, double w, double h) { Calls.Add(("FillRect", new[] { x, y, w, h })); return this; }
         public override RenderContext ClearRect(double x, double y, double w, double h) { Calls.Add(("ClearRect", new[] { x, y, w, h })); return this; }
+        public override RenderContext PointerRect(double x, double y, double w, double h) { Calls.Add(("PointerRect", new[] { x, y, w, h })); return this; }
         public override RenderContext SetFont(string family, double size, string weight = "normal", string style = "normal")
             { Calls.Add(("SetFont", new[] { size })); return this; }
         public override string GetFont() => "";
         public override TextMeasure MeasureText(string text) => default;
+        public override void OpenGroup(string? cls = null, string? id = null) { Groups.Add((cls, id)); Calls.Add(("OpenGroup", Array.Empty<double>())); }
+        public override void CloseGroup() => Calls.Add(("CloseGroup", Array.Empty<double>()));
+        public override void Add(object child) => Calls.Add(("Add", Array.Empty<double>()));
 
         // Helper methods for test assertions
 

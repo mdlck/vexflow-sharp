@@ -14,12 +14,26 @@ namespace VexFlowSharp.Tests.Core
         }
 
         [Test]
+        public void Category_IsV5Fraction()
+        {
+            Assert.That(Fraction.CATEGORY, Is.EqualTo("Fraction"));
+        }
+
+        [Test]
         public void GCD_Returns_GreatestCommonDivisor()
         {
             Assert.That(Fraction.GCD(12, 8), Is.EqualTo(4));
             Assert.That(Fraction.GCD(9, 6), Is.EqualTo(3));
             Assert.That(Fraction.GCD(7, 5), Is.EqualTo(1));
             Assert.That(Fraction.GCD(0, 5), Is.EqualTo(5));
+        }
+
+        [Test]
+        public void LCMM_ReturnsLowestCommonMultipleForMultipleNumbers()
+        {
+            Assert.That(Fraction.LCMM(2, 3, 4), Is.EqualTo(12));
+            Assert.That(Fraction.LCMM(5), Is.EqualTo(5));
+            Assert.That(Fraction.LCMM(), Is.EqualTo(0));
         }
 
         [Test]
@@ -47,6 +61,16 @@ namespace VexFlowSharp.Tests.Core
             var result = new Fraction(0, 1).Add(new Fraction(1, 4));
             Assert.That(result.Numerator, Is.EqualTo(1));
             Assert.That(result.Denominator, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void Add_ZeroNumerator_PreservesLcmDenominator()
+        {
+            var result = new Fraction(16384, 1).Add(new Fraction(0, 3));
+
+            Assert.That(result.Numerator, Is.EqualTo(49152));
+            Assert.That(result.Denominator, Is.EqualTo(3));
+            Assert.That(result, Is.EqualTo(new Fraction(16384, 1)));
         }
 
         [Test]
@@ -113,6 +137,24 @@ namespace VexFlowSharp.Tests.Core
         public void Value_ReturnsDouble()
         {
             Assert.That(new Fraction(1, 4).Value(), Is.EqualTo(0.25).Within(1e-10));
+        }
+
+        [Test]
+        public void QuotientAndRemainder_ReturnComponents()
+        {
+            var fraction = new Fraction(5, 2);
+
+            Assert.That(fraction.Quotient(), Is.EqualTo(2));
+            Assert.That(fraction.Remainder(), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void MakeAbs_ReturnsAbsoluteFraction()
+        {
+            var fraction = new Fraction(-3, -4).MakeAbs();
+
+            Assert.That(fraction.Numerator, Is.EqualTo(3));
+            Assert.That(fraction.Denominator, Is.EqualTo(4));
         }
 
         [Test]
@@ -193,6 +235,27 @@ namespace VexFlowSharp.Tests.Core
         public void ToString_ShowsNumeratorSlashDenominator()
         {
             Assert.That(new Fraction(3, 4).ToString(), Is.EqualTo("3/4"));
+        }
+
+        [Test]
+        public void ToSimplifiedString_ReducesFraction()
+        {
+            Assert.That(new Fraction(4, 8).ToSimplifiedString(), Is.EqualTo("1/2"));
+        }
+
+        [Test]
+        public void ToMixedString_FormatsImproperFractions()
+        {
+            Assert.That(new Fraction(5, 2).ToMixedString(), Is.EqualTo("2 1/2"));
+            Assert.That(new Fraction(4, 2).ToMixedString(), Is.EqualTo("2"));
+            Assert.That(new Fraction(0, 2).ToMixedString(), Is.EqualTo("0"));
+        }
+
+        [Test]
+        public void Parse_ReadsFractionOrWholeNumber()
+        {
+            Assert.That(Fraction.Parse("5/2"), Is.EqualTo(new Fraction(5, 2)));
+            Assert.That(Fraction.Parse("7"), Is.EqualTo(new Fraction(7, 1)));
         }
     }
 }

@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using VexFlowSharp;
 using System.Collections.Generic;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.Modifiers
 {
@@ -26,7 +27,7 @@ namespace VexFlowSharp.Tests.Modifiers
             var notes  = MakeNotes(3);
             var tuplet = new Tuplet(notes, new TupletOptions { NumNotes = 3, Location = (int)TupletLocation.Top });
             Assert.AreEqual(3, tuplet.GetNoteCount());
-            Assert.AreEqual("tuplet", Tuplet.CATEGORY);
+            Assert.AreEqual("Tuplet", Tuplet.CATEGORY);
         }
 
         [Test]
@@ -47,6 +48,27 @@ namespace VexFlowSharp.Tests.Modifiers
             var tuplet = new Tuplet(notes, new TupletOptions { NumNotes = 5, NotesOccupied = 4, Ratioed = true });
             Assert.AreEqual(5, tuplet.GetNoteCount());
             Assert.AreEqual(4, tuplet.GetNotesOccupied());
+        }
+
+        [Test]
+        public void Constructor_AppliesTickMultiplierToNotes()
+        {
+            var notes = MakeNotes(3, "8");
+
+            _ = new Tuplet(notes, new TupletOptions { NumNotes = 3, NotesOccupied = 2 });
+
+            Assert.That(notes[0].GetTicks(), Is.EqualTo(new Fraction(4096, 3)));
+        }
+
+        [Test]
+        public void SetNotesOccupied_RevertsOldMultiplierBeforeApplyingNewOne()
+        {
+            var notes = MakeNotes(3, "8");
+            var tuplet = new Tuplet(notes, new TupletOptions { NumNotes = 3, NotesOccupied = 2 });
+
+            tuplet.SetNotesOccupied(4);
+
+            Assert.That(notes[0].GetTicks(), Is.EqualTo(new Fraction(8192, 3)));
         }
 
         [Test]
@@ -86,13 +108,23 @@ namespace VexFlowSharp.Tests.Modifiers
         [Test]
         public void Complex_NestedTuplets()
         {
-            // Nested tuplets: inner tuplet within outer tuplet
-            var inner  = MakeNotes(3);
-            var outer  = MakeNotes(3);
-            var t1     = new Tuplet(inner, new TupletOptions { NumNotes = 3 });
-            var t2     = new Tuplet(outer, new TupletOptions { NumNotes = 3 });
-            Assert.AreEqual(3, t1.GetNoteCount());
-            Assert.AreEqual(3, t2.GetNoteCount());
+            var notes = MakeNotes(3);
+            var outer = new Tuplet(notes, new TupletOptions { NumNotes = 3 });
+            var inner = new Tuplet(notes, new TupletOptions { NumNotes = 3 });
+
+            Assert.That(outer.GetNestedTupletCount(), Is.EqualTo(0));
+            Assert.That(inner.GetNestedTupletCount(), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void NestedTuplets_IgnoreTupletsOnOppositeSide()
+        {
+            var notes = MakeNotes(3);
+            var top = new Tuplet(notes, new TupletOptions { Location = (int)TupletLocation.Top });
+            var bottom = new Tuplet(notes, new TupletOptions { Location = (int)TupletLocation.Bottom });
+
+            Assert.That(top.GetNestedTupletCount(), Is.EqualTo(0));
+            Assert.That(bottom.GetNestedTupletCount(), Is.EqualTo(0));
         }
 
         [Test]
@@ -143,5 +175,58 @@ namespace VexFlowSharp.Tests.Modifiers
         [Test]
         public void TupletLocation_BottomIsNegativeOne()
             => Assert.AreEqual(-1, (int)TupletLocation.Bottom);
+
+        [Test]
+        public void Tuplet_DefaultOffsets_ComeFromMetrics()
+        {
+            var tuplet = new Tuplet(MakeNotes(3));
+
+            Assert.That(tuplet.GetYOffset(), Is.EqualTo(Metrics.GetDouble("Tuplet.yOffset")));
+            Assert.That(tuplet.GetTextYOffset(), Is.EqualTo(Metrics.GetDouble("Tuplet.textYOffset")));
+        }
+
+        [Test]
+        public void Tuplet_ExplicitOffsets_OverrideMetrics()
+        {
+            var tuplet = new Tuplet(MakeNotes(3), new TupletOptions
+            {
+                YOffset = 9,
+                TextYOffset = 4,
+            });
+
+            Assert.That(tuplet.GetYOffset(), Is.EqualTo(9));
+            Assert.That(tuplet.GetTextYOffset(), Is.EqualTo(4));
+        }
+
+        [Test]
+        public void Draw_EmitsV5PointerRect()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 20, 300);
+            var notes = new List<VexFlowSharp.Note>
+            {
+                new StaveNote(new StaveNoteStruct { Keys = new[] { "c/4" }, Duration = "8" }),
+                new StaveNote(new StaveNoteStruct { Keys = new[] { "d/4" }, Duration = "8" }),
+                new StaveNote(new StaveNoteStruct { Keys = new[] { "e/4" }, Duration = "8" }),
+            };
+
+            for (int i = 0; i < notes.Count; i++)
+            {
+                notes[i].SetStave(stave).SetX(80 + i * 40);
+            }
+
+            var tuplet = new Tuplet(notes);
+            tuplet.SetContext(ctx);
+
+            tuplet.Draw();
+
+            var box = tuplet.GetBoundingBox()!;
+            Assert.That(ctx.GetCall("PointerRect").Args, Is.EqualTo(new[] { box.GetX(), box.GetY(), box.GetW(), box.GetH() }));
+
+            var bracketRects = new List<(string Method, double[] Args)>(ctx.GetCalls("FillRect"));
+            Assert.That(bracketRects[0].Args[3], Is.EqualTo(Metrics.GetDouble("Tuplet.bracket.lineWidth")));
+            Assert.That(bracketRects[2].Args[2], Is.EqualTo(Metrics.GetDouble("Tuplet.bracket.lineWidth")));
+            Assert.That(bracketRects[2].Args[3], Is.EqualTo(Metrics.GetDouble("Tuplet.bracket.legLength")));
+        }
     }
 }

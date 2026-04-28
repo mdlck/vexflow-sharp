@@ -17,8 +17,9 @@ namespace VexFlowSharp
     /// </summary>
     public class KeySignature : StaveModifier
     {
-        // Default horizontal spacing between adjacent accidentals (pixels)
-        private const double AccidentalSpacing = 10.0;
+        public new const string CATEGORY = "KeySignature";
+
+        public override string GetCategory() => CATEGORY;
 
         private readonly string keySpec;
         private string? cancelKeySpec;
@@ -67,6 +68,9 @@ namespace VexFlowSharp
             return accList.Count;
         }
 
+        public string GetKeySpec() => keySpec;
+        public string? GetCancelKeySpec() => cancelKeySpec;
+
         /// <summary>
         /// Force layout calculation based on Tables.KeySignature data and stave clef.
         /// Sets this.width and this.accList.
@@ -76,20 +80,53 @@ namespace VexFlowSharp
             width   = 0;
             accList = Tables.KeySignature(keySpec);
 
+            if (!string.IsNullOrEmpty(cancelKeySpec))
+            {
+                var cancelAccList = Tables.KeySignature(cancelKeySpec);
+                bool differentTypes = accList.Count > 0 && cancelAccList.Count > 0
+                    && cancelAccList[0].Type != accList[0].Type;
+                int naturals = differentTypes ? cancelAccList.Count : cancelAccList.Count - accList.Count;
+
+                if (naturals > 0)
+                {
+                    var cancelled = new List<(string Type, double Line)>();
+                    for (int i = 0; i < naturals; i++)
+                    {
+                        int index = differentTypes ? i : cancelAccList.Count - naturals + i;
+                        cancelled.Add(("n", cancelAccList[index].Line));
+                    }
+                    cancelled.AddRange(accList);
+                    accList = cancelled;
+                }
+            }
+
             // Width is the sum of per-glyph widths plus spacing
+            (string Type, double Line)? previous = null;
             foreach (var acc in accList)
             {
                 var (code, _) = Tables.AccidentalCodes(acc.Type);
                 // Estimate glyph width from BravuraGlyphs data if available
                 double glyphWidth = GetAccidentalGlyphWidth(code);
-                width += glyphWidth + AccidentalSpacing;
+                double spacing = GetAccidentalSpacing(previous, acc);
+                width += glyphWidth + spacing;
+                previous = acc;
             }
 
             // Remove trailing spacing if any accidentals
             if (accList.Count > 0 && width > 0)
-                width -= AccidentalSpacing;
+                width -= Metrics.GetDouble("KeySignature.accidentalSpacing");
 
             formatted = true;
+        }
+
+        private static double GetAccidentalSpacing((string Type, double Line)? previous, (string Type, double Line) current)
+        {
+            if (previous == null) return Metrics.GetDouble("KeySignature.accidentalSpacing");
+            bool hasNatural = previous.Value.Type == "n" || current.Type == "n";
+            double yDistance = Math.Abs(current.Line - previous.Value.Line) * Tables.STAVE_LINE_DISTANCE;
+            return hasNatural && yDistance < Tables.STAVE_LINE_DISTANCE
+                ? Metrics.GetDouble("KeySignature.naturalCollisionSpacing")
+                : Metrics.GetDouble("KeySignature.accidentalSpacing");
         }
 
         private double GetAccidentalGlyphWidth(string code)
@@ -98,7 +135,9 @@ namespace VexFlowSharp
             if (BravuraGlyphs.Data.Glyphs.TryGetValue(code, out var fg))
                 return (fg.XMax - fg.XMin) * scale;
             // Fallback widths matching VexFlow defaults
-            return code.Contains("Flat") ? 8.0 : 10.0;
+            return code.Contains("Flat")
+                ? Metrics.GetDouble("KeySignature.flatFallbackWidth")
+                : Metrics.GetDouble("KeySignature.sharpFallbackWidth");
         }
 
         /// <summary>Draw all accidentals for this key signature on the stave.</summary>
@@ -112,6 +151,7 @@ namespace VexFlowSharp
             double curX  = x + xShift;
             double scale = (glyphFontScale * 72.0) / (BravuraGlyphs.Data.Resolution * 100.0);
 
+            (string Type, double Line)? previous = null;
             foreach (var acc in accList)
             {
                 var (code, _) = Tables.AccidentalCodes(acc.Type);
@@ -122,13 +162,16 @@ namespace VexFlowSharp
                 {
                     Glyph.RenderOutline(ctx, fg.CachedOutline, scale, curX, lineY);
                     double gw = (fg.XMax - fg.XMin) * scale;
-                    curX += gw + AccidentalSpacing;
+                    curX += gw + GetAccidentalSpacing(previous, acc);
                 }
                 else
                 {
                     // Fallback: advance by a default amount
-                    curX += (code.Contains("Flat") ? 8.0 : 10.0) + AccidentalSpacing;
+                    curX += (code.Contains("Flat")
+                        ? Metrics.GetDouble("KeySignature.flatFallbackWidth")
+                        : Metrics.GetDouble("KeySignature.sharpFallbackWidth")) + GetAccidentalSpacing(previous, acc);
                 }
+                previous = acc;
             }
         }
     }

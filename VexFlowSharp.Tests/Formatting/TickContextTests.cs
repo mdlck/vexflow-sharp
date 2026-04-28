@@ -109,6 +109,14 @@ namespace VexFlowSharp.Tests.Formatting
         }
 
         [Test]
+        public void Constructor_UsesMetricPadding()
+        {
+            var tc = new TickContext();
+
+            Assert.That(tc.GetWidth(), Is.EqualTo(Metrics.GetDouble("TickContext.padding") * 2).Within(0.0001));
+        }
+
+        [Test]
         public void PreFormat_AccumulatesMaxMetricsFromMultipleTickables()
         {
             var tc    = new TickContext();
@@ -141,6 +149,19 @@ namespace VexFlowSharp.Tests.Formatting
             double w2 = tc.GetWidth();
 
             Assert.AreEqual(w1, w2, "PreFormat should be idempotent");
+        }
+
+        [Test]
+        public void GetDeviationCost_SumsTickableSpaceDeviation()
+        {
+            var a = new GhostNote("4");
+            var b = new GhostNote("4");
+            a.GetFormatterMetrics().SpaceDeviation = 6;
+            b.GetFormatterMetrics().SpaceDeviation = -2;
+            var tc = new TickContext().AddTickable(a).AddTickable(b);
+
+            Assert.That(tc.GetDeviationCost(), Is.EqualTo(4));
+            Assert.That(tc.GetAverageDeviationCost(), Is.EqualTo(2));
         }
 
         // ── GetTickablesByVoice ───────────────────────────────────────────────

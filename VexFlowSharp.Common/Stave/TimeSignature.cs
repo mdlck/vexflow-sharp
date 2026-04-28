@@ -16,6 +16,10 @@ namespace VexFlowSharp
     /// </summary>
     public class TimeSignature : StaveModifier
     {
+        public new const string CATEGORY = "TimeSignature";
+
+        public override string GetCategory() => CATEGORY;
+
         /// <summary>Special time signatures mapping to single glyphs.</summary>
         private static readonly Dictionary<string, (string Code, double Line)> SpecialGlyphs
             = new Dictionary<string, (string, double)>
@@ -31,6 +35,10 @@ namespace VexFlowSharp
         private readonly TimeSignatureGlyph? numericGlyph;
         // For special (common/cut) time signatures
         private readonly string? specialCode;
+
+        // VexFlow 5 measures time signature text through the active Bravura canvas font.
+        // The outline-derived width is slightly narrower for numeric signatures.
+        private const double NumericCanvasWidthCorrection = 1.1328125;
 
         /// <summary>Staff line for rendering the glyph (0 = numeric, 2 = common/cut).</summary>
         public double Line { get; private set; }
@@ -83,7 +91,8 @@ namespace VexFlowSharp
                 string bot = parts.Length > 1 ? parts[1] : "";
 
                 numericGlyph = new TimeSignatureGlyph(this, top, bot, Point);
-                SetWidth(numericGlyph.Width > 0 ? numericGlyph.Width : GetFallbackNumericWidth(top, bot));
+                double width = numericGlyph.Width > 0 ? numericGlyph.Width : GetFallbackNumericWidth(top, bot);
+                SetWidth(width + NumericCanvasWidthCorrection);
             }
         }
 

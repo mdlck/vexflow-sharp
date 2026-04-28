@@ -27,11 +27,15 @@ namespace VexFlowSharp
     /// </summary>
     public class Barline : StaveModifier
     {
+        public new const string CATEGORY = "Barline";
+
         private static readonly Dictionary<BarlineType, double> _widths;
         private static readonly Dictionary<BarlineType, double> _paddings;
         private static readonly Dictionary<BarlineType, LayoutMetrics> _layoutMetricsMap;
 
         private BarlineType type;
+
+        public override string GetCategory() => CATEGORY;
 
         static Barline()
         {
@@ -168,14 +172,17 @@ namespace VexFlowSharp
             double topY = stave.GetTopLineTopY();
             double botY = stave.GetBottomLineBottomY();
 
-            double xShift = begin ? 3 : -5;
+            double xShift = begin
+                ? Metrics.GetDouble("Barline.repeat.thinBarShiftBegin")
+                : Metrics.GetDouble("Barline.repeat.thinBarShiftEnd");
 
             ctx.FillRect(barX + xShift, topY, 1, botY - topY);
             ctx.FillRect(barX - 2, topY, 3, botY - topY);
 
-            double dotRadius = 2;
-            if (begin) xShift += 4;
-            else       xShift -= 4;
+            double dotRadius = Metrics.GetDouble("Barline.repeat.dotRadius");
+            double dotOffset = Metrics.GetDouble("Barline.repeat.dotOffset");
+            if (begin) xShift += dotOffset;
+            else       xShift -= dotOffset;
 
             double dotX  = barX + xShift + dotRadius / 2;
             double yOff  = (stave.GetNumLines() - 1) * stave.GetSpacingBetweenLines();

@@ -47,6 +47,8 @@ namespace VexFlowSharp.Common.Formatting
     /// </summary>
     public class Voice
     {
+        public const string CATEGORY = "Voice";
+
         // ── Fields ────────────────────────────────────────────────────────────
 
         /// <summary>The time signature for this voice.</summary>
@@ -105,10 +107,38 @@ namespace VexFlowSharp.Common.Formatting
         }
 
         /// <summary>
+        /// Create a Voice from a time signature string such as "4/4" or "3/8".
+        /// Invalid strings fall back to the VexFlow default 4/4.
+        /// </summary>
+        public Voice(string timeSignature) : this(ParseTimeSignature(timeSignature))
+        {
+        }
+
+        /// <summary>
         /// Create a 4/4 Voice using the default time signature.
         /// </summary>
         public Voice() : this(new VoiceTime { NumBeats = 4, BeatValue = 4, Resolution = VexFlowSharp.Tables.RESOLUTION })
         {
+        }
+
+        private static VoiceTime ParseTimeSignature(string timeSignature)
+        {
+            var pieces = (timeSignature ?? string.Empty).Split('/');
+            if (pieces.Length == 2
+                && int.TryParse(pieces[0], out int numBeats)
+                && int.TryParse(pieces[1], out int beatValue)
+                && numBeats > 0
+                && beatValue > 0)
+            {
+                return new VoiceTime
+                {
+                    NumBeats = numBeats,
+                    BeatValue = beatValue,
+                    Resolution = VexFlowSharp.Tables.RESOLUTION,
+                };
+            }
+
+            return new VoiceTime { NumBeats = 4, BeatValue = 4, Resolution = VexFlowSharp.Tables.RESOLUTION };
         }
 
         // ── Time & tick access ────────────────────────────────────────────────
@@ -124,6 +154,9 @@ namespace VexFlowSharp.Common.Formatting
 
         /// <summary>Get the resolution multiplier.</summary>
         public int GetResolutionMultiplier() => resolutionMultiplier;
+
+        /// <summary>Get the actual tick resolution after fractional durations are accounted for.</summary>
+        public int GetActualResolution() => resolutionMultiplier * time.Resolution;
 
         // ── Mode ──────────────────────────────────────────────────────────────
 
@@ -165,6 +198,27 @@ namespace VexFlowSharp.Common.Formatting
         /// <summary>Get the associated stave; throws if not set.</summary>
         public VexFlowSharp.Stave CheckStave()
             => stave ?? throw new VexFlowSharp.VexFlowException("NoStave", "No stave attached to voice.");
+
+        /// <summary>Get the bounding box that contains all tickables in this voice.</summary>
+        public VexFlowSharp.BoundingBox? GetBoundingBox()
+        {
+            VexFlowSharp.BoundingBox? boundingBox = null;
+            foreach (var tickable in tickables)
+            {
+                if (tickable is VexFlowSharp.Note note && note.GetStave() == null && stave != null)
+                    note.SetStave(stave);
+
+                var tickableBox = tickable.GetBoundingBox();
+                if (tickableBox == null) continue;
+
+                if (boundingBox == null)
+                    boundingBox = VexFlowSharp.BoundingBox.Copy(tickableBox);
+                else
+                    boundingBox.MergeWith(tickableBox);
+            }
+
+            return boundingBox;
+        }
 
         // ── Softmax ───────────────────────────────────────────────────────────
 
@@ -240,6 +294,7 @@ namespace VexFlowSharp.Common.Formatting
 
                 // Update resolution multiplier from denominator of running sum
                 resolutionMultiplier = ticksUsed.Denominator;
+                totalTicks = totalTicks.Add(new Fraction(0, ticksUsed.Denominator));
             }
 
             tickables.Add(tickable);
@@ -264,7 +319,12 @@ namespace VexFlowSharp.Common.Formatting
         public Voice PreFormat()
         {
             if (preFormatted) return this;
-            // In Phase 3, requires stave to be set. Skip stave assignment for test contexts.
+            var activeStave = CheckStave();
+            foreach (var tickable in tickables)
+            {
+                if (tickable is VexFlowSharp.Note note && note.GetStave() == null)
+                    note.SetStave(activeStave);
+            }
             preFormatted = true;
             return this;
         }

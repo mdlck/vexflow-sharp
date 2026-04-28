@@ -21,6 +21,7 @@ using VexFlowSharp;
 using VexFlowSharp.Common.Elements;
 using VexFlowSharp.Common.Formatting;
 using VexFlowSharp.Skia;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.Formatting
 {
@@ -45,6 +46,15 @@ namespace VexFlowSharp.Tests.Formatting
             {
                 Duration = "8",
                 Keys     = new[] { key },
+                Clef     = "treble",
+            });
+
+        /// <summary>Create an eighth rest.</summary>
+        private static StaveNote MakeEighthRest()
+            => new StaveNote(new StaveNoteStruct
+            {
+                Duration = "8r",
+                Keys     = new[] { "r/4" },
                 Clef     = "treble",
             });
 
@@ -74,6 +84,14 @@ namespace VexFlowSharp.Tests.Formatting
                 Keys     = new[] { key },
                 Clef     = "treble",
             });
+
+        private static TabNote MakeTabNote(string duration, int str, object fret, int stemDirection = Stem.UP)
+            => new TabNote(new TabNoteStruct
+            {
+                Duration = duration,
+                Positions = new[] { new TabNotePosition { Str = str, Fret = fret } },
+                StemDirection = stemDirection,
+            }, drawStem: true);
 
         /// <summary>Create a standard treble stave at (10, 40, width).</summary>
         private static Stave MakeStave(SkiaRenderContext ctx, double width = 400)
@@ -261,6 +279,26 @@ namespace VexFlowSharp.Tests.Formatting
                 "FormatAndDraw with autoBeam=true must not throw");
         }
 
+        [Test]
+        public void FormatAndDraw_AutoBeamBooleanOverload_DrawsWithoutError()
+        {
+            using var ctx = new SkiaRenderContext(500, 200);
+            var stave = MakeStave(ctx);
+
+            var notes = new List<StemmableNote>
+            {
+                MakeEighth("c/4"),
+                MakeEighth("d/4"),
+                MakeEighth("e/4"),
+                MakeEighth("f/4"),
+            };
+
+            var box = Formatter.FormatAndDraw(ctx, stave, notes, autoBeam: true);
+
+            Assert.That(box, Is.Not.Null);
+            Assert.That(notes, Has.All.Matches<StemmableNote>(note => note.HasBeam()));
+        }
+
         // ── Test 7: Beam_Draw_AfterFormat_NoException ─────────────────────────
 
         /// <summary>
@@ -361,6 +399,271 @@ namespace VexFlowSharp.Tests.Formatting
             var linesTertiary = beam.GetBeamLines("16");
             Assert.That(linesTertiary, Has.Count.EqualTo(0),
                 "Should have no tertiary beam lines ('16' tier) since there are no 32nd notes");
+        }
+
+        [Test]
+        public void GenerateBeams_BeamedTupletMovesToStemSideAndDropsBracket()
+        {
+            var notes = new List<StaveNote>
+            {
+                MakeEighth("c/4"),
+                MakeEighth("d/4"),
+                MakeEighth("e/4"),
+            };
+            var tuplet = new Tuplet(notes.Cast<VexFlowSharp.Note>().ToList(), new TupletOptions
+            {
+                NumNotes = 3,
+                NotesOccupied = 2,
+                Location = (int)TupletLocation.Bottom,
+                Bracketed = true,
+            });
+
+            var beams = Beam.GenerateBeams(
+                notes.Cast<StemmableNote>().ToList(),
+                new BeamConfig
+                {
+                    Groups = new List<Fraction> { new Fraction(3, 8) },
+                    StemDirection = Stem.UP,
+                });
+
+            Assert.That(beams, Has.Count.EqualTo(1));
+            Assert.That(tuplet.GetTupletLocation(), Is.EqualTo((int)TupletLocation.Top));
+            Assert.That(tuplet.IsBracketed(), Is.False);
+        }
+
+        [Test]
+        public void GenerateBeams_PartiallyBeamedTupletKeepsBracket()
+        {
+            var notes = new List<StaveNote>
+            {
+                MakeEighth("c/4"),
+                MakeQuarter("d/4"),
+                MakeEighth("e/4"),
+            };
+            var tuplet = new Tuplet(notes.Cast<VexFlowSharp.Note>().ToList(), new TupletOptions
+            {
+                NumNotes = 3,
+                NotesOccupied = 2,
+                Bracketed = false,
+            });
+
+            var beams = Beam.GenerateBeams(
+                notes.Cast<StemmableNote>().ToList(),
+                new BeamConfig
+                {
+                    Groups = new List<Fraction> { new Fraction(3, 8) },
+                    StemDirection = Stem.DOWN,
+                });
+
+            Assert.That(beams, Is.Empty);
+            Assert.That(tuplet.GetTupletLocation(), Is.EqualTo((int)TupletLocation.Bottom));
+            Assert.That(tuplet.IsBracketed(), Is.True);
+        }
+
+        [Test]
+        public void Draw_IncludesSixthBeamLevelFor256thNotes()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 40, 400);
+            var notes = new List<StemmableNote>
+            {
+                MakeNote("256", "c/4"),
+                MakeNote("256", "d/4"),
+            };
+
+            notes[0].SetStave(stave).SetX(80);
+            notes[1].SetStave(stave).SetX(120);
+            var beam = new Beam(notes);
+            beam.SetContext(ctx);
+
+            beam.Draw();
+
+            Assert.That(beam.GetBeamLines("128"), Has.Count.EqualTo(1));
+            Assert.That(ctx.GetCalls("Fill").Count(), Is.EqualTo(6));
+        }
+
+        [Test]
+        public void Constructor_AutoStemUpdatesBeamStemDirection()
+        {
+            var notes = new List<StemmableNote>
+            {
+                MakeEighth("c/4").SetStemDirection(Stem.DOWN),
+                MakeEighth("d/4").SetStemDirection(Stem.DOWN),
+            };
+
+            var beam = new Beam(notes, autoStem: true);
+
+            Assert.That(beam.GetStemDirection(), Is.EqualTo(Stem.UP));
+            Assert.That(notes.Select(n => n.GetStemDirection()), Is.All.EqualTo(Stem.UP));
+        }
+
+        [Test]
+        public void GenerateBeams_BreaksAtRestsByDefault()
+        {
+            var notes = new List<StemmableNote>
+            {
+                MakeEighth("c/4"),
+                MakeEighthRest(),
+                MakeEighth("d/4"),
+                MakeEighth("e/4"),
+            };
+
+            var beams = Beam.GenerateBeams(notes, new BeamConfig
+            {
+                Groups = new List<Fraction> { new Fraction(4, 8) },
+            });
+
+            Assert.That(beams, Has.Count.EqualTo(1));
+            CollectionAssert.AreEqual(new[] { notes[2], notes[3] }, beams[0].Notes);
+            Assert.That(notes[0].HasBeam(), Is.False);
+            Assert.That(notes[1].HasBeam(), Is.False);
+        }
+
+        [Test]
+        public void GenerateBeams_BeamRestsIncludesMiddleRest()
+        {
+            var notes = new List<StemmableNote>
+            {
+                MakeEighth("c/4"),
+                MakeEighthRest(),
+                MakeEighth("d/4"),
+                MakeEighth("e/4"),
+            };
+
+            var beams = Beam.GenerateBeams(notes, new BeamConfig
+            {
+                Groups = new List<Fraction> { new Fraction(4, 8) },
+                BeamRests = true,
+            });
+
+            Assert.That(beams, Has.Count.EqualTo(1));
+            CollectionAssert.AreEqual(notes, beams[0].Notes);
+            Assert.That(notes[1].HasBeam(), Is.True);
+        }
+
+        [Test]
+        public void GenerateBeams_BeamMiddleOnlyExcludesOuterRests()
+        {
+            var notes = new List<StemmableNote>
+            {
+                MakeEighthRest(),
+                MakeEighth("c/4"),
+                MakeEighth("d/4"),
+                MakeEighthRest(),
+            };
+
+            var beams = Beam.GenerateBeams(notes, new BeamConfig
+            {
+                Groups = new List<Fraction> { new Fraction(4, 8) },
+                BeamRests = true,
+                BeamMiddleOnly = true,
+            });
+
+            Assert.That(beams, Has.Count.EqualTo(1));
+            CollectionAssert.AreEqual(new[] { notes[1], notes[2] }, beams[0].Notes);
+            Assert.That(notes[0].HasBeam(), Is.False);
+            Assert.That(notes[3].HasBeam(), Is.False);
+        }
+
+        [Test]
+        public void GenerateBeams_MaintainStemDirectionsBreaksOnStemChange()
+        {
+            var notes = new List<StemmableNote>
+            {
+                MakeEighth("c/4").SetStemDirection(Stem.UP),
+                MakeEighth("d/4").SetStemDirection(Stem.UP),
+                MakeEighth("e/5").SetStemDirection(Stem.DOWN),
+                MakeEighth("f/5").SetStemDirection(Stem.DOWN),
+            };
+
+            var beams = Beam.GenerateBeams(notes, new BeamConfig
+            {
+                Groups = new List<Fraction> { new Fraction(4, 8) },
+                MaintainStemDirections = true,
+            });
+
+            Assert.That(beams, Has.Count.EqualTo(2));
+            CollectionAssert.AreEqual(new[] { notes[0], notes[1] }, beams[0].Notes);
+            CollectionAssert.AreEqual(new[] { notes[2], notes[3] }, beams[1].Notes);
+            Assert.That(beams[0].GetStemDirection(), Is.EqualTo(Stem.UP));
+            Assert.That(beams[1].GetStemDirection(), Is.EqualTo(Stem.DOWN));
+        }
+
+        [Test]
+        public void GenerateBeams_UnbeamableDurationBreaksGroup()
+        {
+            var notes = new List<StemmableNote>
+            {
+                MakeEighth("c/4"),
+                MakeEighth("d/4"),
+                MakeQuarter("e/4"),
+                MakeEighth("f/4"),
+                MakeEighth("g/4"),
+            };
+
+            var beams = Beam.GenerateBeams(notes, new BeamConfig
+            {
+                Groups = new List<Fraction> { new Fraction(4, 8) },
+            });
+
+            Assert.That(beams, Has.Count.EqualTo(2));
+            CollectionAssert.AreEqual(new[] { notes[0], notes[1] }, beams[0].Notes);
+            CollectionAssert.AreEqual(new[] { notes[3], notes[4] }, beams[1].Notes);
+            Assert.That(notes[2].HasBeam(), Is.False);
+        }
+
+        [Test]
+        public void ApplyStemExtensions_ShowStemletsConfiguresRestStemlet()
+        {
+            var stave = new Stave(10, 40, 400);
+            var notes = new List<StemmableNote>
+            {
+                MakeEighth("c/4"),
+                MakeEighthRest(),
+                MakeEighth("d/4"),
+            };
+
+            for (int i = 0; i < notes.Count; i++)
+                notes[i].SetStave(stave).SetX(80 + i * 40);
+
+            var beam = new Beam(notes)
+            {
+                RenderOptions =
+                {
+                    ShowStemlets = true,
+                },
+            };
+
+            beam.PostFormat();
+            beam.ApplyStemExtensions();
+
+            var restStem = notes[1].GetStem();
+            Assert.That(restStem, Is.Not.Null);
+            Assert.That(restStem!.IsVisible(), Is.True);
+            Assert.That(restStem.IsStemlet(), Is.True);
+            Assert.That(restStem.GetStemletHeight(),
+                Is.EqualTo(beam.RenderOptions.BeamWidth + beam.RenderOptions.StemletExtension));
+        }
+
+        [Test]
+        public void PostFormat_TabNotesUseFlatSlope()
+        {
+            var stave = new TabStave(10, 40, 400);
+            var notes = new List<StemmableNote>
+            {
+                MakeTabNote("8", 1, 3),
+                MakeTabNote("8", 6, 5),
+            };
+
+            notes[0].SetStave(stave).SetX(80);
+            notes[1].SetStave(stave).SetX(140);
+
+            var beam = new Beam(notes);
+
+            beam.PostFormat();
+
+            Assert.That(beam.Slope, Is.EqualTo(0));
+            Assert.That(beam.RenderOptions.FlatBeamOffset.HasValue, Is.True);
         }
     }
 }

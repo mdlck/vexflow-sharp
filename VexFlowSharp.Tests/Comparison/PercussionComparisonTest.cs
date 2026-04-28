@@ -44,6 +44,17 @@ namespace VexFlowSharp.Tests.Comparison
             }
         }
 
+        private static string ReferenceImagesDir
+        {
+            get
+            {
+                string assemblyDir = Path.GetDirectoryName(
+                    typeof(PercussionComparisonTest).Assembly.Location)!;
+                return Path.GetFullPath(
+                    Path.Combine(assemblyDir, "../../../reference-images"));
+            }
+        }
+
         // ── SetUp ─────────────────────────────────────────────────────────────
 
         [SetUp]
@@ -64,6 +75,27 @@ namespace VexFlowSharp.Tests.Comparison
             Assert.That(new FileInfo(outPath).Length, Is.GreaterThan(0), "Output PNG must be non-zero bytes");
         }
 
+        private static void FillWhiteBackground(SkiaRenderContext ctx, double width, double height)
+        {
+            ctx.Save();
+            ctx.SetFillStyle("#FFFFFF");
+            ctx.FillRect(0, 0, width, height);
+            ctx.Restore();
+        }
+
+        private static void AssertPercussionImagesMatch(string actualFilename, string referenceFilename)
+        {
+            string actualPath = Path.Combine(OutputDir, actualFilename);
+            string referencePath = Path.Combine(ReferenceImagesDir, referenceFilename);
+            Assert.That(File.Exists(actualPath), Is.True, $"Actual PNG missing: {actualPath}");
+            Assert.That(File.Exists(referencePath), Is.True, $"Reference PNG missing: {referencePath}");
+
+            Infrastructure.ImageComparisonAssert.AssertImagesMatch(
+                File.ReadAllBytes(actualPath),
+                File.ReadAllBytes(referencePath),
+                thresholdPercent: ImageComparison.CrossEngineThresholdPercent);
+        }
+
         // ── percussion_clef ───────────────────────────────────────────────────
 
         /// <summary>
@@ -74,6 +106,7 @@ namespace VexFlowSharp.Tests.Comparison
         public void PercussionClef_RendersToFile()
         {
             using var ctx = new SkiaRenderContext(400, 120);
+            FillWhiteBackground(ctx, 400, 120);
             var stave = new Stave(10, 10, 300);
             stave.AddClef("percussion");
             stave.SetContext(ctx);
@@ -93,6 +126,7 @@ namespace VexFlowSharp.Tests.Comparison
         public void PercussionBasic0_RendersToFile()
         {
             using var ctx = new SkiaRenderContext(500, 200);
+            FillWhiteBackground(ctx, 500, 200);
             var f = new Factory(ctx, 500, 200);
             var stave = f.Stave().AddClef("percussion").AddTimeSignature("4/4");
 
@@ -140,6 +174,7 @@ namespace VexFlowSharp.Tests.Comparison
         public void PercussionBasic1_RendersToFile()
         {
             using var ctx = new SkiaRenderContext(500, 200);
+            FillWhiteBackground(ctx, 500, 200);
             var f = new Factory(ctx, 500, 200);
             var stave = f.Stave().AddClef("percussion").AddTimeSignature("4/4");
 
@@ -176,6 +211,7 @@ namespace VexFlowSharp.Tests.Comparison
         public void PercussionBasic2_RendersToFile()
         {
             using var ctx = new SkiaRenderContext(500, 200);
+            FillWhiteBackground(ctx, 500, 200);
             var f = new Factory(ctx, 500, 200);
             var stave = f.Stave().AddClef("percussion").AddTimeSignature("4/4");
 
@@ -228,6 +264,7 @@ namespace VexFlowSharp.Tests.Comparison
         public void PercussionSnare0_RendersToFile()
         {
             using var ctx = new SkiaRenderContext(500, 200);
+            FillWhiteBackground(ctx, 500, 200);
             var f = new Factory(ctx, 500, 200);
             var stave = f.Stave().AddClef("percussion").AddTimeSignature("4/4");
 
@@ -260,6 +297,7 @@ namespace VexFlowSharp.Tests.Comparison
         public void PercussionSnare1_RendersToFile()
         {
             using var ctx = new SkiaRenderContext(500, 200);
+            FillWhiteBackground(ctx, 500, 200);
             var f = new Factory(ctx, 500, 200);
             var stave = f.Stave().AddClef("percussion").AddTimeSignature("4/4");
 
@@ -278,6 +316,48 @@ namespace VexFlowSharp.Tests.Comparison
             f.Draw();
 
             SaveAndAssert(ctx, "percussion_snare1-vfsharp.png");
+        }
+
+        [Test]
+        public void PercussionClef_PixelComparison()
+        {
+            PercussionClef_RendersToFile();
+            AssertPercussionImagesMatch("percussion_clef-vfsharp.png", "percussion_clef-vexflow.png");
+        }
+
+        [Test]
+        public void PercussionBasic0_PixelComparison()
+        {
+            PercussionBasic0_RendersToFile();
+            AssertPercussionImagesMatch("percussion_basic0-vfsharp.png", "percussion_basic0-vexflow.png");
+        }
+
+        [Test]
+        public void PercussionBasic1_PixelComparison()
+        {
+            PercussionBasic1_RendersToFile();
+            AssertPercussionImagesMatch("percussion_basic1-vfsharp.png", "percussion_basic1-vexflow.png");
+        }
+
+        [Test]
+        public void PercussionBasic2_PixelComparison()
+        {
+            PercussionBasic2_RendersToFile();
+            AssertPercussionImagesMatch("percussion_basic2-vfsharp.png", "percussion_basic2-vexflow.png");
+        }
+
+        [Test]
+        public void PercussionSnare0_PixelComparison()
+        {
+            PercussionSnare0_RendersToFile();
+            AssertPercussionImagesMatch("percussion_snare0-vfsharp.png", "percussion_snare0-vexflow.png");
+        }
+
+        [Test]
+        public void PercussionSnare1_PixelComparison()
+        {
+            PercussionSnare1_RendersToFile();
+            AssertPercussionImagesMatch("percussion_snare1-vfsharp.png", "percussion_snare1-vexflow.png");
         }
     }
 }

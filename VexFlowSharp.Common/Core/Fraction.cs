@@ -13,6 +13,8 @@ namespace VexFlowSharp
     /// </summary>
     public readonly struct Fraction : IEquatable<Fraction>, IComparable<Fraction>
     {
+        public const string CATEGORY = "Fraction";
+
         /// <summary>
         /// The tick resolution used throughout VexFlow. Equal to 16384.
         /// </summary>
@@ -62,6 +64,20 @@ namespace VexFlowSharp
         }
 
         /// <summary>
+        /// Least common multiple of more than two integers.
+        /// </summary>
+        public static int LCMM(params int[] args)
+        {
+            if (args.Length == 0) return 0;
+            if (args.Length == 1) return args[0];
+
+            int result = args[0];
+            for (int i = 1; i < args.Length; i++)
+                result = LCM(result, args[i]);
+            return result;
+        }
+
+        /// <summary>
         /// Return a new Fraction simplified by GCD. Normalises sign so denominator is always positive.
         /// </summary>
         public Fraction Simplify()
@@ -86,17 +102,8 @@ namespace VexFlowSharp
         /// </summary>
         public Fraction Add(Fraction other)
         {
-            int lcm;
-            if (Numerator == 0)
-                lcm = other.Denominator;
-            else if (other.Numerator == 0)
-                lcm = Denominator;
-            else
-            {
-                int gcd = GCD(Math.Abs(Denominator), Math.Abs(other.Denominator));
-                lcm = (Denominator / gcd) * other.Denominator;
-            }
-
+            int gcd = GCD(Math.Abs(Denominator), Math.Abs(other.Denominator));
+            int lcm = (Denominator / gcd) * other.Denominator;
             int numerator = Numerator * (lcm / Denominator) + other.Numerator * (lcm / other.Denominator);
             return new Fraction(numerator, lcm);
         }
@@ -132,6 +139,21 @@ namespace VexFlowSharp
         {
             return (double)Numerator / Denominator;
         }
+
+        /// <summary>
+        /// Return the integer component of this fraction.
+        /// </summary>
+        public int Quotient() => (int)Math.Floor((double)Numerator / Denominator);
+
+        /// <summary>
+        /// Return the remainder component of this fraction.
+        /// </summary>
+        public int Remainder() => Numerator % Denominator;
+
+        /// <summary>
+        /// Return the absolute value of this fraction.
+        /// </summary>
+        public Fraction MakeAbs() => new Fraction(Math.Abs(Numerator), Math.Abs(Denominator));
 
         /// <summary>
         /// Compare simplified forms for equality.
@@ -178,5 +200,40 @@ namespace VexFlowSharp
         }
 
         public override string ToString() => $"{Numerator}/{Denominator}";
+
+        /// <summary>
+        /// Return a simplified string representation.
+        /// </summary>
+        public string ToSimplifiedString() => Simplify().ToString();
+
+        /// <summary>
+        /// Return a mixed-number string representation.
+        /// </summary>
+        public string ToMixedString()
+        {
+            var simplified = Simplify();
+            int quotient = simplified.Quotient();
+            int remainder = Math.Abs(simplified.Remainder());
+
+            if (quotient == 0)
+            {
+                if (remainder == 0) return "0";
+                return simplified.ToString();
+            }
+
+            if (remainder == 0) return quotient.ToString();
+            return $"{quotient} {remainder}/{simplified.Denominator}";
+        }
+
+        /// <summary>
+        /// Parse a string in "n/d" or "n" form.
+        /// </summary>
+        public static Fraction Parse(string str)
+        {
+            var pieces = str.Split('/');
+            int numerator = int.Parse(pieces[0]);
+            int denominator = pieces.Length > 1 ? int.Parse(pieces[1]) : 1;
+            return new Fraction(numerator, denominator);
+        }
     }
 }

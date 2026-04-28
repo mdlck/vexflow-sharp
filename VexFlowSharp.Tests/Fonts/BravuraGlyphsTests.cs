@@ -34,6 +34,14 @@ namespace VexFlowSharp.Tests.Fonts
         }
 
         [Test]
+        public void Glyphs_Contains_V5MetronomeTempoGlyphs()
+        {
+            Assert.That(BravuraGlyphs.Data.Glyphs, Contains.Key("metNoteQuarterUp"));
+            Assert.That(BravuraGlyphs.Data.Glyphs, Contains.Key("metNote8thUp"));
+            Assert.That(BravuraGlyphs.Data.Glyphs, Contains.Key("metAugmentationDot"));
+        }
+
+        [Test]
         public void GClef_CachedOutline_IsNotNullAndNonEmpty()
         {
             var glyph = BravuraGlyphs.Data.Glyphs["gClef"];

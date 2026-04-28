@@ -62,6 +62,20 @@ namespace VexFlowSharp.Tests.Rendering
         }
 
         [Test]
+        public void SetLineDash_AcceptsSingleValuePattern()
+        {
+            using var ctx = SkiaRenderContext.Create(100, 100);
+            ctx.SetLineDash(new[] { 5.0 });
+            ctx.BeginPath();
+            ctx.MoveTo(10, 50);
+            ctx.LineTo(90, 50);
+            ctx.Stroke();
+
+            var png = ctx.ToPng();
+            Assert.That(png.Length, Is.GreaterThan(0));
+        }
+
+        [Test]
         public void SavePng_WritesFile()
         {
             using var ctx = SkiaRenderContext.Create(50, 50);

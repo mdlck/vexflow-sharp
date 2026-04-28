@@ -2,6 +2,7 @@
 // MIT License
 
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using VexFlowSharp;
 using VexFlowSharp.Common.Formatting;
@@ -31,6 +32,12 @@ namespace VexFlowSharp.Tests.Formatting
         // ── STRICT mode ───────────────────────────────────────────────────────
 
         [Test]
+        public void Category_IsV5Voice()
+        {
+            Assert.That(Voice.CATEGORY, Is.EqualTo("Voice"));
+        }
+
+        [Test]
         public void StrictMode_FourQuarterNotes_IsComplete()
         {
             var voice = new Voice();
@@ -58,6 +65,22 @@ namespace VexFlowSharp.Tests.Formatting
         }
 
         [Test]
+        public void StrictMode_TooManyTicksRollsBackTicksUsed()
+        {
+            var voice = new Voice();
+            voice.AddTickable(MakeNote("4"))
+                 .AddTickable(MakeNote("4"))
+                 .AddTickable(MakeNote("4"))
+                 .AddTickable(MakeNote("4"));
+            var ticksUsed = voice.GetTicksUsed();
+
+            Assert.Throws<VexFlowException>(() => voice.AddTickable(MakeNote("4")));
+
+            Assert.That(voice.GetTicksUsed(), Is.EqualTo(ticksUsed));
+            Assert.That(voice.GetTickables(), Has.Count.EqualTo(4));
+        }
+
+        [Test]
         public void StrictMode_TwoQuarterNotes_IsNotComplete()
         {
             var voice = new Voice();
@@ -65,6 +88,22 @@ namespace VexFlowSharp.Tests.Formatting
                  .AddTickable(MakeNote("4"));
 
             Assert.IsFalse(voice.IsComplete(), "2 quarter notes in 4/4 should not be complete");
+        }
+
+        [Test]
+        public void Constructor_TimeSignatureStringSetsTotalTicks()
+        {
+            var voice = new Voice("3/8");
+
+            Assert.That(voice.GetTotalTicks(), Is.EqualTo(new Fraction(Tables.RESOLUTION * 3 / 8, 1)));
+        }
+
+        [Test]
+        public void Constructor_InvalidTimeSignatureStringFallsBackToFourFour()
+        {
+            var voice = new Voice("not-a-time-signature");
+
+            Assert.That(voice.GetTotalTicks(), Is.EqualTo(new Fraction(Tables.RESOLUTION, 1)));
         }
 
         // ── SOFT mode ─────────────────────────────────────────────────────────
@@ -93,6 +132,24 @@ namespace VexFlowSharp.Tests.Formatting
                 voice.AddTickable(MakeNote("4"));
 
             Assert.AreEqual(8, voice.GetTickables().Count);
+        }
+
+        [Test]
+        public void IgnoredTickable_DoesNotAdvanceTicksButIsAdded()
+        {
+            var voice = new Voice();
+            var bar = new BarNote();
+
+            voice.AddTickable(MakeNote("4"))
+                 .AddTickable(bar)
+                 .AddTickable(MakeNote("4"))
+                 .AddTickable(MakeNote("4"))
+                 .AddTickable(MakeNote("4"));
+
+            Assert.That(bar.ShouldIgnoreTicks(), Is.True);
+            Assert.That(voice.GetTicksUsed(), Is.EqualTo(new Fraction(Tables.RESOLUTION, 1)));
+            Assert.That(voice.GetTickables(), Has.Count.EqualTo(5));
+            Assert.That(voice.IsComplete(), Is.True);
         }
 
         // ── FULL mode ─────────────────────────────────────────────────────────
@@ -156,6 +213,95 @@ namespace VexFlowSharp.Tests.Formatting
             int expected = Tables.RESOLUTION + Tables.RESOLUTION / 2 + Tables.RESOLUTION / 4;
             Assert.AreEqual(expected, voice.GetTicksUsed().Numerator,
                 "TicksUsed should accumulate all note ticks");
+        }
+
+        [Test]
+        public void AddTickable_TripletExpandsTotalTicksDenominatorAndActualResolution()
+        {
+            var voice = new Voice();
+            var notes = new List<StaveNote>
+            {
+                MakeNote("8"),
+                MakeNote("8"),
+                MakeNote("8"),
+            };
+            _ = new Tuplet(new List<VexFlowSharp.Note> { notes[0], notes[1], notes[2] },
+                new TupletOptions { NumNotes = 3, NotesOccupied = 2 });
+
+            voice.AddTickables(new List<Tickable> { notes[0], notes[1], notes[2] });
+
+            Assert.That(voice.GetResolutionMultiplier(), Is.EqualTo(3));
+            Assert.That(voice.GetActualResolution(), Is.EqualTo(Tables.RESOLUTION * 3));
+            Assert.That(voice.GetTotalTicks(), Is.EqualTo(new Fraction(Tables.RESOLUTION, 1)));
+            Assert.That(voice.GetTotalTicks().Denominator, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void AddTickable_NestedTupletsExpandResolutionMultiplier()
+        {
+            var voice = new Voice();
+            voice.SetMode(VoiceMode.SOFT);
+            var notes = new List<StaveNote>
+            {
+                MakeNote("8"),
+                MakeNote("8"),
+                MakeNote("8"),
+            };
+            _ = new Tuplet(new List<VexFlowSharp.Note> { notes[0], notes[1], notes[2] },
+                new TupletOptions { NumNotes = 3, NotesOccupied = 2 });
+            _ = new Tuplet(new List<VexFlowSharp.Note> { notes[0], notes[1], notes[2] },
+                new TupletOptions { NumNotes = 5, NotesOccupied = 4 });
+
+            voice.AddTickables(new List<Tickable> { notes[0], notes[1], notes[2] });
+
+            Assert.That(voice.GetTicksUsed().Denominator, Is.EqualTo(15));
+            Assert.That(voice.GetResolutionMultiplier(), Is.EqualTo(15));
+            Assert.That(voice.GetActualResolution(), Is.EqualTo(Tables.RESOLUTION * 15));
+            Assert.That(voice.GetTotalTicks().Denominator, Is.EqualTo(15));
+        }
+
+        [Test]
+        public void PreFormat_AppliesVoiceStaveToNotesWithoutStaves()
+        {
+            var stave = new Stave(10, 40, 400);
+            var note = MakeNote("4");
+            var voice = new Voice()
+                .SetStave(stave)
+                .AddTickable(note);
+
+            voice.PreFormat();
+
+            Assert.That(note.GetStave(), Is.SameAs(stave));
+        }
+
+        [Test]
+        public void PreFormat_ThrowsWithoutStave()
+        {
+            var voice = new Voice().AddTickable(MakeNote("4"));
+
+            Assert.Throws<VexFlowException>(() => voice.PreFormat());
+        }
+
+        [Test]
+        public void GetBoundingBox_MergesTickableBoundsAndAppliesVoiceStave()
+        {
+            var stave = new Stave(10, 40, 400);
+            var first = MakeNote("4");
+            var second = MakeNote("4");
+            first.SetX(80);
+            second.SetX(150);
+            var voice = new Voice()
+                .SetStave(stave)
+                .AddTickable(first)
+                .AddTickable(second);
+
+            var box = voice.GetBoundingBox();
+
+            Assert.That(first.GetStave(), Is.SameAs(stave));
+            Assert.That(second.GetStave(), Is.SameAs(stave));
+            Assert.That(box, Is.Not.Null);
+            Assert.That(box!.GetX(), Is.LessThanOrEqualTo(first.GetBoundingBox()!.GetX()));
+            Assert.That(box.GetX() + box.GetW(), Is.GreaterThanOrEqualTo(second.GetBoundingBox()!.GetX() + second.GetBoundingBox()!.GetW()));
         }
 
         // ── SmallestTickCount ─────────────────────────────────────────────────

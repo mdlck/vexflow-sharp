@@ -7,23 +7,28 @@
 // GraceNoteGroup collects grace notes and positions them before the main note.
 
 using System.Collections.Generic;
+using VexFlowSharp.Common.Elements;
 using VexFlowSharp.Common.Formatting;
 
 namespace VexFlowSharp
 {
+    public class GraceNoteGroupRenderOptions
+    {
+        public double SlurYShift { get; set; }
+    }
+
     /// <summary>
     /// GraceNoteGroup is a modifier that positions and renders grace notes
     /// immediately before their associated main note.
-    ///
-    /// Phase 2 limitations:
-    /// - PreFormat() is a stub; full Voice/Formatter integration is Phase 3.
-    /// - Format() is a no-op stub (Phase 3 responsibility).
-    /// - Slur rendering is simplified (no StaveTie/TabTie in Phase 2).
     ///
     /// Port of VexFlow's GraceNoteGroup class from gracenotegroup.ts.
     /// </summary>
     public class GraceNoteGroup : Modifier
     {
+        public new const string CATEGORY = "GraceNoteGroup";
+
+        public override string GetCategory() => CATEGORY;
+
         // ── Fields ────────────────────────────────────────────────────────────
 
         /// <summary>The grace notes belonging to this group.</summary>
@@ -32,11 +37,15 @@ namespace VexFlowSharp
         /// <summary>Whether to draw a slur connecting the grace notes to the main note.</summary>
         protected bool showSlur;
 
-        /// <summary>Y shift for the slur arc.</summary>
-        protected double slurY;
-
         /// <summary>Whether this group has been pre-formatted.</summary>
         protected bool preFormatted;
+
+        protected readonly Voice voice;
+        protected Formatter? formatter;
+        private readonly List<Beam> beams;
+        private StaveTie? slur;
+
+        public GraceNoteGroupRenderOptions RenderOptions { get; }
 
         // ── Constructor ───────────────────────────────────────────────────────
 
@@ -51,10 +60,21 @@ namespace VexFlowSharp
         {
             this.graceNotes = graceNotes;
             this.showSlur = showSlur;
-            this.slurY = 0;
             this.preFormatted = false;
             this.width = 0;
+            this.beams = new List<Beam>();
+            this.voice = new Voice(new VoiceTime
+            {
+                NumBeats = 4,
+                BeatValue = 4,
+                Resolution = Tables.RESOLUTION,
+            }).SetStrict(false);
+            this.RenderOptions = new GraceNoteGroupRenderOptions { SlurYShift = 0 };
             position = ModifierPosition.Left;
+
+            var tickables = new List<Tickable>();
+            foreach (var gn in graceNotes) tickables.Add(gn);
+            voice.AddTickables(tickables);
         }
 
         // ── Width ──────────────────────────────────────────────────────────────
@@ -74,39 +94,109 @@ namespace VexFlowSharp
         /// <summary>Get the grace notes in this group.</summary>
         public List<GraceNote> GetGraceNotes() => graceNotes;
 
-        // ── PreFormat stub ────────────────────────────────────────────────────
+        /// <summary>Whether this group renders a slur to the main note.</summary>
+        public bool GetShowSlur() => showSlur;
+
+        public GraceNoteGroup BeamNotes(List<GraceNote>? notes = null)
+        {
+            notes ??= graceNotes;
+            if (notes.Count > 1)
+            {
+                var beamNotes = new List<StemmableNote>();
+                foreach (var note in notes)
+                    beamNotes.Add(note);
+
+                var beam = new Beam(beamNotes);
+                beam.RenderOptions.BeamWidth = 3;
+                beam.RenderOptions.PartialBeamLength = 4;
+                beams.Add(beam);
+            }
+
+            return this;
+        }
+
+        public static bool Format(List<GraceNoteGroup> gracenoteGroups, ModifierContextState state)
+        {
+            const double groupSpacingStave = 4;
+            const double groupSpacingTab = 0;
+
+            if (gracenoteGroups == null || gracenoteGroups.Count == 0) return false;
+
+            var groupList = new List<(double Shift, GraceNoteGroup Group, double Spacing)>();
+            Note? prevNote = null;
+            double shift = 0;
+
+            foreach (var gracenoteGroup in gracenoteGroups)
+            {
+                var note = gracenoteGroup.TryGetAttachedNote();
+                bool isStaveNote = note is StaveNote;
+                double spacing = isStaveNote ? groupSpacingStave : groupSpacingTab;
+
+                if (isStaveNote && note != prevNote)
+                {
+                    shift = System.Math.Max(note!.GetLeftDisplacedHeadPx(), shift);
+                    prevNote = note;
+                }
+
+                groupList.Add((shift, gracenoteGroup, spacing));
+            }
+
+            double groupShift = groupList[0].Shift;
+            bool right = false;
+            bool left = false;
+            foreach (var item in groupList)
+            {
+                if (item.Group.GetPosition() == ModifierPosition.Right) right = true;
+                else left = true;
+
+                item.Group.PreFormat();
+                double formatWidth = item.Group.GetWidth() + item.Spacing;
+                groupShift = System.Math.Max(formatWidth, groupShift);
+            }
+
+            foreach (var item in groupList)
+            {
+                double formatWidth = item.Group.GetWidth() + item.Spacing;
+                item.Group.SetSpacingFromNextModifier(
+                    groupShift - System.Math.Min(formatWidth, groupShift) + StaveNote.minNoteheadPadding);
+            }
+
+            if (right) state.RightShift += groupShift;
+            if (left) state.LeftShift += groupShift;
+            return true;
+        }
+
+        // ── PreFormat ─────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Pre-format stub. Computes width as the sum of all grace note widths.
-        ///
-        /// PHASE 2 STUB: Does NOT use Voice or Formatter (Pitfall 6).
-        /// Full formatting using Voice and Formatter is a Phase 3 responsibility.
+        /// Pre-format the grace-note voice and record the formatter's minimum total width.
         /// Port of GraceNoteGroup.preFormat() from gracenotegroup.ts.
         /// </summary>
         public void PreFormat()
         {
             if (preFormatted) return;
 
-            // Compute total width from grace note widths (no Formatter in Phase 2)
-            double totalWidth = 0;
-            foreach (var gn in graceNotes)
-            {
-                totalWidth += gn.GetWidth();
-            }
-
-            SetWidth(totalWidth);
+            formatter ??= new Formatter();
+            formatter.JoinVoices(new List<Voice> { voice });
+            formatter.Format(new List<Voice> { voice }, 0, new FormatParams());
+            SetWidth(formatter.GetMinTotalWidth());
             preFormatted = true;
         }
 
-        // ── Format stub ───────────────────────────────────────────────────────
+        // ── Format ────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Format stub — no-op in Phase 2.
-        /// Full implementation using Voice and Formatter arrives in Phase 3.
+        /// Instance compatibility wrapper; modifier-context layout is handled by the static Format().
         /// </summary>
         public void Format()
         {
-            // Phase 3: use Voice and Formatter to arrange grace notes
+            PreFormat();
+        }
+
+        private Note? TryGetAttachedNote()
+        {
+            try { return GetNote() as Note; }
+            catch { return null; }
         }
 
         // ── Draw override ─────────────────────────────────────────────────────
@@ -126,43 +216,30 @@ namespace VexFlowSharp
             var mainStave = mainNote?.GetStave();
             if (mainStave == null) return;
 
-            // Build a SOFT voice for the grace notes and format them on the stave.
-            // SOFT mode doesn't enforce beat count, suitable for grace note groups.
-            var graceVoice = new Voice(new VoiceTime { NumBeats = 4, BeatValue = 4 });
-            graceVoice.SetMode(VoiceMode.SOFT);
-            var tickables = new List<Tickable>();
-            foreach (var gn in graceNotes) tickables.Add(gn);
-            graceVoice.AddTickables(tickables);
+            PreFormat();
 
-            // Format the grace notes into a small space just before the main note.
-            // We use a tight width equal to the group's own computed width.
-            double formatWidth = System.Math.Max(GetWidth(), 30.0);
-            new Formatter()
-                .JoinVoices(new List<Voice> { graceVoice })
-                .Format(new List<Voice> { graceVoice }, formatWidth);
-
-            // Set the stave on each grace note so Y values are computed correctly.
-            foreach (var gn in graceNotes)
-                gn.SetStave(mainStave);
-
-            // Position grace notes to the left of the main note.
-            // Strategy: set each grace note's tick context X directly so that
-            // GetNoteHeadBeginX() lands at mainNote - groupWidth + gnRelativeX.
-            //
-            // We cannot use SetXShift() here because GetNoteHeadBeginX() =
-            // GetAbsoluteX() + xShift and GetAbsoluteX() already includes xShift,
-            // causing double-counting. VexFlow avoids this by adjusting tc.GetX()
-            // directly in GraceNoteGroup.format().
-            double groupWidth = GetWidth();
-            double mainTcX = mainNote!.GetTickContext()?.GetX() ?? 0;
-            double gnRelX0 = graceNotes[0].GetTickContext()?.GetX() ?? 0;
-
-            foreach (var gn in graceNotes)
+            if (mainNote!.GetTickContext() != null)
             {
-                var gnTc = gn.GetTickContext();
-                if (gnTc == null) continue;
-                double gnRelX = gnTc.GetX() - gnRelX0; // position within the group
-                gnTc.SetX(mainTcX - groupWidth + gnRelX);
+                AlignSubNotesWithNote(new List<Note>(graceNotes), mainNote);
+            }
+            else
+            {
+                // Direct unit-test rendering can draw an attached note without a parent TickContext.
+                // Keep that path positioned from the parent x while formatted voices provide v5 offsets.
+                foreach (var gn in graceNotes)
+                    gn.SetStave(mainStave);
+
+                double groupWidth = GetWidth();
+                double mainX = mainNote.GetAbsoluteX();
+                double gnRelX0 = graceNotes.Count > 0 ? graceNotes[0].GetTickContext()?.GetX() ?? 0 : 0;
+
+                foreach (var gn in graceNotes)
+                {
+                    var gnTc = gn.GetTickContext();
+                    if (gnTc == null) continue;
+                    double gnRelX = gnTc.GetX() - gnRelX0;
+                    gnTc.SetX(mainX - groupWidth + gnRelX);
+                }
             }
 
             // Draw each grace note
@@ -171,40 +248,33 @@ namespace VexFlowSharp
                 gn.SetContext(ctx).Draw();
             }
 
-            // Draw a simple slur arc if showSlur is true
+            foreach (var beam in beams)
+            {
+                beam.SetContext(ctx).Draw();
+            }
+
             if (showSlur && graceNotes.Count > 0 && mainNote != null)
             {
-                DrawSimpleSlur(ctx);
+                DrawSlur(ctx, mainNote);
             }
         }
 
-        /// <summary>
-        /// Draw a simplified slur arc from the last grace note to the main note.
-        /// Phase 2 simplified version — uses a basic quadratic bezier curve.
-        /// Phase 3 will replace this with a StaveTie or TabTie.
-        /// </summary>
-        private void DrawSimpleSlur(RenderContext ctx)
+        private void DrawSlur(RenderContext ctx, Note mainNote)
         {
-            var lastGrace = graceNotes[graceNotes.Count - 1];
-            double x1 = lastGrace.GetAbsoluteX();
-            // note is typed as Element? in Modifier base class; cast to Note for GetAbsoluteX()
-            double x2 = (note as Note)?.GetAbsoluteX() ?? lastGrace.GetAbsoluteX() + 10;
+            var tieNotes = new TieNotes
+            {
+                LastNote = graceNotes[0],
+                FirstNote = mainNote,
+                FirstIndexes = new[] { 0 },
+                LastIndexes = new[] { 0 },
+            };
 
-            // Use a basic arc above/below the notes
-            double[] graceYs;
-            try { graceYs = lastGrace.GetYs(); }
-            catch { return; } // No y-values set — skip slur
-
-            double y1 = graceYs[0];
-            double midX = (x1 + x2) / 2.0;
-            double midY = y1 - 8 + slurY; // Arc above the notes
-
-            ctx.Save();
-            ctx.BeginPath();
-            ctx.MoveTo(x1, y1);
-            ctx.QuadraticCurveTo(midX, midY, x2, y1);
-            ctx.Stroke();
-            ctx.Restore();
+            slur = mainNote is StaveNote
+                ? new StaveTie(tieNotes)
+                : new TabTie(tieNotes);
+            slur.RenderOptions.Cp2 = 12;
+            slur.RenderOptions.YShift = (mainNote is StaveNote ? 7 : 5) + RenderOptions.SlurYShift;
+            slur.SetContext(ctx).Draw();
         }
     }
 }

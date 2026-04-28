@@ -61,6 +61,8 @@ namespace VexFlowSharp
     /// </summary>
     public class NoteHead : Element
     {
+        public new const string CATEGORY = "NoteHead";
+
         protected double line;
         protected double x;
         protected double y;
@@ -78,6 +80,8 @@ namespace VexFlowSharp
         protected double stemUpXOffset;
         protected double stemDownXOffset;
         protected GlyphProps glyphProps;
+
+        public override string GetCategory() => CATEGORY;
 
         /// <summary>
         /// Construct a NoteHead from the given struct.
@@ -183,6 +187,28 @@ namespace VexFlowSharp
         /// <summary>Get the glyph code for this notehead.</summary>
         public string GetGlyphCode() => glyphCode;
 
+        /// <summary>Get the SMuFL glyph rendered by this notehead.</summary>
+        public string GetText() => glyphCode;
+
+        /// <summary>Get glyph text metrics used by VexFlow 5 layout calculations.</summary>
+        public GlyphMetrics GetTextMetrics()
+        {
+            var metrics = glyph?.GetMetrics();
+            if (metrics != null) return metrics;
+
+            double width = GetWidth();
+            return new GlyphMetrics
+            {
+                Width = width,
+                Height = Tables.STAVE_LINE_DISTANCE,
+                ActualBoundingBoxAscent = Tables.STAVE_LINE_DISTANCE / 2.0,
+                ActualBoundingBoxDescent = Tables.STAVE_LINE_DISTANCE / 2.0,
+                XMin = 0,
+                XMax = width,
+                Scale = 1,
+            };
+        }
+
         /// <summary>Whether this notehead is displaced.</summary>
         public bool IsDisplaced() => displaced;
 
@@ -199,9 +225,46 @@ namespace VexFlowSharp
         /// </summary>
         public double GetWidth()
         {
-            // Width is determined by the glyph font scale and the glyph metrics
-            // Use a simple approximation based on glyph font scale
+            var metrics = glyph?.GetMetrics();
+            if (metrics != null && metrics.Width > 0)
+                return metrics.Width;
+
             return glyphProps.HeadWidth > 0 ? glyphProps.HeadWidth : 8.0;
+        }
+
+        /// <summary>Get the absolute X coordinate where the glyph is rendered.</summary>
+        public double GetAbsoluteX()
+        {
+            var displacementStemAdjustment = Stem.WIDTH / 2.0;
+            var displacement = displaced
+                ? (GetWidth() - displacementStemAdjustment) * stemDirection
+                : 0;
+            return x + xShift + displacement;
+        }
+
+        /// <summary>Return a bounding box for this notehead glyph.</summary>
+        public override BoundingBox? GetBoundingBox()
+        {
+            double headX = GetAbsoluteX();
+            if (glyph != null)
+            {
+                var metrics = glyph.GetMetrics();
+                if (metrics != null)
+                {
+                    return new BoundingBox(
+                        headX + metrics.XMin,
+                        y - metrics.Height,
+                        metrics.Width,
+                        metrics.Height);
+                }
+            }
+
+            double width = GetWidth();
+            return new BoundingBox(
+                headX,
+                y - Tables.STAVE_LINE_DISTANCE / 2.0,
+                width,
+                Tables.STAVE_LINE_DISTANCE);
         }
 
         /// <summary>
@@ -213,7 +276,7 @@ namespace VexFlowSharp
             var ctx = CheckContext();
             rendered = true;
 
-            double headX = x + xShift;
+            double headX = GetAbsoluteX();
 
             ctx.Save();
             if (customStyle != null) ApplyStyle(customStyle);

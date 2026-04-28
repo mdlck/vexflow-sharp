@@ -8,6 +8,7 @@
 // It extends Element directly — no ModifierContext involvement.
 
 using System;
+using System.Linq;
 
 namespace VexFlowSharp
 {
@@ -29,6 +30,12 @@ namespace VexFlowSharp
 
         /// <summary>Index into the end note's keys array for tie anchor (default 0).</summary>
         public int LastIndex { get; set; } = 0;
+
+        /// <summary>Indexes into the start note's keys array for multi-string tab ties/slides.</summary>
+        public int[]? FirstIndexes { get; set; }
+
+        /// <summary>Indexes into the end note's keys array for multi-string tab ties/slides.</summary>
+        public int[]? LastIndexes { get; set; }
     }
 
     /// <summary>
@@ -38,25 +45,25 @@ namespace VexFlowSharp
     public class StaveTieRenderOptions
     {
         /// <summary>Quadratic bezier control point 1 y-offset (top arc peak).</summary>
-        public double Cp1 { get; set; } = 36;
+        public double Cp1 { get; set; } = Metrics.GetDouble("StaveTie.cp1");
 
         /// <summary>Quadratic bezier control point 2 y-offset (return arc offset).</summary>
-        public double Cp2 { get; set; } = 36;
+        public double Cp2 { get; set; } = Metrics.GetDouble("StaveTie.cp2");
 
         /// <summary>X offset applied to the first note anchor point.</summary>
-        public double FirstXShift { get; set; } = 0;
+        public double FirstXShift { get; set; } = Metrics.GetDouble("StaveTie.firstXShift");
 
         /// <summary>X offset applied to the last note anchor point.</summary>
-        public double LastXShift { get; set; } = 0;
+        public double LastXShift { get; set; } = Metrics.GetDouble("StaveTie.lastXShift");
 
         /// <summary>Text x shift for centering the text label.</summary>
-        public double TextShiftX { get; set; } = 0;
+        public double TextShiftX { get; set; } = Metrics.GetDouble("StaveTie.textShiftX");
 
         /// <summary>Y shift applied to the tie arc (scaled by direction).</summary>
-        public double YShift { get; set; } = 7;
+        public double YShift { get; set; } = Metrics.GetDouble("StaveTie.yShift");
 
-        /// <summary>Stroke thickness for the filled tie arc.</summary>
-        public double Thickness { get; set; } = 2;
+        /// <summary>Stroke thickness for legacy callers. VexFlow renders ties as filled arcs.</summary>
+        public double Thickness { get; set; } = Metrics.GetDouble("StaveTie.thickness");
     }
 
     /// <summary>
@@ -69,6 +76,8 @@ namespace VexFlowSharp
     /// </summary>
     public class StaveTie : Element
     {
+        public new const string CATEGORY = "StaveTie";
+
         private readonly TieNotes notes;
         private readonly string? text;
         public StaveTieRenderOptions RenderOptions => renderOptions;
@@ -102,6 +111,12 @@ namespace VexFlowSharp
             return this;
         }
 
+        /// <summary>Get the optional tie text label.</summary>
+        public string? GetText() => text;
+
+        /// <summary>Get the explicit tie direction, or 0 when direction is inferred.</summary>
+        public int GetDirection() => direction;
+
         /// <summary>
         /// Get the TieNotes structure.
         /// Port of VexFlow's StaveTie.getNotes().
@@ -126,7 +141,7 @@ namespace VexFlowSharp
         /// </summary>
         private void RenderTie(RenderContext ctx,
                                 double firstX, double lastX,
-                                double firstY, double lastY,
+                                double[] firstYs, double[] lastYs,
                                 int dir)
         {
             double cp1 = renderOptions.Cp1;
@@ -135,23 +150,41 @@ namespace VexFlowSharp
             // For very close notes, use smaller control points (matches VexFlow behavior)
             if (Math.Abs(lastX - firstX) < 10)
             {
-                cp1 = 2;
-                cp2 = 8;
+                cp1 = Metrics.GetDouble("StaveTie.closeNoteCp1");
+                cp2 = Metrics.GetDouble("StaveTie.closeNoteCp2");
             }
 
             double fxShift = renderOptions.FirstXShift;
             double lxShift = renderOptions.LastXShift;
 
             double cpX      = (lastX + lxShift + (firstX + fxShift)) / 2.0;
-            double topCpY   = (firstY + lastY) / 2.0 + cp1 * dir;
-            double botCpY   = (firstY + lastY) / 2.0 + cp2 * dir;
+            var firstIndexes = GetFirstIndexes();
+            var lastIndexes = GetLastIndexes();
+            if (firstIndexes.Length != lastIndexes.Length)
+                throw new VexFlowException("BadArguments", "Tied notes must have same number of indexes.");
 
-            ctx.BeginPath();
-            ctx.MoveTo(firstX + fxShift, firstY);
-            ctx.QuadraticCurveTo(cpX, topCpY, lastX + lxShift, lastY);
-            ctx.QuadraticCurveTo(cpX, botCpY, firstX + fxShift, firstY);
-            ctx.ClosePath();
-            ctx.Fill();
+            for (int i = 0; i < firstIndexes.Length; i++)
+            {
+                int firstIndex = firstIndexes[i];
+                int lastIndex = lastIndexes[i];
+                if (firstIndex < 0 || firstIndex >= firstYs.Length ||
+                    lastIndex < 0 || lastIndex >= lastYs.Length)
+                {
+                    throw new VexFlowException("BadArguments", "Bad indexes for tie rendering.");
+                }
+
+                double firstY = firstYs[firstIndex];
+                double lastY = lastYs[lastIndex];
+                double topCpY = (firstY + lastY) / 2.0 + cp1 * dir;
+                double botCpY = (firstY + lastY) / 2.0 + cp2 * dir;
+
+                ctx.BeginPath();
+                ctx.MoveTo(firstX + fxShift, firstY);
+                ctx.QuadraticCurveTo(cpX, topCpY, lastX + lxShift, lastY);
+                ctx.QuadraticCurveTo(cpX, botCpY, firstX + fxShift, firstY);
+                ctx.ClosePath();
+                ctx.Fill();
+            }
         }
 
         /// <summary>
@@ -194,13 +227,13 @@ namespace VexFlowSharp
             var lastNote  = notes.LastNote;
 
             double firstX, lastX;
-            double firstY, lastY;
+            double[] firstYs, lastYs;
             int stemDirection = -1; // default: arc above = -1 in VexFlow convention
 
             if (firstNote != null)
             {
                 firstX        = firstNote.GetTieRightX();
-                firstY        = firstNote.GetTieYForBottom();
+                firstYs       = firstNote.GetYs();
                 try { stemDirection = firstNote.GetStemDirection(); }
                 catch { /* no stem — use default */ }
             }
@@ -208,7 +241,7 @@ namespace VexFlowSharp
             {
                 var stave = lastNote.CheckStave();
                 firstX = stave.GetTieStartX();
-                firstY = lastNote.GetTieYForBottom();
+                firstYs = lastNote.GetYs();
             }
             else
             {
@@ -219,7 +252,7 @@ namespace VexFlowSharp
             if (lastNote != null)
             {
                 lastX        = lastNote.GetTieLeftX();
-                lastY        = lastNote.GetTieYForBottom();
+                lastYs       = lastNote.GetYs();
                 try { stemDirection = lastNote.GetStemDirection(); }
                 catch { /* no stem — use default */ }
             }
@@ -227,7 +260,7 @@ namespace VexFlowSharp
             {
                 var stave = firstNote.CheckStave();
                 lastX = stave.GetTieEndX();
-                lastY = firstY;
+                lastYs = firstYs;
             }
             else
             {
@@ -239,14 +272,18 @@ namespace VexFlowSharp
 
             // Apply y shift (scaled by direction)
             double yShift = renderOptions.YShift * dir;
-            firstY += yShift;
-            lastY  += yShift;
+            firstYs = firstYs.Select(y => y + yShift).ToArray();
+            lastYs = lastYs.Select(y => y + yShift).ToArray();
 
-            RenderTie(ctx, firstX, lastX, firstY, lastY, dir);
+            RenderTie(ctx, firstX, lastX, firstYs, lastYs, dir);
             RenderText(ctx, firstX, lastX);
         }
 
+        private int[] GetFirstIndexes() => notes.FirstIndexes ?? new[] { notes.FirstIndex };
+
+        private int[] GetLastIndexes() => notes.LastIndexes ?? new[] { notes.LastIndex };
+
         /// <inheritdoc />
-        public override string GetCategory() => "StaveTie";
+        public override string GetCategory() => CATEGORY;
     }
 }

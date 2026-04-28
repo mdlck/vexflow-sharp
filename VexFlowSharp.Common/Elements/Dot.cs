@@ -24,7 +24,7 @@ namespace VexFlowSharp
         // ── Category ──────────────────────────────────────────────────────────
 
         /// <summary>Category string used by ModifierContext to group dots.</summary>
-        public const string CATEGORY = "dots";
+        public new const string CATEGORY = "Dot";
 
         /// <inheritdoc/>
         public override string GetCategory() => CATEGORY;
@@ -37,15 +37,15 @@ namespace VexFlowSharp
         // ── Constructor ───────────────────────────────────────────────────────
 
         /// <summary>
-        /// Create a new Dot at the RIGHT position with radius 2 and width 5.
+        /// Create a new Dot at the RIGHT position.
         /// Port of Dot constructor from dot.ts.
         /// </summary>
         public Dot()
         {
             position = ModifierPosition.Right;
-            radius   = 2;
+            radius   = Metrics.GetDouble("Dot.radius");
             dotShiftY = 0;
-            SetWidth(5);
+            SetWidth(Metrics.GetDouble("Dot.width"));
         }
 
         // ── Accessors ─────────────────────────────────────────────────────────
@@ -71,8 +71,8 @@ namespace VexFlowSharp
             base.SetNote(n);
             if (n is GraceNote)
             {
-                radius *= 0.5;
-                SetWidth(3);
+                radius *= Metrics.GetDouble("Dot.graceScale");
+                SetWidth(Metrics.GetDouble("Dot.graceWidth"));
             }
             return this;
         }
@@ -127,7 +127,7 @@ namespace VexFlowSharp
             if (dots == null || dots.Count == 0) return false;
 
             double rightShift   = state.RightShift;
-            double dotSpacing   = 1;
+            double dotSpacing   = Metrics.GetDouble("Dot.spacing");
 
             // Build list enriched with line position info
             var dotList = new List<(double Line, Note Note, string NoteId, Dot Dot)>();
@@ -235,11 +235,14 @@ namespace VexFlowSharp
         {
             var ctx  = CheckContext();
             var note = (Note)GetNote();
+            SetRendered();
             note.CheckStave(); // validates stave is set; we read lineSpace from it
             int idx  = GetIndex() ?? 0;
 
             var stave = note.CheckStave();
             var start = note.GetModifierStartXY(ModifierPosition.Right, idx, new { forceFlagRight = true });
+            if (note is TabNote tabNote)
+                start.Y = tabNote.GetStemExtents().BaseY;
 
             double lineSpace = stave.GetSpacingBetweenLines();
 

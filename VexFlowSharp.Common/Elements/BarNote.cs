@@ -13,6 +13,8 @@ namespace VexFlowSharp
     /// </summary>
     public class BarNote : Note
     {
+        public new const string CATEGORY = "BarNote";
+
         private readonly BarlineType _barlineType;
 
         /// <summary>
@@ -25,6 +27,10 @@ namespace VexFlowSharp
             ignoreTicks  = true;
             SetWidth(8.0);
         }
+
+        public BarlineType GetBarlineType() => _barlineType;
+
+        public override string GetCategory() => CATEGORY;
 
         /// <summary>
         /// No-op — BarNote has no modifiers and does not participate in modifier layout.

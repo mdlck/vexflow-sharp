@@ -96,6 +96,7 @@ namespace VexFlowSharp.Common.Formatting
             if (!_registry.ContainsKey(info.Family) || overwrite)
             {
                 _registry[info.Family] = info;
+                _textWidthCache.Clear();
             }
         }
 
@@ -127,11 +128,11 @@ namespace VexFlowSharp.Common.Formatting
             TextFormatterInfo? matched = null;
             foreach (var requested in requestedFamilies)
             {
-                var trimmed = requested.Trim();
+                var trimmed = NormalizeFamilyName(requested);
                 foreach (var registeredFamily in _registry.Keys)
                 {
                     // VexFlow startsWith matching: "Roboto Slab Medium" matches "Roboto Slab"
-                    if (registeredFamily.StartsWith(trimmed, StringComparison.OrdinalIgnoreCase))
+                    if (trimmed.StartsWith(registeredFamily, StringComparison.OrdinalIgnoreCase))
                     {
                         matched = _registry[registeredFamily];
                         break;
@@ -170,6 +171,19 @@ namespace VexFlowSharp.Common.Formatting
             _textWidthCache.Clear();
         }
 
+        private static string NormalizeFamilyName(string family)
+        {
+            var trimmed = family.Trim();
+            if (trimmed.Length >= 2
+                && ((trimmed[0] == '\'' && trimmed[trimmed.Length - 1] == '\'')
+                    || (trimmed[0] == '"' && trimmed[trimmed.Length - 1] == '"')))
+            {
+                return trimmed.Substring(1, trimmed.Length - 2).Trim();
+            }
+
+            return trimmed;
+        }
+
         // ── Synthetic fallback font ────────────────────────────────────────────
 
         /// <summary>
@@ -180,7 +194,7 @@ namespace VexFlowSharp.Common.Formatting
         private static readonly TextFormatterInfo _syntheticFallback = new TextFormatterInfo
         {
             Family = "_fallback",
-            Resolution = 1000,
+            Resolution = (int)VexFlowSharp.Metrics.GetDouble("TextFormatter.defaultResolution"),
             Glyphs = new Dictionary<string, double>(), // empty → uses DefaultAdvanceWidth
             Serifs = false,
             Monospaced = false,
@@ -194,7 +208,7 @@ namespace VexFlowSharp.Common.Formatting
         /// Matches VexFlow's fallback of ~0.65 em per character for '#' and '5'.
         /// Using 0.5 em as a reasonable average for sans-serif fonts.
         /// </summary>
-        private const double DefaultAdvanceWidthEm = 0.5;
+        private static double DefaultAdvanceWidthEm => VexFlowSharp.Metrics.GetDouble("TextFormatter.defaultAdvanceWidthEm");
 
         // ── Instance fields ────────────────────────────────────────────────────
 
@@ -239,7 +253,7 @@ namespace VexFlowSharp.Common.Formatting
         /// Port of VexFlow's fontSizeInPixels getter: size(pt) * (4/3).
         /// VexFlow's Font.scaleToPxFrom.pt = 4/3 (96 dpi / 72 pt-per-inch).
         /// </summary>
-        public double FontSizeInPixels => _sizeInPt * (4.0 / 3.0);
+        public double FontSizeInPixels => _sizeInPt * VexFlowSharp.Metrics.GetDouble("TextFormatter.ptToPx");
 
         /// <summary>Font size in points.</summary>
         public double FontSizeInPt => _sizeInPt;
@@ -325,12 +339,14 @@ namespace VexFlowSharp.Common.Formatting
         /// </summary>
         public void UpdateParams(TextFormatterInfo info)
         {
+            _textWidthCache.Remove(_cacheKey);
             if (!string.IsNullOrEmpty(info.Family)) _family = info.Family;
             if (info.Resolution > 0) _resolution = info.Resolution;
             if (info.Glyphs != null && info.Glyphs.Count > 0) _glyphs = info.Glyphs;
             _bold = info.Bold;
             _italic = info.Italic;
             _cacheKey = BuildCacheKey();
+            _textWidthCache.Remove(_cacheKey);
         }
 
         // ── Private helpers ────────────────────────────────────────────────────

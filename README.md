@@ -4,11 +4,11 @@ An (AI-assisted) C# port of [VexFlow](https://github.com/0xfe/vexflow) — the o
 
 ## Overview
 
-VexFlowSharp brings VexFlow's music notation rendering to C# environments, including Unity via UI Toolkit. It targets the same class hierarchy and rendering pipeline as VexFlow v4.x, with method names translated to PascalCase and object literals replaced by C# structs. If you already know VexFlow JS, the C# API will feel immediately familiar.
+VexFlowSharp brings VexFlow's music notation rendering to C# environments, including Unity via UI Toolkit. It targets the same class hierarchy and rendering pipeline as VexFlow, with method names translated to PascalCase and object literals replaced by C# structs or options classes. If you already know VexFlow JS, the C# API will feel immediately familiar.
 
-> **Note:** This port is currently based on VexFlow **4.2.6**.
+> **Note:** The scoped VexFlow **5.0.0** migration is complete for this repository. The public API is intentionally C#-idiomatic, so TypeScript `camelCase` options are exposed as PascalCase properties while preserving VexFlow's construction patterns where practical.
 
-Current status: 546 NUnit tests passing (554 total, 8 skipped), approximately 27,000 lines of C#.
+Current v5 parity baseline: 938 NUnit tests passing (938 total, 0 skipped). Maintainer-facing migration details live in [`docs/vexflow-5-migration.md`](docs/vexflow-5-migration.md), with visual comparison policy in [`docs/vexflow-5-visual-parity.md`](docs/vexflow-5-visual-parity.md) and upstream audit evidence in [`docs/vexflow-5-upstream-audit.md`](docs/vexflow-5-upstream-audit.md).
 
 ## Project Structure
 
@@ -26,6 +26,10 @@ Current status: 546 NUnit tests passing (554 total, 8 skipped), approximately 27
 | `VexFlowSharp.Unity` | Unity UPM package | `VexFlowElement` (custom `VisualElement`) and `UIElementsRenderContext` for Unity UI Toolkit / Painter2D rendering. Requires Unity 2022.1+. |
 
 The `VexFlowSharp.Skia.*` platform packages exist because SkiaSharp requires platform-specific native assets. Reference the appropriate platform package for your target OS. For cross-platform builds, reference `VexFlowSharp.Skia` directly and add SkiaSharp native asset packages manually.
+
+## Rendering Scope
+
+VexFlowSharp supports the backend-neutral `RenderContext` abstraction plus the concrete SkiaSharp and Unity UI Toolkit renderers listed above. VexFlow's browser-specific SVG, Canvas DOM, HTML element, CSS, event, and renderer bootstrap APIs are out of scope for the C# port unless a future renderer package explicitly adds them. For web-hosted .NET applications, use the Skia WebAssembly package or another `RenderContext` implementation rather than expecting the JavaScript SVG/Canvas renderer surface.
 
 ## Font Setup
 
@@ -227,12 +231,14 @@ var tie = factory.StaveTie(new TieNotes { FirstNote = n1, LastNote = n2 });
 | VexFlow JS | VexFlowSharp |
 |---|---|
 | `camelCase` methods (`addClef`, `addModifier`) | `PascalCase` methods (`AddClef`, `AddModifier`) |
+| `camelCase` options (`softmaxFactor`, `customPadding`) | `PascalCase` options (`SoftmaxFactor`, `CustomPadding`) |
 | `note.setContext(ctx).draw()` — chainable | `note.SetContext(ctx); note.Draw();` — two separate calls (`SetContext` returns `Element`, not the concrete subtype) |
 | `{ keys: ['c/4'], duration: 'q' }` object literal | `new StaveNoteStruct { Keys = new[] { "c/4" }, Duration = "q" }` C# object initializer |
 | Accidentals inferred from key signature context | Accidentals must be explicitly added: `note.AddModifier(new Accidental("#"), keyIndex)` |
 | `new Vex.Flow.Factory({ renderer: { elementId: 'div', width, height } })` | `new Factory(ctx, width, height)` — context is passed directly to the constructor |
+| SVG/Canvas DOM renderer setup | Use `SkiaRenderContext`, Unity `UIElementsRenderContext`, or another C# `RenderContext` implementation |
 | `require('vexflow')` / ESM import | Add `VexFlowSharp.Common` as a NuGet package or precompiled DLL reference |
-| `vf.EasyScore().set({ time: '4/4' }).notes(...)` | `var es = factory.EasyScore(); es.DefaultClef = "treble"; es.Notes("C5/q, D5");` |
+| `vf.EasyScore().set({ time: '4/4' }).notes(...)` | `var es = factory.EasyScore(); es.Set(new EasyScoreDefaults { Time = "4/4" }); es.Notes("C5/q, D5");` |
 
 ### SetContext and Draw are not chainable
 
@@ -281,15 +287,15 @@ Always call `factory.Draw()` rather than drawing elements individually to ensure
 
 VexFlowSharp.Common includes ports of the following VexFlow classes:
 
-**Notation objects:** `StaveNote`, `GraceNote`, `GhostNote`, `TabNote`, `NoteHead`, `Rest`
+**Notation objects:** `StaveNote`, `GraceNote`, `GhostNote`, `GlyphNote`, `RepeatNote`, `BarNote`, `ClefNote`, `TimeSigNote`, `KeySigNote`, `TextNote`, `TabNote`, `GraceTabNote`, `NoteHead`, `Rest`, `MultiMeasureRest`
 
-**Stave modifiers:** `Clef`, `TimeSignature`, `KeySignature`, `Barline`, `StaveSection`, `StaveTempoSection`, `StaveText`
+**Stave modifiers:** `Clef`, `TimeSignature`, `KeySignature`, `Barline`, `StaveSection`, `StaveTempo`, `StaveText`, `Repetition`, `Volta`
 
-**Modifiers:** `Accidental`, `Articulation`, `Annotation`, `Dot`, `Ornament`, `Vibrato`, `VibratoBracket`, `NoteSubGroup`, `GraceNoteGroup`
+**Modifiers:** `Accidental`, `Articulation`, `Annotation`, `Dot`, `Ornament`, `Vibrato`, `VibratoBracket`, `NoteSubGroup`, `GraceNoteGroup`, `FretHandFinger`, `StringNumber`, `Stroke`, `Tremolo`, `Parenthesis`
 
-**Connecting elements:** `Beam`, `StaveTie`, `Curve`, `StaveConnector`, `Tuplet`
+**Connecting elements:** `Beam`, `StaveTie`, `StaveHairpin`, `StaveLine`, `TabTie`, `TabSlide`, `Curve`, `StaveConnector`, `Tuplet`, `TextBracket`
 
-**Dynamic markings:** `TextDynamics`, `Crescendo`
+**Dynamic markings:** `TextDynamics`, `Crescendo`, `PedalMarking`, `ChordSymbol`
 
 **Formatting engine:** `Formatter`, `TickContext`, `ModifierContext`, `Voice`, `Fraction`
 
@@ -301,7 +307,7 @@ VexFlowSharp.Common includes ports of the following VexFlow classes:
 
 - **Cross-stave beaming** is not fully implemented. Beams within a single stave work correctly; beams that span two staves (common in piano music) require additional work.
 - **Bravura only.** The font system is wired to the Bravura SMuFL font. Other fonts (Gonville, Petaluma) are not included.
-- **Tab stave** notation is partially ported; full guitar tablature rendering has not been validated against reference images.
+- **Image parity is active for generated VexFlow 5 scenes.** Formatter, grand-staff, complex-notation, percussion, and gallery PNG references now run as normal tests with a documented cross-engine tolerance for SkiaSharp vs. node-canvas rasterization. The local upstream commit audit is complete for the vendored `4.2.2..5.0.0` range. MusicXML real-score excerpts remain C# output/smoke scenes because this repository has no local VexFlow 5 MusicXML reference renderer.
 
 ## Building
 
@@ -309,7 +315,7 @@ VexFlowSharp.Common includes ports of the following VexFlow classes:
 # Build all projects
 dotnet build
 
-# Run the test suite (546 passing)
+# Run the test suite
 dotnet test
 ```
 

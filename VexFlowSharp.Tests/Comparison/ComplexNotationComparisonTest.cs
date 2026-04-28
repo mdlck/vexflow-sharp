@@ -36,6 +36,17 @@ namespace VexFlowSharp.Tests.Comparison
             }
         }
 
+        private static string ReferenceImagesDir
+        {
+            get
+            {
+                string assemblyDir = Path.GetDirectoryName(
+                    typeof(ComplexNotationComparisonTest).Assembly.Location)!;
+                return Path.GetFullPath(
+                    Path.Combine(assemblyDir, "../../../reference-images"));
+            }
+        }
+
         // ── SetUp ─────────────────────────────────────────────────────────────
 
         [SetUp]
@@ -62,6 +73,10 @@ namespace VexFlowSharp.Tests.Comparison
         public void ComplexNotation_RendersToFile()
         {
             using var ctx = new SkiaRenderContext(600, 200);
+            ctx.Save();
+            ctx.SetFillStyle("#FFFFFF");
+            ctx.FillRect(0, 0, 600, 200);
+            ctx.Restore();
 
             // Draw stave with treble clef and 4/4 time signature
             var stave = new Stave(10, 40, 570);
@@ -164,6 +179,22 @@ namespace VexFlowSharp.Tests.Comparison
             var fileInfo = new System.IO.FileInfo(outPath);
             Assert.That(fileInfo.Length, Is.GreaterThan(0),
                 "Output PNG must be non-zero bytes");
+        }
+
+        [Test]
+        public void ComplexNotation_PixelComparison()
+        {
+            ComplexNotation_RendersToFile();
+
+            string actualPath = Path.Combine(OutputDir, "complex_notation-vfsharp.png");
+            string referencePath = Path.Combine(ReferenceImagesDir, "complex_notation-vexflow.png");
+            Assert.That(File.Exists(actualPath), Is.True, $"Actual PNG missing: {actualPath}");
+            Assert.That(File.Exists(referencePath), Is.True, $"Reference PNG missing: {referencePath}");
+
+            Infrastructure.ImageComparisonAssert.AssertImagesMatch(
+                File.ReadAllBytes(actualPath),
+                File.ReadAllBytes(referencePath),
+                thresholdPercent: ImageComparison.CrossEngineThresholdPercent);
         }
     }
 }

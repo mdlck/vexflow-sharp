@@ -21,6 +21,13 @@ namespace VexFlowSharp.Tests.Note
         {
             var n = new TestNote(new NoteStruct { Duration = "4", Keys = new[] { "c/4" } });
             Assert.That(n.GetDuration(), Is.EqualTo("4"));
+            Assert.That(n.GetCategory(), Is.EqualTo(VexFlowSharp.Note.CATEGORY));
+        }
+
+        [Test]
+        public void StemmableNote_CategoryIsV5Category()
+        {
+            Assert.That(StemmableNote.CATEGORY, Is.EqualTo("StemmableNote"));
         }
 
         [Test]

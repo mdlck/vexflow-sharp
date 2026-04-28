@@ -110,5 +110,14 @@ namespace VexFlowSharp.Tests.Core
             var t = new TestTickable(new Fraction(1, 4));
             Assert.That(t, Is.InstanceOf<Element>());
         }
+
+        [Test]
+        public void Category_IsV5Tickable()
+        {
+            var t = new TestTickable(new Fraction(1, 4));
+
+            Assert.That(Tickable.CATEGORY, Is.EqualTo("Tickable"));
+            Assert.That(t.GetCategory(), Is.EqualTo(Tickable.CATEGORY));
+        }
     }
 }

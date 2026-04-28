@@ -74,6 +74,15 @@ namespace VexFlowSharp.Tests.Fonts
     [Category("Glyph")]
     public class GlyphTests
     {
+        [Test]
+        public void Category_IsV5Glyph()
+        {
+            var glyph = new Glyph("noteheadBlack", 40);
+
+            Assert.That(Glyph.CATEGORY, Is.EqualTo("Glyph"));
+            Assert.That(glyph.GetCategory(), Is.EqualTo(Glyph.CATEGORY));
+        }
+
         /// <summary>
         /// Test 1: Y-inversion correctness.
         /// MOVE to (100,200) then LINE to (300,400) with scale=1.0, origin=(0,0)

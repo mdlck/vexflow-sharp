@@ -24,7 +24,7 @@ namespace VexFlowSharp
         // ── Category ──────────────────────────────────────────────────────────
 
         /// <summary>Category string used by ModifierContext to group articulations.</summary>
-        public const string CATEGORY = "articulations";
+        public new const string CATEGORY = "Articulation";
 
         /// <inheritdoc/>
         public override string GetCategory() => CATEGORY;
@@ -39,6 +39,8 @@ namespace VexFlowSharp
 
         /// <summary>Font scale used for rendering (matches Tables.NOTATION_FONT_SCALE).</summary>
         private readonly double fontScale = Tables.NOTATION_FONT_SCALE;
+
+        private const double InitialOffset = -0.5;
 
         // ── Constructor ───────────────────────────────────────────────────────
 
@@ -55,7 +57,7 @@ namespace VexFlowSharp
             // Resolve articulation struct — fall back to raw glyph code if not found
             if (Tables.ArticulationCodes.TryGetValue(type, out var art))
             {
-                articulation = art;
+                articulation = CloneArticulationStruct(art);
             }
             else
             {
@@ -73,6 +75,23 @@ namespace VexFlowSharp
                 if (w > 0) SetWidth(w);
             }
         }
+
+        public Articulation SetBetweenLines(bool betweenLines = true)
+        {
+            articulation.BetweenLines = betweenLines;
+            return this;
+        }
+
+        public bool GetBetweenLines() => articulation.BetweenLines;
+
+        private static ArticulationStruct CloneArticulationStruct(ArticulationStruct source)
+            => new ArticulationStruct
+            {
+                Code = source.Code,
+                AboveCode = source.AboveCode,
+                BelowCode = source.BelowCode,
+                BetweenLines = source.BetweenLines,
+            };
 
         // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -166,19 +185,18 @@ namespace VexFlowSharp
             if (articulations == null || articulations.Count == 0) return false;
 
             const double margin = 0.5;
+            double maxGlyphWidth = 0;
 
             // Compute increment (height in line units + margin)
             double GetIncrement(Articulation art, double line, ModifierPosition pos)
             {
-                double heightInLines = 1.0; // fallback: 1 line unit
+                double heightInLines = 1.0;
                 var code = art.GetGlyphCode();
                 if (!string.IsNullOrEmpty(code))
                 {
-                    // Height approximation: glyph Ha (ascent) in font units * scale / STAVE_LINE_DISTANCE
-                    double w = Glyph.GetWidth(code, art.fontScale);
-                    // Use width as proxy if Ha unavailable; VexFlow uses actual metric height
-                    // which requires a render pass; we approximate with 1.5 line units for most glyphs
-                    if (w > 0) heightInLines = 1.5;
+                    var metrics = new Glyph(code, art.fontScale).GetMetrics();
+                    if (metrics != null && metrics.Height > 0)
+                        heightInLines = metrics.Height / Tables.STAVE_LINE_DISTANCE;
                 }
                 return RoundToNearestHalf(GetRoundingFunction(line, pos), heightInLines + margin);
             }
@@ -186,6 +204,7 @@ namespace VexFlowSharp
             foreach (var art in articulations)
             {
                 var note     = (Note)art.GetNote();
+                maxGlyphWidth = Math.Max(note.GetMetrics().GlyphWidth, maxGlyphWidth);
                 bool hasStem = (note is StemmableNote sn0) && sn0.HasStem();
                 int stemDir  = (note is StemmableNote sn1) ? sn1.GetStemDirection() : Stem.UP;
                 double lines = 5;
@@ -237,6 +256,16 @@ namespace VexFlowSharp
                 }
             }
 
+            double width = 0;
+            foreach (var articulation in articulations)
+                width = Math.Max(articulation.GetWidth(), width);
+
+            double overlap = Math.Min(
+                Math.Max(width - maxGlyphWidth, 0),
+                Math.Max(width - (state.LeftShift + state.RightShift), 0));
+            state.LeftShift += overlap / 2;
+            state.RightShift += overlap / 2;
+
             return true;
         }
 
@@ -257,17 +286,14 @@ namespace VexFlowSharp
             double staffSpace = stave.GetSpacingBetweenLines();
             var pos          = GetPosition();
             bool canSitBetweenLines = articulation.BetweenLines;
+            bool isTab = note is TabNote;
 
             // X: centered over/under the note head
             var startXY = note.GetModifierStartXY(pos, idx);
             double x    = startXY.X;
+            bool shouldSitOutsideStaff = !canSitBetweenLines || isTab;
 
-            // Determine initial offset based on position vs stem direction
-            bool hasStem   = (note is StemmableNote snCheck) && snCheck.HasStem();
-            int stemDir    = (note is StemmableNote snDir) ? snDir.GetStemDirection() : Stem.UP;
-            bool isOnStemTip = (pos == ModifierPosition.Above && stemDir == Stem.UP)
-                            || (pos == ModifierPosition.Below && stemDir == Stem.DOWN);
-            double initialOffset = (hasStem && isOnStemTip) ? 0.5 : 1.0;
+            double initialOffset = GetInitialOffset(note, pos);
 
             double tl = textLine; // text line set by Format()
 
@@ -275,57 +301,32 @@ namespace VexFlowSharp
             int offsetDirection;
             if (pos == ModifierPosition.Above)
             {
-                double topY;
-                if (hasStem && stemDir == Stem.UP && note is StemmableNote snTop)
-                {
-                    try { topY = snTop.GetStemExtents().TopY; }
-                    catch
-                    {
-                        topY = note.GetYs().Length > 0 ? note.GetYs()[0] : startXY.Y;
-                    }
-                }
-                else
-                {
-                    double minY = double.MaxValue;
-                    foreach (var noteY in note.GetYs())
-                        if (noteY < minY) minY = noteY;
-                    topY = minY < double.MaxValue ? minY : startXY.Y;
-                }
-                y = topY - (tl + initialOffset) * staffSpace;
+                y = GetTopY(note, tl) - (tl + initialOffset) * staffSpace;
+                if (shouldSitOutsideStaff)
+                    y = Math.Min(stave.GetYForTopText(InitialOffset), y);
                 offsetDirection = -1;
             }
             else
             {
-                double botY;
-                if (hasStem && stemDir == Stem.DOWN && note is StemmableNote snBot)
-                {
-                    try { botY = snBot.GetStemExtents().TopY; }
-                    catch
-                    {
-                        botY = note.GetYs().Length > 0 ? note.GetYs()[note.GetYs().Length - 1] : startXY.Y;
-                    }
-                }
-                else
-                {
-                    double maxY = double.MinValue;
-                    foreach (var noteY in note.GetYs())
-                        if (noteY > maxY) maxY = noteY;
-                    botY = maxY > double.MinValue ? maxY : startXY.Y;
-                }
-                y = botY + (tl + initialOffset) * staffSpace;
+                y = GetBottomY(note, tl) + (tl + initialOffset) * staffSpace;
+                if (shouldSitOutsideStaff)
+                    y = Math.Max(stave.GetYForBottomText(InitialOffset), y);
                 offsetDirection = +1;
             }
 
             // Snap to staff
-            var kProps      = note.GetKeyProps();
-            double noteLine = (idx < kProps.Count) ? kProps[idx].Line : 3.0;
-            double[] noteYs = note.GetYs();
-            double distanceFromNote = (noteYs.Length > idx)
-                ? (noteYs[idx] - y) / staffSpace
-                : 0;
-            double articLine  = distanceFromNote + noteLine;
-            double snappedLine = SnapLineToStaff(canSitBetweenLines, articLine, pos, offsetDirection);
-            y += Math.Abs(snappedLine - articLine) * staffSpace * offsetDirection;
+            if (!isTab)
+            {
+                var kProps      = note.GetKeyProps();
+                double noteLine = (idx < kProps.Count) ? kProps[idx].Line : 3.0;
+                double[] noteYs = note.GetYs();
+                double distanceFromNote = (noteYs.Length > idx)
+                    ? (noteYs[idx] - y) / staffSpace
+                    : 0;
+                double articLine  = distanceFromNote + noteLine;
+                double snappedLine = SnapLineToStaff(canSitBetweenLines, articLine, pos, offsetDirection);
+                y += Math.Abs(snappedLine - articLine) * staffSpace * offsetDirection;
+            }
 
             // Render the glyph
             var code = GetGlyphCode();
@@ -334,6 +335,90 @@ namespace VexFlowSharp
                 var g = new Glyph(code, fontScale);
                 g.Render(ctx, x, y);
             }
+        }
+
+        private static double GetTopY(Note note, double textLine)
+        {
+            int stemDirection = note.GetStemDirection();
+            if (note is TabNote tabNote)
+            {
+                if (tabNote.HasStem())
+                {
+                    var extents = tabNote.GetStemExtents();
+                    return stemDirection == Stem.UP
+                        ? extents.TopY
+                        : note.CheckStave().GetYForTopText(textLine);
+                }
+                return note.CheckStave().GetYForTopText(textLine);
+            }
+
+            if (note is StemmableNote stemmable)
+            {
+                if (stemmable.HasStem())
+                {
+                    var extents = stemmable.GetStemExtents();
+                    return stemDirection == Stem.UP ? extents.TopY : extents.BaseY;
+                }
+
+                return Min(note.GetYs());
+            }
+
+            throw new VexFlowException("UnknownCategory", "Only can get the top and bottom ys of stavenotes and tabnotes");
+        }
+
+        private static double GetBottomY(Note note, double textLine)
+        {
+            int stemDirection = note.GetStemDirection();
+            if (note is TabNote tabNote)
+            {
+                if (tabNote.HasStem())
+                {
+                    var extents = tabNote.GetStemExtents();
+                    return stemDirection == Stem.UP
+                        ? note.CheckStave().GetYForBottomText(textLine)
+                        : extents.TopY;
+                }
+                return note.CheckStave().GetYForBottomText(textLine);
+            }
+
+            if (note is StemmableNote stemmable)
+            {
+                if (stemmable.HasStem())
+                {
+                    var extents = stemmable.GetStemExtents();
+                    return stemDirection == Stem.UP ? extents.BaseY : extents.TopY;
+                }
+
+                return Max(note.GetYs());
+            }
+
+            throw new VexFlowException("UnknownCategory", "Only can get the top and bottom ys of stavenotes and tabnotes");
+        }
+
+        private static double GetInitialOffset(Note note, ModifierPosition position)
+        {
+            bool isOnStemTip =
+                (position == ModifierPosition.Above && note.GetStemDirection() == Stem.UP) ||
+                (position == ModifierPosition.Below && note.GetStemDirection() == Stem.DOWN);
+
+            if (note is TabNote)
+                return note.HasStem() && isOnStemTip ? 1 : 0;
+
+            return note.HasStem() && isOnStemTip ? 0.5 : 1;
+        }
+
+        private static double Min(double[] values)
+        {
+            double min = values[0];
+            foreach (var value in values) if (value < min) min = value;
+            return min;
+        }
+
+        private static double Max(double[] values)
+        {
+            double max = values[0];
+            foreach (var value in values) if (value > max) max = value;
+            return max;
         }
     }
 }

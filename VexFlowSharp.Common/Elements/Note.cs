@@ -85,6 +85,8 @@ namespace VexFlowSharp
     /// </summary>
     public abstract class Note : Tickable
     {
+        public new const string CATEGORY = "Note";
+
         // ── Fields ────────────────────────────────────────────────────────────
 
         /// <summary>Glyph properties for this note's duration and type.</summary>
@@ -108,8 +110,16 @@ namespace VexFlowSharp
         /// <summary>Number of augmentation dots.</summary>
         protected int dots;
 
+        public override string GetCategory() => CATEGORY;
+
         /// <summary>Y coordinates for each note head in this note/chord.</summary>
         protected double[] ys;
+
+        /// <summary>Tuplets this note belongs to, ordered from outermost to innermost.</summary>
+        protected List<Tuplet> tupletStack = new List<Tuplet>();
+
+        /// <summary>The innermost tuplet this note belongs to, if any.</summary>
+        protected Tuplet? tuplet;
 
         /// <summary>Manual X position (used when tickContext is null).</summary>
         protected double x = 0;
@@ -281,7 +291,7 @@ namespace VexFlowSharp
                 double absX = tc.GetX();
                 // Add stave noteStartX + stave padding (matches VexFlow note.ts getAbsoluteX)
                 if (stave != null)
-                    absX += stave.GetNoteStartX() + VexFlowSharp.Tables.STAVE_PADDING;
+                    absX += stave.GetNoteStartX() + Metrics.GetDouble("Stave.padding");
                 return absX + xShift;
             }
             return x;
@@ -326,6 +336,45 @@ namespace VexFlowSharp
             return this;
         }
 
+        /// <summary>Associate this note with a tuplet, preserving insertion order.</summary>
+        public Note SetTuplet(Tuplet tuplet)
+        {
+            if (!tupletStack.Contains(tuplet))
+            {
+                tupletStack.Add(tuplet);
+                ApplyTickMultiplier(tuplet.GetNotesOccupied(), tuplet.GetNoteCount());
+            }
+            this.tuplet = tuplet;
+            return this;
+        }
+
+        /// <summary>Remove this note's association with a tuplet.</summary>
+        public Note ResetTuplet(Tuplet? tuplet = null)
+        {
+            if (tuplet != null)
+            {
+                if (tupletStack.Remove(tuplet))
+                    ApplyTickMultiplier(tuplet.GetNoteCount(), tuplet.GetNotesOccupied());
+            }
+            else
+            {
+                while (tupletStack.Count > 0)
+                {
+                    var current = tupletStack[tupletStack.Count - 1];
+                    tupletStack.RemoveAt(tupletStack.Count - 1);
+                    ApplyTickMultiplier(current.GetNoteCount(), current.GetNotesOccupied());
+                }
+            }
+            this.tuplet = tupletStack.Count > 0 ? tupletStack[tupletStack.Count - 1] : null;
+            return this;
+        }
+
+        /// <summary>Get a copy of the tuplets this note belongs to.</summary>
+        public List<Tuplet> GetTupletStack() => new List<Tuplet>(tupletStack);
+
+        /// <summary>Get the innermost tuplet this note belongs to.</summary>
+        public override object? GetTuplet() => tuplet;
+
         // ── Note metrics ──────────────────────────────────────────────────────
 
         /// <summary>
@@ -338,12 +387,14 @@ namespace VexFlowSharp
             // Include modifier context state so TickContext allocates space for accidentals/dots.
             double modLeft  = modifierContext?.GetState().LeftShift  ?? 0;
             double modRight = modifierContext?.GetState().RightShift ?? 0;
+            double formattedWidth = GetWidth();
+            double notePx = formattedWidth - modLeft - modRight - leftDisplacedHeadPx - rightDisplacedHeadPx;
 
             return new NoteMetrics
             {
-                Width                = width,
+                Width                = formattedWidth,
                 GlyphWidth           = glyphProps.HeadWidth,
-                NotePx               = width,
+                NotePx               = notePx,
                 ModLeftPx            = modLeft,
                 ModRightPx           = modRight,
                 LeftDisplacedHeadPx  = leftDisplacedHeadPx,
@@ -360,12 +411,14 @@ namespace VexFlowSharp
         {
             double modLeft  = modifierContext?.GetState().LeftShift  ?? 0;
             double modRight = modifierContext?.GetState().RightShift ?? 0;
+            double formattedWidth = GetWidth();
+            double notePx = formattedWidth - modLeft - modRight - leftDisplacedHeadPx - rightDisplacedHeadPx;
 
             return new NoteMetrics
             {
-                Width                = width,
+                Width                = formattedWidth,
                 GlyphWidth           = glyphProps.HeadWidth,
-                NotePx               = width,
+                NotePx               = notePx,
                 ModLeftPx            = modLeft,
                 ModRightPx           = modRight,
                 LeftDisplacedHeadPx  = leftDisplacedHeadPx,
@@ -424,7 +477,28 @@ namespace VexFlowSharp
         /// Port of VexFlow note.ts getFirstDotPx().
         /// Returns rightDisplacedHeadPx by default; override for parenthesis padding.
         /// </summary>
-        public virtual double GetFirstDotPx() => rightDisplacedHeadPx;
+        public virtual double GetRightParenthesisPx(int index)
+        {
+            var props = GetKeyProps()[index];
+            return props.Displaced ? GetRightDisplacedHeadPx() : 0;
+        }
+
+        public virtual double GetLeftParenthesisPx(int index)
+        {
+            var props = GetKeyProps()[index];
+            return props.Displaced ? GetLeftDisplacedHeadPx() - GetXShift() : -GetXShift();
+        }
+
+        public virtual double GetFirstDotPx()
+        {
+            double px = rightDisplacedHeadPx;
+            var parentheses = GetModifierContext()?.GetMembers(Parenthesis.CATEGORY);
+
+            if (parentheses != null && parentheses.Count != 0 && parentheses[0] is Parenthesis parenthesis)
+                px += parenthesis.GetWidth() + 1;
+
+            return px;
+        }
 
         // ── Modifier start XY ─────────────────────────────────────────────────
 

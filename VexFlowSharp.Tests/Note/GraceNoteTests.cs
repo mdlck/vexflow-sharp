@@ -5,8 +5,11 @@
 // Verifies: SCALE=0.66, LEDGER_LINE_OFFSET=2, 0.66 scale, width=3, GraceNoteGroup.GetWidth() > 0.
 
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using VexFlowSharp;
+using VexFlowSharp.Common.Formatting;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.Note
 {
@@ -61,6 +64,19 @@ namespace VexFlowSharp.Tests.Note
             });
         }
 
+        [Test]
+        public void GraceNote_CategoryIsV5Category()
+        {
+            var n = new GraceNote(new GraceNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/4" },
+            });
+
+            Assert.That(n.GetCategory(), Is.EqualTo(GraceNote.CATEGORY));
+            Assert.That(GraceNote.CATEGORY, Is.EqualTo("GraceNote"));
+        }
+
         // ── Scale ──────────────────────────────────────────────────────────────
 
         /// <summary>
@@ -76,6 +92,18 @@ namespace VexFlowSharp.Tests.Note
                 Keys = new[] { "c/4" },
             });
             Assert.That(n.GetStaveNoteScale(), Is.EqualTo(0.66));
+        }
+
+        [Test]
+        public void GraceNote_GetStemExtension_AppliesV5ScaleAdjustment()
+        {
+            var n = new GraceNote(new GraceNoteStruct
+            {
+                Duration = "8",
+                Keys = new[] { "c/4" },
+            });
+
+            Assert.That(n.GetStemExtension(), Is.EqualTo(Stem.HEIGHT * GraceNote.SCALE - Stem.HEIGHT).Within(1e-9));
         }
 
         // ── Width ──────────────────────────────────────────────────────────────
@@ -109,6 +137,105 @@ namespace VexFlowSharp.Tests.Note
             var group = new GraceNoteGroup(new List<GraceNote> { g1, g2 });
             group.PreFormat();
             Assert.That(group.GetWidth(), Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void GraceNoteGroup_CategoryIsV5Category()
+        {
+            var group = new GraceNoteGroup(new List<GraceNote>());
+
+            Assert.That(group.GetCategory(), Is.EqualTo(GraceNoteGroup.CATEGORY));
+            Assert.That(GraceNoteGroup.CATEGORY, Is.EqualTo("GraceNoteGroup"));
+        }
+
+        [Test]
+        public void GraceNoteGroup_Format_ConsumesLeftShiftAndSetsSpacing()
+        {
+            var note = new StaveNote(new StaveNoteStruct { Duration = "4", Keys = new[] { "c/4" } });
+            var g1 = new GraceNote(new GraceNoteStruct { Duration = "8", Keys = new[] { "c/4" } });
+            var g2 = new GraceNote(new GraceNoteStruct { Duration = "8", Keys = new[] { "d/4" } });
+            var group = new GraceNoteGroup(new List<GraceNote> { g1, g2 });
+            note.AddModifier(group);
+            var state = new ModifierContextState();
+
+            GraceNoteGroup.Format(new List<GraceNoteGroup> { group }, state);
+
+            Assert.That(state.LeftShift, Is.EqualTo(group.GetWidth() + 4).Within(0.0001));
+            Assert.That(state.RightShift, Is.EqualTo(0).Within(0.0001));
+            Assert.That(group.GetSpacingFromNextModifier(), Is.EqualTo(StaveNote.minNoteheadPadding).Within(0.0001));
+        }
+
+        [Test]
+        public void GraceNoteGroup_BeamNotes_AttachesV5GraceBeamOptions()
+        {
+            var g1 = new GraceNote(new GraceNoteStruct { Duration = "8", Keys = new[] { "c/4" } });
+            var g2 = new GraceNote(new GraceNoteStruct { Duration = "8", Keys = new[] { "d/4" } });
+            var group = new GraceNoteGroup(new List<GraceNote> { g1, g2 });
+
+            Assert.That(group.BeamNotes(), Is.SameAs(group));
+
+            Assert.That(g1.HasBeam(), Is.True);
+            Assert.That(g2.HasBeam(), Is.True);
+            Assert.That(g1.GetBeam()!.RenderOptions.BeamWidth, Is.EqualTo(3));
+            Assert.That(g1.GetBeam()!.RenderOptions.PartialBeamLength, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void BeamedGraceNote_UsesScaledStemBeamExtension()
+        {
+            var g1 = new GraceNote(new GraceNoteStruct { Duration = "32", Keys = new[] { "c/4" } });
+            var g2 = new GraceNote(new GraceNoteStruct { Duration = "32", Keys = new[] { "d/4" } });
+
+            new GraceNoteGroup(new List<GraceNote> { g1, g2 }).BeamNotes();
+
+            double expected = Stem.HEIGHT * GraceNote.SCALE - Stem.HEIGHT + 7.5 * GraceNote.SCALE;
+            Assert.That(g1.GetStemExtension(), Is.EqualTo(expected).Within(1e-9));
+        }
+
+        [Test]
+        public void GraceNoteGroup_DrawSlur_UsesStaveTieShape()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 20, 300);
+            stave.SetContext(ctx);
+            var note = new StaveNote(new StaveNoteStruct { Duration = "4", Keys = new[] { "c/4" } });
+            var grace = new GraceNote(new GraceNoteStruct { Duration = "8", Keys = new[] { "d/4" } });
+            var group = new GraceNoteGroup(new List<GraceNote> { grace }, showSlur: true);
+            note.SetStave(stave).SetX(100).AddModifier(group);
+            note.PreFormat();
+            group.SetContext(ctx);
+
+            group.Draw();
+
+            Assert.That(ctx.GetCalls("QuadraticCurveTo").Count(), Is.EqualTo(2));
+            Assert.That(ctx.HasCall("Fill"), Is.True);
+        }
+
+        [Test]
+        public void GraceNoteGroup_RenderOptions_ApplySlurYShift()
+        {
+            double DrawAndGetFirstControlY(double slurYShift)
+            {
+                var ctx = new RecordingRenderContext();
+                var stave = new Stave(10, 20, 300);
+                stave.SetContext(ctx);
+                var note = new StaveNote(new StaveNoteStruct { Duration = "4", Keys = new[] { "c/4" } });
+                var grace = new GraceNote(new GraceNoteStruct { Duration = "8", Keys = new[] { "d/4" } });
+                var group = new GraceNoteGroup(new List<GraceNote> { grace }, showSlur: true);
+                group.RenderOptions.SlurYShift = slurYShift;
+                note.SetStave(stave).SetX(100).AddModifier(group);
+                note.PreFormat();
+                group.SetContext(ctx);
+
+                group.Draw();
+
+                return ctx.GetCalls("QuadraticCurveTo").First().Args[1];
+            }
+
+            double defaultControlY = DrawAndGetFirstControlY(0);
+            double shiftedControlY = DrawAndGetFirstControlY(4);
+
+            Assert.That(shiftedControlY, Is.Not.EqualTo(defaultControlY));
         }
 
         // ── Slash flag ─────────────────────────────────────────────────────────

@@ -38,6 +38,10 @@ namespace VexFlowSharp
     /// </summary>
     public abstract class StaveModifier : Element
     {
+        public new const string CATEGORY = "StaveModifier";
+
+        public override string GetCategory() => CATEGORY;
+
         protected double width = 0;
         protected double x = 0;
         protected double padding = 10;

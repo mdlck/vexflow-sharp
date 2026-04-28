@@ -23,10 +23,13 @@ namespace VexFlowSharp
         // ── Category ──────────────────────────────────────────────────────────
 
         /// <summary>Category string used by ModifierContext to group ornaments.</summary>
-        public const string CATEGORY = "ornaments";
+        public new const string CATEGORY = "Ornament";
 
         /// <inheritdoc/>
         public override string GetCategory() => CATEGORY;
+
+        /// <summary>Minimum horizontal padding between ornaments and neighboring noteheads/modifiers.</summary>
+        public static double MinPadding => Metrics.GetDouble("NoteHead.minPadding");
 
         // ── Static ornament type groups ───────────────────────────────────────
 
@@ -49,8 +52,7 @@ namespace VexFlowSharp
         /// </summary>
         public static readonly string[] OrnamentAlignWithNoteHead =
         {
-            "doit", "fall", "fallLong", "doitLong", "bend",
-            "plungerClosed", "plungerOpen", "scoop",
+            "doit", "fall", "fallLong", "doitLong", "scoop",
         };
 
         /// <summary>
@@ -61,6 +63,12 @@ namespace VexFlowSharp
         {
             "doit", "fall", "fallLong", "doitLong", "jazzTurn", "smear", "flip",
         };
+
+        public static readonly string[] OrnamentLeft = { "scoop" };
+
+        public static readonly string[] OrnamentRight = { "doit", "fall", "fallLong", "doitLong" };
+
+        public static readonly string[] OrnamentYShift = { "fallLong" };
 
         /// <summary>
         /// Ornaments that go above/below the note based on space availability.
@@ -88,17 +96,13 @@ namespace VexFlowSharp
         /// <summary>Whether to align with note head rather than stem.</summary>
         private readonly bool alignWithNoteHead;
 
+        private double? delayXShift;
+
         /// <summary>Accidental glyph above the ornament (e.g., trill with sharp).</summary>
         public Glyph? AccidentalUpper { get; private set; }
 
         /// <summary>Accidental glyph below the ornament.</summary>
         public Glyph? AccidentalLower { get; private set; }
-
-        /// <summary>Padding between ornament and upper accidental (px).</summary>
-        private const double AccidentalUpperPadding = 3.0;
-
-        /// <summary>Padding between ornament and lower accidental (px).</summary>
-        private const double AccidentalLowerPadding = 3.0;
 
         /// <summary>Reported width override for jazz ornaments that overlap the next bar.</summary>
         private readonly double reportedWidth;
@@ -114,11 +118,12 @@ namespace VexFlowSharp
         {
             Type = type;
             position = ModifierPosition.Above;
+            if (Array.IndexOf(OrnamentRight, type) >= 0)
+                position = ModifierPosition.Right;
+            if (Array.IndexOf(OrnamentLeft, type) >= 0)
+                position = ModifierPosition.Left;
 
-            if (!Tables.OrnamentCodes.TryGetValue(type, out var code))
-                throw new VexFlowException("ArgumentError", $"Ornament not found: '{type}'");
-
-            glyphCode = code;
+            glyphCode = Tables.OrnamentCode(type);
 
             // Jazz ornaments that release after the note are delayed by default
             Delayed = Array.IndexOf(OrnamentNoteTransition, type) >= 0;
@@ -138,6 +143,14 @@ namespace VexFlowSharp
 
         /// <summary>Set whether the ornament should be delayed (jazz ornaments).</summary>
         public Ornament SetDelayed(bool delayed) { Delayed = delayed; return this; }
+
+        public override Modifier SetNote(Element n)
+        {
+            base.SetNote(n);
+            if (Array.IndexOf(OrnamentArticulation, Type) >= 0 && n is Note note)
+                position = note.GetLineNumber() >= 3 ? ModifierPosition.Above : ModifierPosition.Below;
+            return this;
+        }
 
         /// <summary>SMuFL code of the upper accidental (set via SetUpperAccidental).</summary>
         private string? accidentalUpperCode;
@@ -188,19 +201,26 @@ namespace VexFlowSharp
             double rightShift  = state.RightShift;
             double leftShift   = state.LeftShift;
             double yOffset     = 0;
-            const int increment = 2;
+            double increment = Metrics.GetDouble("Ornament.textLineIncrement");
+            double sideShift = Metrics.GetDouble("Ornament.sideShift");
 
             foreach (var ornament in ornaments)
             {
-                bool isRelease      = Array.IndexOf(OrnamentRelease, ornament.Type) >= 0;
-                bool isAttack       = Array.IndexOf(OrnamentAttack, ornament.Type) >= 0;
                 bool isArticulation = Array.IndexOf(OrnamentArticulation, ornament.Type) >= 0;
 
-                if (isRelease)
-                    ornament.xShift += rightShift + 2;
+                if (ornament.GetPosition() == ModifierPosition.Right)
+                {
+                    ornament.xShift += rightShift + sideShift;
+                    rightShift += ornament.GetWidth() + MinPadding;
+                    continue;
+                }
 
-                if (isAttack)
-                    ornament.xShift -= leftShift + 2;
+                if (ornament.GetPosition() == ModifierPosition.Left)
+                {
+                    ornament.xShift -= leftShift + ornament.GetWidth() + sideShift;
+                    leftShift += ornament.GetWidth() + MinPadding;
+                    continue;
+                }
 
                 if (ornament.reportedWidth != 0 && ornament.xShift < 0)
                     leftShift += ornament.reportedWidth;
@@ -220,13 +240,13 @@ namespace VexFlowSharp
                     {
                         state.TopTextLine += increment;
                         ornament.yShift   += yOffset;
-                        yOffset           -= Tables.STAVE_LINE_DISTANCE; // approximate glyph height
+                        yOffset           -= ornament.GetGlyphHeight();
                     }
                     else
                     {
                         state.TextLine  += increment;
                         ornament.yShift += yOffset;
-                        yOffset         += Tables.STAVE_LINE_DISTANCE;
+                        yOffset         += ornament.GetGlyphHeight();
                     }
                 }
                 else
@@ -249,6 +269,11 @@ namespace VexFlowSharp
             return true;
         }
 
+        private double GetGlyphHeight()
+        {
+            return new Glyph(glyphCode, fontScale).GetMetrics()?.Height ?? Tables.STAVE_LINE_DISTANCE;
+        }
+
         // ── Draw ──────────────────────────────────────────────────────────────
 
         /// <summary>
@@ -259,6 +284,13 @@ namespace VexFlowSharp
         {
             var ctx  = CheckContext();
             var note = (Note)GetNote();
+            rendered = true;
+
+            string groupClass = "ornament";
+            var classAttribute = GetAttribute("class");
+            if (!string.IsNullOrEmpty(classAttribute))
+                groupClass += " " + classAttribute;
+            ctx.OpenGroup(groupClass, GetId());
 
             var stave    = note.CheckStave();
             double spacing = stave.GetSpacingBetweenLines();
@@ -286,12 +318,12 @@ namespace VexFlowSharp
             }
 
             bool isPlacedOnNoteheadSide = stemDir == Stem.DOWN;
-            double lineSpacing = 1;
+            double lineSpacing = Metrics.GetDouble("Ornament.lineSpacing");
 
             // Beamed stems are longer — adjust spacing
             if (!isPlacedOnNoteheadSide && note is StaveNote snBeam)
             {
-                try { if (snBeam.GetBeam() != null) lineSpacing += 0.5; }
+                try { if (snBeam.GetBeam() != null) lineSpacing += Metrics.GetDouble("Ornament.beamedLineSpacing"); }
                 catch { /* no beam */ }
             }
 
@@ -310,12 +342,11 @@ namespace VexFlowSharp
 
             glyphY += yShift;
 
-            // Adjust for delayed ornaments (jazz ornaments placed after the note)
             if (Delayed)
             {
-                // Simple offset: push right by half the glyph width
-                double w = Glyph.GetWidth(glyphCode, fontScale);
-                glyphX += w / 2;
+                double computedDelay = delayXShift ?? ComputeDelayXShift(note, stave, glyphX);
+                delayXShift = computedDelay;
+                glyphX += computedDelay;
             }
 
             // Render lower accidental first
@@ -323,27 +354,37 @@ namespace VexFlowSharp
             {
                 try
                 {
-                    AccidentalLower.Render(ctx, glyphX, glyphY);
-                    double lowerH = Glyph.GetWidth(accidentalLowerCode, fontScale / 1.3);
-                    glyphY -= lowerH + AccidentalLowerPadding;
+                    var metrics = AccidentalLower.GetMetrics();
+                    double lowerX = glyphX + xShift - (metrics?.Width ?? 0) * 0.5;
+                    AccidentalLower.Render(ctx, lowerX, glyphY);
+                    glyphY -= (metrics?.Height ?? Glyph.GetWidth(accidentalLowerCode, fontScale / 1.3))
+                        + Metrics.GetDouble("Ornament.accidentalLowerPadding");
                 }
                 catch { /* glyph not available — skip */ }
             }
+
+            if (Array.IndexOf(OrnamentYShift, Type) >= 0)
+                yShift += new Glyph(glyphCode, fontScale).GetMetrics()?.Height ?? GetWidth();
 
             // Render ornament glyph
             try
             {
                 var g = new Glyph(glyphCode, fontScale);
-                g.Render(ctx, glyphX, glyphY);
+                double renderX = glyphX + xShift;
+                if (position == ModifierPosition.Above || position == ModifierPosition.Below)
+                    renderX -= GetWidth() * 0.5;
+                g.Render(ctx, renderX, glyphY + yShift);
 
                 // Render upper accidental above the ornament
                 if (AccidentalUpper != null && accidentalUpperCode != null)
                 {
                     try
                     {
-                        double ornH = Glyph.GetWidth(glyphCode, fontScale);
-                        glyphY -= ornH + AccidentalUpperPadding;
-                        AccidentalUpper.Render(ctx, glyphX, glyphY);
+                        double ornH = g.GetMetrics()?.Height ?? GetWidth();
+                        glyphY -= ornH + Metrics.GetDouble("Ornament.accidentalUpperPadding");
+                        var upperMetrics = AccidentalUpper.GetMetrics();
+                        double upperX = glyphX + xShift - (upperMetrics?.Width ?? 0) * 0.5;
+                        AccidentalUpper.Render(ctx, upperX, glyphY + yShift);
                     }
                     catch { /* glyph not available — skip */ }
                 }
@@ -352,6 +393,28 @@ namespace VexFlowSharp
             {
                 // Glyph not available in font data — skip rendering silently
             }
+
+            DrawPointerRect();
+            ctx.CloseGroup();
+        }
+
+        private double ComputeDelayXShift(Note note, Stave stave, double glyphX)
+        {
+            double startX = note.GetTickContext()?.GetX() ?? note.GetAbsoluteX();
+            var voice = note.GetVoice();
+            if (voice != null)
+            {
+                var tickables = voice.GetTickables();
+                int index = tickables.IndexOf(note);
+                if (index >= 0 && index + 1 < tickables.Count)
+                {
+                    var nextContext = tickables[index + 1].GetTickContext();
+                    if (nextContext != null)
+                        return (nextContext.GetX() - startX) * 0.5;
+                }
+            }
+
+            return (stave.GetX() + stave.GetWidth() - glyphX) * 0.5;
         }
     }
 }

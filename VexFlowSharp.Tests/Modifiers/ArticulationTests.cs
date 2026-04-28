@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using VexFlowSharp;
 using VexFlowSharp.Common.Formatting;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.Modifiers
 {
@@ -50,7 +51,7 @@ namespace VexFlowSharp.Tests.Modifiers
 
         [Test]
         public void Category_IsArticulations()
-            => Assert.AreEqual("articulations", Articulation.CATEGORY);
+            => Assert.AreEqual("Articulation", Articulation.CATEGORY);
 
         // ── Format tests ───────────────────────────────────────────────────────
 
@@ -85,7 +86,7 @@ namespace VexFlowSharp.Tests.Modifiers
         {
             // Staccato 'a.' is BetweenLines = true (may sit in a space)
             var art = new Articulation("a.");
-            Assert.AreEqual("articulations", art.GetCategory());
+            Assert.AreEqual("Articulation", art.GetCategory());
             Assert.AreEqual(ModifierPosition.Above, art.GetPosition(),
                 "Default position should be ABOVE");
         }
@@ -94,7 +95,7 @@ namespace VexFlowSharp.Tests.Modifiers
         public void DrawArticulations_TenutoAboveNote()
         {
             var art = new Articulation("a-");
-            Assert.AreEqual("articulations", art.GetCategory());
+            Assert.AreEqual("Articulation", art.GetCategory());
             // Tenuto BetweenLines = true
             Assert.IsTrue(Tables.ArticulationCodes["a-"].BetweenLines,
                 "Tenuto BetweenLines must be true");
@@ -104,7 +105,7 @@ namespace VexFlowSharp.Tests.Modifiers
         public void DrawArticulations_AccentAboveNote()
         {
             var art = new Articulation("a>");
-            Assert.AreEqual("articulations", art.GetCategory());
+            Assert.AreEqual("Articulation", art.GetCategory());
             Assert.IsNotNull(Tables.ArticulationCodes["a>"].AboveCode,
                 "Accent must have an AboveCode");
         }
@@ -120,8 +121,8 @@ namespace VexFlowSharp.Tests.Modifiers
 
             var artAbove = new Articulation("a@a");
             var artBelow = new Articulation("a@u");
-            Assert.AreEqual("articulations", artAbove.GetCategory());
-            Assert.AreEqual("articulations", artBelow.GetCategory());
+            Assert.AreEqual("Articulation", artAbove.GetCategory());
+            Assert.AreEqual("Articulation", artBelow.GetCategory());
         }
 
         [Test]
@@ -132,8 +133,8 @@ namespace VexFlowSharp.Tests.Modifiers
             var fermata  = new Articulation("a@a");
 
             // Both should be articulations
-            Assert.AreEqual("articulations", staccato.GetCategory());
-            Assert.AreEqual("articulations", fermata.GetCategory());
+            Assert.AreEqual("Articulation", staccato.GetCategory());
+            Assert.AreEqual("Articulation", fermata.GetCategory());
 
             // BetweenLines flag should differ
             Assert.IsTrue(Tables.ArticulationCodes["a."].BetweenLines,
@@ -146,12 +147,78 @@ namespace VexFlowSharp.Tests.Modifiers
         public void DrawArticulations2_Marcato()
         {
             var art = new Articulation("a^");
-            Assert.AreEqual("articulations", art.GetCategory());
+            Assert.AreEqual("Articulation", art.GetCategory());
             // Marcato BetweenLines = false (must sit outside staff)
             Assert.IsFalse(Tables.ArticulationCodes["a^"].BetweenLines,
                 "Marcato BetweenLines must be false");
             Assert.IsNotNull(Tables.ArticulationCodes["a^"].AboveCode,
                 "Marcato must have an AboveCode");
+        }
+
+        [Test]
+        public void SetBetweenLines_OverridesTableValue()
+        {
+            var art = new Articulation("a^").SetBetweenLines(true);
+            var state = new ModifierContextState();
+            var note = new StaveNote(new StaveNoteStruct { Keys = new[] { "c/4" }, Duration = "4" });
+            note.SetStave(new Stave(10, 20, 300)).AddModifier(art);
+
+            Assert.DoesNotThrow(() => Articulation.Format(new List<Articulation> { art }, state));
+        }
+
+        [Test]
+        public void Format_UsesGlyphHeightForTextLineIncrement()
+        {
+            var state = new ModifierContextState();
+            var art = new Articulation("a.");
+            var note = new StaveNote(new StaveNoteStruct { Keys = new[] { "c/4" }, Duration = "4" });
+            note.SetStave(new Stave(10, 20, 300)).AddModifier(art);
+            string code = Tables.ArticulationCodes["a."].AboveCode ?? Tables.ArticulationCodes["a."].Code!;
+            double expectedIncrement = System.Math.Ceiling(((new Glyph(code, Tables.NOTATION_FONT_SCALE).GetMetrics()!.Height / Tables.STAVE_LINE_DISTANCE) + 0.5) / 0.5) * 0.5;
+
+            Articulation.Format(new List<Articulation> { art }, state);
+
+            Assert.That(state.TopTextLine, Is.EqualTo(expectedIncrement).Within(0.0001));
+        }
+
+        [Test]
+        public void Format_AddsSymmetricHorizontalOverlapBeyondNotehead()
+        {
+            var state = new ModifierContextState();
+            var art = new Articulation("a@a");
+            var note = new StaveNote(new StaveNoteStruct { Keys = new[] { "c/4" }, Duration = "4" });
+            note.SetStave(new Stave(10, 20, 300)).AddModifier(art);
+            double expectedOverlap = System.Math.Min(
+                System.Math.Max(art.GetWidth() - note.GetMetrics().GlyphWidth, 0),
+                System.Math.Max(art.GetWidth() - (state.LeftShift + state.RightShift), 0));
+
+            Articulation.Format(new List<Articulation> { art }, state);
+
+            Assert.That(state.LeftShift, Is.EqualTo(expectedOverlap / 2).Within(0.0001));
+            Assert.That(state.RightShift, Is.EqualTo(expectedOverlap / 2).Within(0.0001));
+        }
+
+        [Test]
+        public void Draw_TabNoteArticulationRendersWithoutStaffSnap()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new TabStave(10, 20, 300);
+            stave.SetContext(ctx);
+            var note = new TabNote(new TabNoteStruct
+            {
+                Positions = new[] { new TabNotePosition { Str = 3, Fret = 7 } },
+                Duration = "4",
+            });
+            var art = new Articulation("a.");
+            note.SetStave(stave);
+            note.SetContext(ctx);
+            note.AddModifier(art);
+            note.PreFormat();
+            art.SetContext(ctx);
+
+            art.Draw();
+
+            Assert.That(ctx.HasCall("Fill"), Is.True);
         }
     }
 }

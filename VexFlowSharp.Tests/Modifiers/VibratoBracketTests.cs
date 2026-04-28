@@ -17,6 +17,7 @@ namespace VexFlowSharp.Tests.Modifiers
             var stop    = new GhostNote("q");
             var bracket = new VibratoBracket(start, stop);
             Assert.IsNotNull(bracket);
+            Assert.That(bracket.GetCategory(), Is.EqualTo(VibratoBracket.CATEGORY));
         }
 
         [Test]

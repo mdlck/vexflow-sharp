@@ -25,7 +25,7 @@ namespace VexFlowSharp.Tests.Elements
             // pixel differences are always 99%+ for complex note rendering.
 
             // Verify static category
-            Assert.That(NoteSubGroup.CATEGORY, Is.EqualTo("notesubgroups"));
+            Assert.That(NoteSubGroup.CATEGORY, Is.EqualTo("NoteSubGroup"));
         }
 
         [Test]
@@ -82,11 +82,11 @@ namespace VexFlowSharp.Tests.Elements
 
         [Test]
         [Category("Unit")]
-        public void CategoryIsNoteSubGroups()
+        public void CategoryIsV5NoteSubGroup()
         {
             var note = new GhostNote(new NoteStruct { Duration = "4" });
             var group = new NoteSubGroup(new List<VexFlowNote> { note });
-            Assert.That(group.GetCategory(), Is.EqualTo("notesubgroups"));
+            Assert.That(group.GetCategory(), Is.EqualTo("NoteSubGroup"));
         }
 
         [Test]

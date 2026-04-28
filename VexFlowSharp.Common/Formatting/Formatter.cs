@@ -22,13 +22,13 @@ namespace VexFlowSharp.Common.Formatting
     public class FormatterOptions
     {
         /// <summary>Softmax factor for proportional spacing. Defaults to Tables.SOFTMAX_FACTOR (10).</summary>
-        public double SoftmaxFactor { get; set; } = VexFlowSharp.Tables.SOFTMAX_FACTOR;
+        public double SoftmaxFactor { get; set; } = Metrics.GetDouble("Formatter.softmaxFactor");
 
         /// <summary>Use global softmax across all staves. Defaults to false.</summary>
         public bool GlobalSoftmax { get; set; } = false;
 
         /// <summary>Maximum justify iterations. Defaults to 5.</summary>
-        public int MaxIterations { get; set; } = 5;
+        public int MaxIterations { get; set; } = (int)Metrics.GetDouble("Formatter.maxIterations");
     }
 
     /// <summary>
@@ -177,10 +177,7 @@ namespace VexFlowSharp.Common.Formatting
 
         /// <summary>
         /// Helper to format and draw a single voice onto a stave.
-        /// Returns null (voice BoundingBox not implemented yet).
         /// Port of Formatter.FormatAndDraw() from formatter.ts.
-        ///
-        /// Note: autoBeam path requires Beam class (plan 03-04).
         /// </summary>
         public static VexFlowSharp.BoundingBox? FormatAndDraw(
             VexFlowSharp.RenderContext ctx,
@@ -216,8 +213,18 @@ namespace VexFlowSharp.Common.Formatting
                 beam.Draw();
             }
 
-            return null; // BoundingBox from voice not yet implemented
+            return voice.GetBoundingBox();
         }
+
+        /// <summary>
+        /// Convenience overload matching VexFlow's boolean autoBeam parameter.
+        /// </summary>
+        public static VexFlowSharp.BoundingBox? FormatAndDraw(
+            VexFlowSharp.RenderContext ctx,
+            VexFlowSharp.Stave stave,
+            List<VexFlowSharp.StemmableNote> notes,
+            bool autoBeam)
+            => FormatAndDraw(ctx, stave, notes, new FormatParams { AutoBeam = autoBeam });
 
         // ── Context creation ──────────────────────────────────────────────────
 
@@ -599,10 +606,10 @@ namespace VexFlowSharp.Common.Formatting
 
             if (contextList.Count == 1) return 0;
 
-            // Determine padding bounds from Tables constants
-            double configMinPadding = VexFlowSharp.Tables.STAVE_END_PADDING_MIN;
-            double configMaxPadding = VexFlowSharp.Tables.STAVE_END_PADDING_MAX;
-            double leftPadding      = VexFlowSharp.Tables.STAVE_PADDING;
+            // Determine padding bounds from common metrics.
+            double configMinPadding = Metrics.GetDouble("Stave.endPaddingMin");
+            double configMaxPadding = Metrics.GetDouble("Stave.endPaddingMax");
+            double leftPadding      = Metrics.GetDouble("Stave.padding");
 
             // Calculate minimum distance between contexts
             double CalcMinDistance(double tW, double[] dists)
@@ -709,16 +716,18 @@ namespace VexFlowSharp.Common.Formatting
             }
 
             // Compute duration stats (mean space used per duration type)
-            var durationStats = new Dictionary<string, (double Mean, int Count)>(StringComparer.Ordinal);
+            var durationStats = new Dictionary<string, (double Mean, int Count, double Total)>(StringComparer.Ordinal);
 
             void UpdateStats(string dur, double space)
             {
                 if (!durationStats.ContainsKey(dur))
-                    durationStats[dur] = (space, 1);
+                    durationStats[dur] = (space, 1, space);
                 else
                 {
-                    var (mean, count) = durationStats[dur];
-                    durationStats[dur] = ((mean + space) / 2.0, count + 1);
+                    var (_, count, total) = durationStats[dur];
+                    total += space;
+                    count += 1;
+                    durationStats[dur] = (total / count, count, total);
                 }
             }
 
@@ -797,26 +806,6 @@ namespace VexFlowSharp.Common.Formatting
             var contexts = tickContexts;
             if (contexts.List.Count == 0) return 0;
 
-            void Move(TickContext current, double shift,
-                TickContext? prev, TickContext? next)
-            {
-                current.SetX(current.GetX() + shift);
-                var cfm = current.GetFormatterMetrics();
-                cfm.FreedomLeft  += shift;
-                cfm.FreedomRight -= shift;
-
-                if (prev != null)
-                {
-                    var pfm = prev.GetFormatterMetrics();
-                    pfm.FreedomRight += shift;
-                }
-                if (next != null)
-                {
-                    var nfm = next.GetFormatterMetrics();
-                    nfm.FreedomLeft -= shift;
-                }
-            }
-
             double shift = 0;
             totalShift = 0;
 
@@ -828,12 +817,9 @@ namespace VexFlowSharp.Common.Formatting
                 TickContext? nextContext = index < contexts.List.Count - 1
                     ? contexts.Map[contexts.List[index + 1]] : null;
 
-                Move(context, shift, prevContext, nextContext);
+                context.Move(shift, prevContext, nextContext);
 
-                // Cost is negative sum of deviations for tickables in this context
-                double cost = 0;
-                foreach (var t in context.GetTickables())
-                    cost -= t.GetFormatterMetrics().SpaceDeviation;
+                double cost = -context.GetDeviationCost();
 
                 if (cost > 0)
                 {
@@ -898,16 +884,81 @@ namespace VexFlowSharp.Common.Formatting
                 AlignRestsToNotes(voice.GetTickables(), alignAllNotes);
         }
 
+        private static double MidLine(double top, double bottom) => (top + bottom) / 2.0;
+
+        private static double GetRestLineForNextNoteGroup(
+            List<VexFlowSharp.Tickable> tickables,
+            double currRestLine,
+            int currNoteIndex,
+            bool compare)
+        {
+            double nextRestLine = currRestLine;
+
+            for (int noteIndex = currNoteIndex + 1; noteIndex < tickables.Count; noteIndex++)
+            {
+                if (tickables[noteIndex] is Note note && !note.IsRest() && !note.ShouldIgnoreTicks())
+                {
+                    nextRestLine = note.GetLineForRest();
+                    break;
+                }
+            }
+
+            if (compare && Math.Abs(currRestLine - nextRestLine) > double.Epsilon)
+            {
+                double top = Math.Max(currRestLine, nextRestLine);
+                double bot = Math.Min(currRestLine, nextRestLine);
+                nextRestLine = MidLine(top, bot);
+            }
+
+            return nextRestLine;
+        }
+
         /// <summary>
         /// Align rests to neighboring notes within a list of tickables.
         /// Port of Formatter.AlignRestsToNotes() from formatter.ts.
-        /// In Phase 3, this is a no-op (rest line positioning requires Note.GetLineForRest,
-        /// which is a Phase 4 concern). The method signature is provided for API completeness.
         /// </summary>
         public static void AlignRestsToNotes(List<VexFlowSharp.Tickable> tickables, bool alignAllNotes,
             bool alignTuplets = false)
         {
-            // Phase 3: rest alignment deferred to Phase 4 (requires GetLineForRest on Note).
+            for (int index = 0; index < tickables.Count; index++)
+            {
+                if (tickables[index] is not StaveNote currTickable || !currTickable.IsRest())
+                    continue;
+
+                if (currTickable.GetTuplet() != null && !alignTuplets)
+                    continue;
+
+                double line = currTickable.GetLineForRest();
+                if (Math.Abs(line - 3) > double.Epsilon)
+                    continue;
+
+                if (!alignAllNotes && currTickable.GetBeam() == null)
+                    continue;
+
+                double newLine = currTickable.GetKeyLine(0);
+                if (index == 0)
+                {
+                    newLine = GetRestLineForNextNoteGroup(tickables, newLine, index, compare: false);
+                }
+                else if (index > 0 && index < tickables.Count)
+                {
+                    var prevTickable = tickables[index - 1];
+                    if (prevTickable is StaveNote prevStaveNote)
+                    {
+                        if (prevStaveNote.IsRest())
+                        {
+                            newLine = prevStaveNote.GetKeyLine(0);
+                        }
+                        else
+                        {
+                            double restLine = prevStaveNote.GetLineForRest();
+                            newLine = GetRestLineForNextNoteGroup(tickables, restLine, index, compare: true);
+                        }
+                    }
+                }
+
+                currTickable.SetKeyLine(0, newLine);
+            }
         }
 
         /// <summary>
@@ -946,10 +997,9 @@ namespace VexFlowSharp.Common.Formatting
             // Justify to stave note area minus defaultPadding.
             // VexFlow: justifyWidth = stave.getNoteEndX() - stave.getNoteStartX() - Stave.defaultPadding
             // where defaultPadding = stave.padding + stave.endPaddingMax = 12 + 10 = 22.
-            // Port: Tables.STAVE_PADDING (12) + Tables.STAVE_END_PADDING_MAX (10) = 22.
             double justifyW = stave.GetNoteEndX()
                 - stave.GetNoteStartX()
-                - (VexFlowSharp.Tables.STAVE_PADDING + VexFlowSharp.Tables.STAVE_END_PADDING_MAX);
+                - VexFlowSharp.Stave.DefaultPadding;
 
             Format(voicesToFormat, justifyW, options);
             return this;

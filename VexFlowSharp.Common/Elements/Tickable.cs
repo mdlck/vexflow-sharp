@@ -42,6 +42,8 @@ namespace VexFlowSharp
     /// </summary>
     public abstract class Tickable : Element
     {
+        public new const string CATEGORY = "Tickable";
+
         /// <summary>Whether the formatter should ignore this tickable.</summary>
         protected bool ignoreTicks = false;
 
@@ -92,6 +94,8 @@ namespace VexFlowSharp
             formatterMetrics = new FormatterMetrics();
         }
 
+        public override string GetCategory() => CATEGORY;
+
         /// <summary>Get the tick duration of this element.</summary>
         public Fraction GetTicks() => ticks;
 
@@ -102,8 +106,8 @@ namespace VexFlowSharp
             return this;
         }
 
-        /// <summary>Get the rendered width in pixels.</summary>
-        public double GetWidth() => width;
+        /// <summary>Get the rendered width in pixels, including modifier context width.</summary>
+        public double GetWidth() => width + (modifierContext?.GetWidth() ?? 0);
 
         /// <summary>Set the rendered width. Returns this for fluent chaining.</summary>
         public Tickable SetWidth(double w)
@@ -150,6 +154,7 @@ namespace VexFlowSharp
         public Tickable ApplyTickMultiplier(int numerator, int denominator)
         {
             tickMultiplier = tickMultiplier.Multiply(new Fraction(numerator, denominator));
+            ticks = tickMultiplier.Multiply(new Fraction(intrinsicTicks, 1));
             return this;
         }
 

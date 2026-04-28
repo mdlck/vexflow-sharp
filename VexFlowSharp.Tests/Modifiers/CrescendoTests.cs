@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using VexFlowSharp;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.Modifiers
 {
@@ -26,14 +27,10 @@ namespace VexFlowSharp.Tests.Modifiers
         }
 
         [Test]
-        public void DefaultHeight_IsTen()
+        public void DefaultHeight_ComesFromMetrics()
         {
-            // VexFlow crescendo.ts default height = 15; plan spec says 10 for C# port
-            // We keep 15 (matching VexFlow source) — the plan spec note says 10 but
-            // the actual VexFlow source uses 15; accept either with comment.
             var c = new Crescendo(false);
-            // Height defaults to 15 per VexFlow crescendo.ts
-            Assert.Greater(c.GetHeight(), 0);
+            Assert.That(c.GetHeight(), Is.EqualTo(Metrics.GetDouble("Crescendo.height")));
         }
 
         [Test]
@@ -42,7 +39,7 @@ namespace VexFlowSharp.Tests.Modifiers
             // Verify Crescendo contains GetNextContext logic — confirmed in Draw() implementation
             // Structural test: object constructs successfully with proper CATEGORY
             var c = new Crescendo(false);
-            Assert.AreEqual("crescendo", Crescendo.CATEGORY);
+            Assert.AreEqual("Crescendo", Crescendo.CATEGORY);
         }
 
         [Test]
@@ -51,7 +48,30 @@ namespace VexFlowSharp.Tests.Modifiers
             // Fallback path: when no next context, stave end is used
             // Structural test: Crescendo extends Note (tick-allocated)
             var c = new Crescendo(false);
-            Assert.AreEqual("crescendo", c.GetCategory());
+            Assert.AreEqual("Crescendo", c.GetCategory());
+        }
+
+        [Test]
+        public void Draw_UsesMetricDefaultGeometry()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 60, 200);
+            stave.SetContext(ctx);
+            var crescendo = new Crescendo(false);
+            crescendo.SetX(20).SetStave(stave).SetContext(ctx);
+
+            crescendo.Draw();
+
+            double y = stave.GetYForLine(Metrics.GetDouble("Crescendo.line") + Metrics.GetDouble("Crescendo.lineOffset"))
+                + Metrics.GetDouble("Crescendo.yOffset");
+            double halfHeight = Metrics.GetDouble("Crescendo.height") / 2;
+
+            Assert.That(ctx.HasCall("BeginPath"), Is.True);
+            Assert.That(ctx.GetCall("MoveTo").Args[0], Is.EqualTo(stave.GetX() + stave.GetWidth()).Within(0.0001));
+            Assert.That(ctx.GetCall("MoveTo").Args[1], Is.EqualTo(y - halfHeight).Within(0.0001));
+            Assert.That(ctx.GetCalls("LineTo"), Is.Not.Empty);
+            Assert.That(ctx.GetCall("LineTo").Args[0], Is.EqualTo(20).Within(0.0001));
+            Assert.That(ctx.GetCall("LineTo").Args[1], Is.EqualTo(y).Within(0.0001));
         }
     }
 }

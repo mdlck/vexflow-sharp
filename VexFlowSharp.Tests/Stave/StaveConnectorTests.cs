@@ -4,6 +4,7 @@
 using NUnit.Framework;
 using VexFlowSharp;
 using VexFlowSharp.Skia;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.StaveConnectorTests
 {
@@ -53,6 +54,7 @@ namespace VexFlowSharp.Tests.StaveConnectorTests
 
             // Verify enum type string aliases
             Assert.That(brace.GetConnectorType(), Is.EqualTo(StaveConnectorType.Brace));
+            Assert.That(brace.GetCategory(), Is.EqualTo(StaveConnector.CATEGORY));
             Assert.That(bracket.GetConnectorType(), Is.EqualTo(StaveConnectorType.Bracket));
             Assert.That(single.GetConnectorType(), Is.EqualTo(StaveConnectorType.Single));
             Assert.That(single.GetConnectorType(), Is.EqualTo(StaveConnectorType.SingleLeft));
@@ -128,6 +130,46 @@ namespace VexFlowSharp.Tests.StaveConnectorTests
 
             conn.SetType("none");
             Assert.That(conn.GetConnectorType(), Is.EqualTo(StaveConnectorType.None));
+        }
+
+        [Test]
+        [Category("Unit")]
+        public void ThinDoubleConnector_UsesMetricGeometry()
+        {
+            var ctx = new RecordingRenderContext();
+            var top = new Stave(80, 40, 200);
+            var bot = new Stave(80, 160, 200);
+            var conn = new StaveConnector(top, bot)
+                .SetType(StaveConnectorType.ThinDouble)
+                .SetContext(ctx);
+
+            conn.Draw();
+
+            var rects = ctx.GetCalls("FillRect").ToArray();
+            Assert.That(rects.Length, Is.EqualTo(2));
+            Assert.That(rects[0].Args[2], Is.EqualTo(Metrics.GetDouble("StaveConnector.singleLineWidth")).Within(0.0001));
+            Assert.That(rects[1].Args[0], Is.EqualTo(rects[0].Args[0] - Metrics.GetDouble("StaveConnector.thinDoubleGap")).Within(0.0001));
+        }
+
+        [Test]
+        [Category("Unit")]
+        public void ConnectorText_UsesMetricOffsets()
+        {
+            var ctx = new RecordingRenderContext();
+            var top = new Stave(80, 40, 200);
+            var bot = new Stave(80, 160, 200);
+            var conn = new StaveConnector(top, bot)
+                .SetType(StaveConnectorType.None)
+                .SetText("Piano", shiftX: 2, shiftY: 3)
+                .SetContext(ctx);
+
+            conn.Draw();
+
+            Assert.That(ctx.GetCall("SetLineWidth").Args[0], Is.EqualTo(Metrics.GetDouble("StaveConnector.textLineWidth")).Within(0.0001));
+            Assert.That(ctx.GetCall("FillText").Args[0], Is.EqualTo(80 - Metrics.GetDouble("StaveConnector.textXOffset") + 2).Within(0.0001));
+            Assert.That(
+                ctx.GetCall("FillText").Args[1],
+                Is.EqualTo((top.GetYForLine(0) + bot.GetYForLine(bot.GetNumLines() - 1)) / 2.0 + 3 + Metrics.GetDouble("StaveConnector.textYOffset")).Within(0.0001));
         }
     }
 }

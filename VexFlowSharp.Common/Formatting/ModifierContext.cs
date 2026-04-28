@@ -91,29 +91,29 @@ namespace VexFlowSharp.Common.Formatting
                 // 1. StaveNote — real implementation (Phase 3)
                 s => StaveNote.Format(GetStaveNotes(), s),
 
-                // 2. Parenthesis — stub (Phase 4)
-                _ => { },
+                // 2. Parenthesis — real implementation (v5 migration)
+                s => Parenthesis.Format(GetModifiers<Parenthesis>(Parenthesis.CATEGORY), s),
 
                 // 3. Dots — real implementation (Phase 4)
                 s => Dot.Format(GetModifiers<Dot>(Dot.CATEGORY), s),
 
-                // 4. FretHandFinger — stub (Phase 4)
-                _ => { },
+                // 4. FretHandFinger — real implementation (v5 migration)
+                s => FretHandFinger.Format(GetModifiers<FretHandFinger>(FretHandFinger.CATEGORY), s),
 
                 // 5. Accidentals — real implementation (Phase 4)
                 s => Accidental.Format(GetModifiers<Accidental>(Accidental.CATEGORY), s),
 
-                // 6. Stroke — stub (Phase 4)
-                _ => { },
+                // 6. Stroke — real implementation (v5 migration)
+                s => Stroke.Format(GetModifiers<Stroke>(Stroke.CATEGORY), s),
 
-                // 7. GraceNoteGroups — stub (Phase 4)
-                _ => { },
+                // 7. GraceNoteGroups — real implementation (v5 migration)
+                s => GraceNoteGroup.Format(GetModifiers<GraceNoteGroup>(GraceNoteGroup.CATEGORY), s),
 
                 // 8. NoteSubGroup — real implementation (Phase 5)
                 s => NoteSubGroup.Format(GetModifiers<NoteSubGroup>(NoteSubGroup.CATEGORY), s),
 
-                // 9. StringNumber — stub (Phase 4)
-                _ => { },
+                // 9. StringNumber — real implementation (v5 migration)
+                s => StringNumber.Format(GetModifiers<StringNumber>(StringNumber.CATEGORY), s),
 
                 // 10. Articulation — real implementation (Phase 4, plan 04-02)
                 s => Articulation.Format(GetModifiers<Articulation>(Articulation.CATEGORY), s),
@@ -124,11 +124,11 @@ namespace VexFlowSharp.Common.Formatting
                 // 12. Annotation — real implementation (Phase 4, plan 04-05)
                 s => Annotation.Format(GetModifiers<Annotation>(Annotation.CATEGORY), s),
 
-                // 13. ChordSymbol — stub (Phase 4)
-                _ => { },
+                // 13. ChordSymbol — real implementation (v5 migration)
+                s => ChordSymbol.Format(GetModifiers<ChordSymbol>(ChordSymbol.CATEGORY), s),
 
-                // 14. Bend — stub (Phase 4)
-                _ => { },
+                // 14. Bend — real implementation (v5 migration)
+                s => Bend.Format(GetModifiers<Bend>(Bend.CATEGORY), s),
 
                 // 15. Vibrato — real implementation (Phase 4, plan 04-05)
                 s => Vibrato.Format(GetModifiers<Vibrato>(Vibrato.CATEGORY), s, this),

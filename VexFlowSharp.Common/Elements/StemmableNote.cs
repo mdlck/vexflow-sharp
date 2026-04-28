@@ -17,6 +17,10 @@ namespace VexFlowSharp
     /// </summary>
     public abstract class StemmableNote : Note
     {
+        public new const string CATEGORY = "StemmableNote";
+
+        public override string GetCategory() => CATEGORY;
+
         // ── Fields ────────────────────────────────────────────────────────────
 
         /// <summary>The stem for this note (null until BuildStem is called).</summary>
@@ -90,7 +94,7 @@ namespace VexFlowSharp
                     double scale = Tables.NOTATION_FONT_SCALE;
                     try
                     {
-                        flag = new Glyph(flagCode, scale);
+                        flag = new Flag(flagCode, scale);
                     }
                     catch
                     {
@@ -157,6 +161,9 @@ namespace VexFlowSharp
         {
             if (stemExtensionOverride.HasValue)
                 return stemExtensionOverride.Value;
+
+            if (beam != null)
+                return glyphProps.StemBeamExtension * GetStaveNoteScale();
 
             return stemDirection == Stem.UP
                 ? glyphProps.StemUpExtension

@@ -158,17 +158,17 @@ namespace VexFlowSharp.Tests.Formatting
 
         /// <summary>
         /// Two StaveNotes in the same ModifierContext produce a non-negative right shift
-        /// when their ranges intersect (stem-up C4 vs stem-down C4 at same position).
+        /// when their ranges intersect and v5 unison compatibility requires a visual offset.
         /// </summary>
         [Test]
         public void StaveNoteFormat_TwoNotes_ProducesShift()
         {
             var state = new ModifierContextState();
 
-            // Two quarter notes at the same pitch with opposite stem directions.
-            // They will intersect, so Format should shift one of them.
+            // Same-pitch quarter notes with different styles cannot use the v5 unison overlap shortcut.
             var noteU = MakeNote("c/4", "4", Stem.UP);
             var noteL = MakeNote("c/4", "4", Stem.DOWN);
+            noteL.SetStyle(new ElementStyle { FillStyle = "red" });
 
             var notes = new List<StaveNote> { noteU, noteL };
             bool result = StaveNote.Format(notes, state);
@@ -176,6 +176,21 @@ namespace VexFlowSharp.Tests.Formatting
             Assert.That(result, Is.True, "Format returns true for two notes");
             // The two notes overlap — a right shift should have been applied.
             Assert.That(state.RightShift, Is.GreaterThan(0), "RightShift increased for overlapping voices");
+        }
+
+        [Test]
+        public void StaveNoteFormat_OppositeStemQuarterAgainstHalf_DoesNotShift()
+        {
+            var state = new ModifierContextState();
+            var upper = MakeNote("c/5", "4", Stem.UP);
+            var lower = MakeNote("c/4", "2", Stem.DOWN);
+
+            bool result = StaveNote.Format(new List<StaveNote> { upper, lower }, state);
+
+            Assert.That(result, Is.True);
+            Assert.That(upper.GetXShift(), Is.EqualTo(0));
+            Assert.That(lower.GetXShift(), Is.EqualTo(0));
+            Assert.That(state.RightShift, Is.EqualTo(0));
         }
 
         // ── 8. StaveNoteFormat_NullOrEmpty_ReturnsFalse ───────────────────────

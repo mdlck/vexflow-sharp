@@ -17,6 +17,8 @@ namespace VexFlowSharp
     /// </summary>
     public class GhostNote : StemmableNote
     {
+        public new const string CATEGORY = "GhostNote";
+
         // ── Fields ────────────────────────────────────────────────────────────
 
         /// <summary>Whether this note has been pre-formatted.</summary>
@@ -52,6 +54,8 @@ namespace VexFlowSharp
         /// Port of GhostNote.isRest() from ghostnote.ts.
         /// </summary>
         public override bool IsRest() => true;
+
+        public override string GetCategory() => CATEGORY;
 
         // ── SetStave override ─────────────────────────────────────────────────
 

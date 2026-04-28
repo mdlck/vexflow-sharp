@@ -9,19 +9,25 @@ using System.Linq;
 
 namespace VexFlowSharp
 {
+    public class StaveLineConfig
+    {
+        public bool? Visible { get; set; }
+    }
+
     /// <summary>
     /// Options for configuring a Stave.
     /// Port of VexFlow's StaveOptions interface from stave.ts.
     /// </summary>
     public class StaveOptions
     {
-        public int    NumLines                 { get; set; } = 5;
-        public double SpacingBetweenLinesPx    { get; set; } = Tables.STAVE_LINE_DISTANCE; // 10.0
-        public double SpaceAboveStaffLn        { get; set; } = 4.0;
-        public double SpaceBelowStaffLn        { get; set; } = 4.0;
-        public double TopTextPosition          { get; set; } = 1.0;
-        public double BottomTextPosition       { get; set; } = 4.0;  // set to NumLines in ResetLines
-        public string FillStyle                { get; set; } = "#999999";
+        public int    NumLines                 { get; set; } = (int)Metrics.GetDouble("Stave.numLines");
+        public double SpacingBetweenLinesPx    { get; set; } = Metrics.GetDouble("Stave.spacingBetweenLinesPx");
+        public double SpaceAboveStaffLn        { get; set; } = Metrics.GetDouble("Stave.spaceAboveStaffLn");
+        public double SpaceBelowStaffLn        { get; set; } = Metrics.GetDouble("Stave.spaceBelowStaffLn");
+        public double TopTextPosition          { get; set; } = Metrics.GetDouble("Stave.topTextPosition");
+        public double BottomTextPosition       { get; set; } = Metrics.GetDouble("Stave.bottomTextPosition");  // set to NumLines in ResetLines
+        public double VerticalBarWidth         { get; set; } = Metrics.GetDouble("Stave.verticalBarWidth");
+        public string FillStyle                { get; set; } = Metrics.GetString("Stave.strokeStyle");
         public bool   LeftBar                  { get; set; } = true;
         public bool   RightBar                 { get; set; } = true;
         /// <summary>Whether each line is visible. Populated by ResetLines().</summary>
@@ -38,6 +44,10 @@ namespace VexFlowSharp
     /// </summary>
     public class Stave : Element
     {
+        public new const string CATEGORY = "Stave";
+
+        public override string GetCategory() => CATEGORY;
+
         // ── Fields ────────────────────────────────────────────────────────────
 
         protected double x;
@@ -53,6 +63,7 @@ namespace VexFlowSharp
 
         protected readonly StaveOptions options;
         protected readonly List<StaveModifier> modifiers;
+        protected ElementStyle defaultLedgerLineStyle;
 
         // ── Constructor ───────────────────────────────────────────────────────
 
@@ -72,6 +83,7 @@ namespace VexFlowSharp
             this.modifiers = new List<StaveModifier>();
 
             this.options = options ?? new StaveOptions();
+            this.defaultLedgerLineStyle = new ElementStyle { StrokeStyle = "#444", LineWidth = 2 };
 
             ResetLines();
 
@@ -136,11 +148,25 @@ namespace VexFlowSharp
 
         /// <summary>Y of the top edge of the topmost staff line.</summary>
         public double GetTopLineTopY()
-            => GetYForLine(0) - Tables.STAVE_LINE_THICKNESS / 2;
+            => GetYForLine(0);
 
         /// <summary>Y of the bottom edge of the bottommost staff line.</summary>
         public double GetBottomLineBottomY()
-            => GetYForLine(options.NumLines - 1) + Tables.STAVE_LINE_THICKNESS / 2;
+            => GetYForLine(options.NumLines - 1) + GetLineWidth();
+
+        /// <summary>Y for the center of the virtual line immediately below the staff.</summary>
+        public double GetBottomLineY()
+            => GetYForLine(options.NumLines);
+
+        /// <summary>Y coordinate of the full stave bottom, including configured space below the staff.</summary>
+        public double GetBottomY()
+            => GetBottomLineY() + options.SpaceBelowStaffLn * options.SpacingBetweenLinesPx;
+
+        public override BoundingBox? GetBoundingBox()
+            => new BoundingBox(x, y, width, GetBottomY() - y);
+
+        private double GetLineWidth()
+            => GetStyle()?.LineWidth ?? Tables.STAVE_LINE_THICKNESS;
 
         /// <summary>Reverse of GetYForLine: staff line for a given y.</summary>
         public double GetLineForY(double yCoord)
@@ -165,6 +191,28 @@ namespace VexFlowSharp
             return startX;
         }
 
+        /// <summary>
+        /// Pixels shifted from the stave origin after formatting begin modifiers.
+        /// Mirrors VexFlow's getModifierXShift() helper used by stave-attached decorations.
+        /// </summary>
+        public double GetModifierXShift(int index = 0)
+        {
+            if (!formatted) Format();
+
+            if (GetModifiers(StaveModifierPosition.Begin).Count == 1)
+                return 0;
+
+            if (index >= 0 && index < modifiers.Count && modifiers[index].GetPosition() == StaveModifierPosition.Right)
+                return 0;
+
+            double shiftedStartX = startX - x;
+            var begBarline = modifiers[0] as Barline;
+            if (begBarline?.GetBarlineType() == BarlineType.RepeatBegin && shiftedStartX > begBarline.GetWidth())
+                shiftedStartX -= begBarline.GetWidth();
+
+            return shiftedStartX;
+        }
+
         /// <summary>Override the note start x position.</summary>
         public Stave SetNoteStartX(double x)
         {
@@ -175,15 +223,15 @@ namespace VexFlowSharp
 
         /// <summary>
         /// Default padding (left + right) used by System to calculate justify width.
-        /// Approximates VexFlow's stave.padding + stave.endPaddingMax from font metrics.
+        /// Mirrors VexFlow's stave.padding + stave.endPaddingMax from font metrics.
         /// </summary>
-        public static double DefaultPadding => Tables.STAVE_LINE_DISTANCE;
+        public static double DefaultPadding => Metrics.GetDouble("Stave.padding") + Metrics.GetDouble("Stave.endPaddingMax");
 
         /// <summary>
         /// Right padding used by System when startX is already determined (autoWidth).
-        /// Approximates VexFlow's stave.endPaddingMax from font metrics.
+        /// Mirrors VexFlow's stave.endPaddingMax from font metrics.
         /// </summary>
-        public static double RightPadding => 0;
+        public static double RightPadding => Metrics.GetDouble("Stave.endPaddingMax");
 
         /// <summary>
         /// Align beginning modifiers (clef, key signature, time signature) across multiple staves.
@@ -268,7 +316,7 @@ namespace VexFlowSharp
 
         public double GetX() => x;
 
-        public void SetX(double newX)
+        public Stave SetX(double newX)
         {
             double shift = newX - x;
             formatted = false;
@@ -277,39 +325,101 @@ namespace VexFlowSharp
             endX   += shift;
             foreach (var mod in modifiers)
                 mod.SetX(mod.GetX() + shift);
+            return this;
         }
 
         public double GetY() => y;
 
-        public void SetY(double newY) { y = newY; }
+        public Stave SetY(double newY) { y = newY; return this; }
 
         public double GetWidth() => width;
 
-        public void SetWidth(double w)
+        public Stave SetWidth(double w)
         {
             formatted = false;
             width = w;
             endX  = x + w;
+            return this;
         }
 
         public double GetHeight() => height;
 
         public int GetNumLines() => options.NumLines;
 
-        public void SetNumLines(int n)
+        public Stave SetNumLines(int n)
         {
             options.NumLines = n;
             ResetLines();
+            return this;
         }
 
         public double GetSpacingBetweenLines() => options.SpacingBetweenLinesPx;
+
+        public double GetVerticalBarWidth() => options.VerticalBarWidth;
+
+        public List<StaveLineConfig> GetConfigForLines()
+        {
+            return options.LineConfig
+                .Select(visible => new StaveLineConfig { Visible = visible })
+                .ToList();
+        }
+
+        public Stave SetConfigForLine(int lineNumber, StaveLineConfig lineConfig)
+        {
+            if (lineNumber >= options.NumLines || lineNumber < 0)
+                throw new VexFlowException("StaveConfigError", "The line number must be within the range of the number of lines in the Stave.");
+            if (!lineConfig.Visible.HasValue)
+                throw new VexFlowException("StaveConfigError", "The line configuration object is missing the 'visible' property.");
+
+            options.LineConfig[lineNumber] = lineConfig.Visible.Value;
+            return this;
+        }
+
+        public Stave SetConfigForLines(List<StaveLineConfig> linesConfiguration)
+        {
+            if (linesConfiguration.Count != options.NumLines)
+                throw new VexFlowException("StaveConfigError", "The length of the lines configuration array must match the number of lines in the Stave");
+
+            for (int i = 0; i < linesConfiguration.Count; i++)
+            {
+                bool? visible = linesConfiguration[i].Visible;
+                if (visible.HasValue)
+                    options.LineConfig[i] = visible.Value;
+            }
+
+            return this;
+        }
+
+        /// <summary>Set the default style used by notes for ledger lines on this stave.</summary>
+        public Stave SetDefaultLedgerLineStyle(ElementStyle style)
+        {
+            defaultLedgerLineStyle = style;
+            return this;
+        }
+
+        /// <summary>Get the default ledger-line style, merged with this stave's style.</summary>
+        public ElementStyle GetDefaultLedgerLineStyle()
+            => MergeStyles(GetStyle(), defaultLedgerLineStyle);
+
+        private static ElementStyle MergeStyles(ElementStyle? baseStyle, ElementStyle? overrideStyle)
+        {
+            return new ElementStyle
+            {
+                ShadowColor = overrideStyle?.ShadowColor ?? baseStyle?.ShadowColor,
+                ShadowBlur = overrideStyle?.ShadowBlur ?? baseStyle?.ShadowBlur,
+                FillStyle = overrideStyle?.FillStyle ?? baseStyle?.FillStyle,
+                StrokeStyle = overrideStyle?.StrokeStyle ?? baseStyle?.StrokeStyle,
+                LineWidth = overrideStyle?.LineWidth ?? baseStyle?.LineWidth,
+                LineDash = overrideStyle?.LineDash ?? baseStyle?.LineDash,
+            };
+        }
 
         public string GetClef() => clef;
 
         public string? GetEndClef() => endClef;
 
         public int GetMeasure() => measure;
-        public void SetMeasure(int m) { measure = m; }
+        public Stave SetMeasure(int m) { measure = m; return this; }
 
         // ── Modifiers ─────────────────────────────────────────────────────────
 
@@ -413,6 +523,8 @@ namespace VexFlowSharp
         /// </summary>
         public void Format()
         {
+            var begBarline = modifiers[0] as Barline;
+            var endBarline = modifiers[1];
             var begModifiers = GetModifiers(StaveModifierPosition.Begin);
             var endModifiers = GetModifiers(StaveModifierPosition.End);
 
@@ -427,6 +539,24 @@ namespace VexFlowSharp
             {
                 { "TimeSignature", 0 }, { "KeySignature", 1 }, { "Barline", 2 }, { "Clef", 3 }
             });
+
+            if (begModifiers.Count > 1 && begBarline != null && begBarline.GetBarlineType() == BarlineType.RepeatBegin)
+            {
+                begModifiers.Remove(begBarline);
+                begModifiers.Add(begBarline);
+                var singleBarline = new Barline(BarlineType.Single);
+                singleBarline.SetStave(this);
+                singleBarline.SetPosition(StaveModifierPosition.Begin);
+                begModifiers.Insert(0, singleBarline);
+            }
+
+            if (endModifiers.IndexOf(endBarline) > 0)
+            {
+                var noneBarline = new Barline(BarlineType.None);
+                noneBarline.SetStave(this);
+                noneBarline.SetPosition(StaveModifierPosition.End);
+                endModifiers.Insert(0, noneBarline);
+            }
 
             // Calculate startX by walking begin modifiers
             int offset = 0;
@@ -448,9 +578,11 @@ namespace VexFlowSharp
             // CRITICAL: if there is exactly one end modifier (just the barline), endX = x + width.
             // This matches: this.end_x = endModifiers.length === 1 ? this.x + this.width : x;
             curX = x + width;
+            int lastBarlineIdx = 0;
             for (int i = 0; i < endModifiers.Count; i++)
             {
                 var mod    = endModifiers[i];
+                if (mod is Barline) lastBarlineIdx = i;
                 var lm     = mod.GetLayoutMetrics();
 
                 double widthsRight       = 0;
@@ -473,7 +605,7 @@ namespace VexFlowSharp
                 }
                 else
                 {
-                    widthsPaddingRight = mod.GetPadding(i); // no lastBarlineIdx tracking (simplified)
+                    widthsPaddingRight = mod.GetPadding(i - lastBarlineIdx);
                     if (i != 0) widthsRight = mod.GetWidth();
                     if (i == 0) widthsLeft  = mod.GetWidth();
                 }
@@ -529,7 +661,7 @@ namespace VexFlowSharp
             ctx.SetFillStyle(options.FillStyle);
             ctx.SetStrokeStyle(options.FillStyle);
 
-            double lineThickness = Tables.STAVE_LINE_THICKNESS;
+            double lineThickness = GetLineWidth();
 
             for (int i = 0; i < options.NumLines; i++)
             {

@@ -112,6 +112,31 @@ namespace VexFlowSharp.Tests.TableTests
         }
 
         [Test]
+        public void KeySignature_NewSharpsSyntax_UsesSharps()
+        {
+            var result = Tables.KeySignature("sharps_3");
+
+            Assert.That(result.Count, Is.EqualTo(3));
+            Assert.That(result, Has.All.Matches<(string Type, double Line)>(acc => acc.Type == "#"));
+        }
+
+        [Test]
+        public void KeySignature_NewFlatsSyntax_UsesFlats()
+        {
+            var result = Tables.KeySignature("flats_3");
+
+            Assert.That(result.Count, Is.EqualTo(3));
+            Assert.That(result, Has.All.Matches<(string Type, double Line)>(acc => acc.Type == "b"));
+        }
+
+        [Test]
+        public void KeySignature_NewZeroSyntax_ReturnsEmpty()
+        {
+            Assert.That(Tables.KeySignature("sharps_0"), Is.Empty);
+            Assert.That(Tables.KeySignature("flats_0"), Is.Empty);
+        }
+
+        [Test]
         public void KeySignature_Unknown_Throws()
         {
             var ex = Assert.Throws<VexFlowException>(() => Tables.KeySignature("Z#m"));
@@ -201,6 +226,32 @@ namespace VexFlowSharp.Tests.TableTests
             var props = Tables.GetGlyphProps("4", "r");
             Assert.That(props.Rest, Is.True);
             Assert.That(props.CodeHead, Is.EqualTo("restQuarter"));
+        }
+
+        [Test]
+        public void AccidentalCodes_UnknownGlyphName_PassesThrough()
+        {
+            var result = Tables.AccidentalCodes("accidentalWyschnegradsky1TwelfthsSharp");
+
+            Assert.That(result.Code, Is.EqualTo("accidentalWyschnegradsky1TwelfthsSharp"));
+            Assert.That(result.PaddingAdj, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void AccidentalCodes_V5PersianAliases_AreMapped()
+        {
+            Assert.That(Tables.AccidentalCodes("o").Code, Is.EqualTo("accidentalSori"));
+            Assert.That(Tables.AccidentalCodes("k").Code, Is.EqualTo("accidentalKoron"));
+            Assert.That(Tables.AccidentalCodes("++-").Code, Is.EqualTo("accidentalBuyukMucennebSharp"));
+        }
+
+        [Test]
+        public void OrnamentCode_CamelCaseAndCustomGlyphNames()
+        {
+            Assert.That(Tables.OrnamentCode("mordentInverted"), Is.EqualTo("ornamentMordent"));
+            Assert.That(Tables.OrnamentCode("turnInverted"), Is.EqualTo("ornamentTurnSlash"));
+            Assert.That(Tables.OrnamentCode("ornamentPrecompSlideTrillDAnglebert"),
+                Is.EqualTo("ornamentPrecompSlideTrillDAnglebert"));
         }
 
         // ── Constants ─────────────────────────────────────────────────────────

@@ -61,6 +61,16 @@ namespace VexFlowSharp.Tests.Formatting
             return stave;
         }
 
+        [Test]
+        public void FormatterOptions_DefaultsComeFromMetrics()
+        {
+            var options = new FormatterOptions();
+
+            Assert.That(options.SoftmaxFactor, Is.EqualTo(Metrics.GetDouble("Formatter.softmaxFactor")));
+            Assert.That(options.MaxIterations, Is.EqualTo((int)Metrics.GetDouble("Formatter.maxIterations")));
+            Assert.That(options.GlobalSoftmax, Is.False);
+        }
+
         // ── Test 1: SingleVoice — x-positions increase left to right ──────────
 
         /// <summary>
@@ -82,7 +92,7 @@ namespace VexFlowSharp.Tests.Formatting
                 MakeNote("4", "f/4"),
             };
 
-            Formatter.FormatAndDraw(ctx, stave, notes);
+            var box = Formatter.FormatAndDraw(ctx, stave, notes);
 
             // Each note's absolute X must be greater than the previous
             double prevX = double.NegativeInfinity;
@@ -93,6 +103,11 @@ namespace VexFlowSharp.Tests.Formatting
                     $"Note {i} (c/4, quarter) absoluteX={absX:F2} must be > prevX={prevX:F2}");
                 prevX = absX;
             }
+
+            Assert.That(box, Is.Not.Null);
+            Assert.That(box!.GetX(), Is.LessThanOrEqualTo(notes[0].GetBoundingBox()!.GetX()));
+            Assert.That(box.GetX() + box.GetW(),
+                Is.GreaterThanOrEqualTo(notes[^1].GetBoundingBox()!.GetX() + notes[^1].GetBoundingBox()!.GetW()));
         }
 
         // ── Test 2: Mixed durations — half gets more space than quarters ───────
@@ -213,6 +228,45 @@ namespace VexFlowSharp.Tests.Formatting
             double minWidth = formatter.GetMinTotalWidth();
             Assert.That(minWidth, Is.GreaterThan(0),
                 $"GetMinTotalWidth() must be > 0, got {minWidth:F2}");
+        }
+
+        [Test]
+        public void AlignRestsToNotes_FirstRest_UsesNextNoteLine()
+        {
+            var rest = MakeNote("4r", "r/4");
+            var next = MakeNote("4", "e/5");
+            var tickables = new List<Tickable> { rest, next };
+
+            Formatter.AlignRestsToNotes(tickables, alignAllNotes: true);
+
+            Assert.That(rest.GetKeyLine(0), Is.EqualTo(next.GetLineForRest()).Within(0.001));
+        }
+
+        [Test]
+        public void AlignRestsToNotes_MiddleRest_UsesMidpointBetweenNeighborGroups()
+        {
+            var prev = MakeNote("4", "e/5");
+            var rest = MakeNote("4r", "r/4");
+            var next = MakeNote("4", "c/4");
+            var tickables = new List<Tickable> { prev, rest, next };
+
+            Formatter.AlignRestsToNotes(tickables, alignAllNotes: true);
+
+            var expectedLine = (prev.GetLineForRest() + next.GetLineForRest()) / 2.0;
+            Assert.That(rest.GetKeyLine(0), Is.EqualTo(expectedLine).Within(0.001));
+        }
+
+        [Test]
+        public void AlignRestsToNotes_LeavesExplicitRestLineAlone()
+        {
+            var rest = MakeNote("4r", "r/4");
+            rest.SetKeyLine(0, 2);
+            var next = MakeNote("4", "e/5");
+            var tickables = new List<Tickable> { rest, next };
+
+            Formatter.AlignRestsToNotes(tickables, alignAllNotes: true);
+
+            Assert.That(rest.GetKeyLine(0), Is.EqualTo(2));
         }
 
         // ── Test 5: FormatToStave keeps notes within stave bounds ─────────────

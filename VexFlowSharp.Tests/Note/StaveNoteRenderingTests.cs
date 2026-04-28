@@ -18,9 +18,11 @@
 //   - drawLedgerLines: notes above and below the staff
 
 using System;
+using System.Linq;
 using NUnit.Framework;
 using VexFlowSharp;
 using VexFlowSharp.Skia;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.Note
 {
@@ -63,6 +65,19 @@ namespace VexFlowSharp.Tests.Note
             note.SetContext(ctx);
             note.Draw();
             return note;
+        }
+
+        [Test]
+        public void StaveNote_DrawEmitsV5PointerRect()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 30, 300);
+            var note = new StaveNote(new StaveNoteStruct { Keys = new[] { "c/4" }, Duration = "4" });
+
+            DrawNote(note, stave, ctx, 80);
+
+            var box = note.GetBoundingBox()!;
+            Assert.That(ctx.GetCall("PointerRect").Args, Is.EqualTo(new[] { box.GetX(), box.GetY(), box.GetW(), box.GetH() }));
         }
 
         // ── StaveNote_DrawBasic_Treble ─────────────────────────────────────────
@@ -279,12 +294,116 @@ namespace VexFlowSharp.Tests.Note
             Assert.That(lowNote.GetYs()[0], Is.GreaterThan(staffBottom), "c/3 Y is below staff");
         }
 
-        // ── SaveSample ────────────────────────────────────────────────────────
-        // Run explicitly to produce a PNG for visual inspection:
-        //   dotnet test --filter "FullyQualifiedName~SaveSample"
+        [Test]
+        public void StaveNote_DrawLedgerLines_UsesStaveDefaultLedgerStyle()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 60, 380);
+            stave.SetDefaultLedgerLineStyle(new ElementStyle { StrokeStyle = "#123456", LineWidth = 3 });
+
+            var highNote = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/6" },
+                Clef = "treble",
+            });
+
+            highNote.SetStave(stave);
+            highNote.SetX(80);
+            highNote.SetContext(ctx);
+            highNote.DrawLedgerLines();
+
+            Assert.That(ctx.GetCalls("SetLineWidth").Any(call => call.Args[0] == 3), Is.True);
+        }
 
         [Test]
-        [Explicit("Visual inspection — saves PNG to /tmp/vexflow_sample.png")]
+        public void StaveNote_GetBoundingBox_AfterDrawIncludesNoteheadAndStem()
+        {
+            using var ctx = new SkiaRenderContext(400, 250);
+            var stave = new Stave(10, 60, 380);
+            stave.SetContext(ctx);
+
+            var note = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/5" },
+                Clef = "treble",
+            });
+
+            DrawNote(note, stave, ctx, 80);
+
+            var box = note.GetBoundingBox();
+            Assert.That(box, Is.Not.Null);
+            Assert.That(box!.GetW(), Is.GreaterThan(0));
+            Assert.That(box.GetH(), Is.GreaterThan(0));
+            Assert.That(box.GetX(), Is.LessThanOrEqualTo(note.GetStemX()));
+        }
+
+        [Test]
+        public void StaveNote_DrawFlag_UsesGlyphMetricsForStemUpPlacement()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 60, 380);
+            var note = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "8",
+                Keys = new[] { "c/4" },
+                StemDirection = Stem.UP,
+            });
+            note.SetStave(stave);
+            note.SetX(80);
+            note.SetContext(ctx);
+
+            note.DrawFlag();
+
+            var firstMove = ctx.GetCall("MoveTo").Args;
+            var metrics = new Glyph("flag8thUp", Tables.NOTATION_FONT_SCALE).GetMetrics()!;
+            var outline = BravuraGlyphs.Data.Glyphs["flag8thUp"].CachedOutline!;
+            double expectedX = note.GetStemX() - Stem.WIDTH / 2.0 + outline[1] * metrics.Scale;
+            double expectedY = note.GetNoteHeadBounds().YBottom - note.CheckStem().GetHeight()
+                + metrics.ActualBoundingBoxAscent - outline[2] * metrics.Scale;
+
+            Assert.That(firstMove[0], Is.EqualTo(Math.Round(expectedX, 3)).Within(0.001));
+            Assert.That(firstMove[1], Is.EqualTo(Math.Round(expectedY, 3)).Within(0.001));
+        }
+
+        [Test]
+        public void Flag_CategoryAndRenderGroup_MatchV5Surface()
+        {
+            var ctx = new RecordingRenderContext();
+            var flag = new Flag("flag8thUp", Tables.NOTATION_FONT_SCALE);
+
+            flag.Render(ctx, 10, 20);
+
+            Assert.That(flag.GetCategory(), Is.EqualTo(Flag.CATEGORY));
+            Assert.That(Flag.CATEGORY, Is.EqualTo("Flag"));
+            Assert.That(ctx.HasCall("OpenGroup"), Is.True);
+            Assert.That(ctx.HasCall("CloseGroup"), Is.True);
+        }
+
+        [Test]
+        public void StaveNote_GetBoundingBox_FlaggedNoteIncludesFlagMetrics()
+        {
+            var stave = new Stave(10, 60, 380);
+            var note = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "8",
+                Keys = new[] { "c/4" },
+                StemDirection = Stem.UP,
+            });
+            note.SetStave(stave);
+            note.SetX(80);
+
+            var box = note.GetBoundingBox();
+            var metrics = new Glyph("flag8thUp", Tables.NOTATION_FONT_SCALE).GetMetrics()!;
+            double expectedFlagTop = note.GetNoteHeadBounds().YBottom - note.CheckStem().GetHeight();
+
+            Assert.That(box, Is.Not.Null);
+            Assert.That(box!.GetY(), Is.LessThanOrEqualTo(expectedFlagTop).Within(0.001));
+            Assert.That(box.GetH(), Is.GreaterThan(metrics.ActualBoundingBoxAscent));
+        }
+
+        [Test]
         public void SaveSample()
         {
             using var ctx = new SkiaRenderContext(700, 200);

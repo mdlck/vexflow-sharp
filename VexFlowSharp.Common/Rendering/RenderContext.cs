@@ -9,6 +9,8 @@ namespace VexFlowSharp
     /// </summary>
     public abstract class RenderContext
     {
+        public const string CATEGORY = "RenderContext";
+
         // State
         public abstract void Clear();
         public abstract RenderContext Save();
@@ -23,15 +25,20 @@ namespace VexFlowSharp
         public abstract RenderContext SetLineWidth(double width);
         public abstract RenderContext SetLineCap(string capType);
         public abstract RenderContext SetLineDash(double[] dashPattern);
+        public virtual string FillStyle { get => ""; set => SetFillStyle(value); }
+        public virtual string StrokeStyle { get => ""; set => SetStrokeStyle(value); }
 
         // Transform
         public abstract RenderContext Scale(double x, double y);
         public abstract RenderContext Resize(double width, double height);
+        public virtual RenderContext OpenRotation(double degrees, double x, double y) { return this; }
+        public virtual RenderContext CloseRotation() { return this; }
 
         // Rectangles
         public abstract RenderContext Rect(double x, double y, double width, double height);
         public abstract RenderContext FillRect(double x, double y, double width, double height);
         public abstract RenderContext ClearRect(double x, double y, double width, double height);
+        public virtual RenderContext PointerRect(double x, double y, double width, double height) { return this; }
 
         // Path
         public abstract RenderContext BeginPath();
@@ -42,6 +49,7 @@ namespace VexFlowSharp
         public abstract RenderContext Arc(double x, double y, double radius, double startAngle, double endAngle, bool counterclockwise);
         public abstract RenderContext ClosePath();
         public abstract RenderContext Fill();
+        public virtual RenderContext Fill(object? attributes) => Fill();
         public abstract RenderContext Stroke();
 
         // Text
@@ -53,5 +61,6 @@ namespace VexFlowSharp
         // Grouping (SVG-only; no-op in Canvas/Skia backends)
         public virtual void OpenGroup(string? cls = null, string? id = null) { }
         public virtual void CloseGroup() { }
+        public virtual void Add(object child) { }
     }
 }

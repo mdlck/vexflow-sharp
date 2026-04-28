@@ -76,7 +76,7 @@ namespace VexFlowSharp.Common.Formatting
         protected double xOffset = 0;
 
         /// <summary>Padding on each side (width += padding * 2).</summary>
-        protected double padding = 1;
+        protected double padding = Metrics.GetDouble("TickContext.padding");
 
         // ── Accumulated metrics ───────────────────────────────────────────────
 
@@ -168,6 +168,39 @@ namespace VexFlowSharp.Common.Formatting
 
         /// <summary>Set padding.</summary>
         public TickContext SetPadding(double p) { padding = p; return this; }
+
+        /// <summary>
+        /// Move this context and update neighboring freedom metrics.
+        /// Port of TickContext.move() used by Formatter.tune().
+        /// </summary>
+        public TickContext Move(double shift, TickContext? previous = null, TickContext? next = null)
+        {
+            SetX(GetX() + shift);
+            formatterMetrics.FreedomLeft += shift;
+            formatterMetrics.FreedomRight -= shift;
+
+            if (previous != null)
+                previous.GetFormatterMetrics().FreedomRight += shift;
+            if (next != null)
+                next.GetFormatterMetrics().FreedomLeft -= shift;
+
+            return this;
+        }
+
+        /// <summary>Sum space deviations for all tickables in this context.</summary>
+        public double GetDeviationCost()
+        {
+            double cost = 0;
+            foreach (var tickable in tickables)
+                cost += tickable.GetFormatterMetrics().SpaceDeviation;
+            return cost;
+        }
+
+        /// <summary>Average space deviation for all tickables in this context.</summary>
+        public double GetAverageDeviationCost()
+        {
+            return tickables.Count == 0 ? 0 : GetDeviationCost() / tickables.Count;
+        }
 
         // ── Tick fractions ────────────────────────────────────────────────────
 

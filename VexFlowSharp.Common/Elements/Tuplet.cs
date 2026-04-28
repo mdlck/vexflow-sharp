@@ -47,8 +47,11 @@ namespace VexFlowSharp
         /// <summary>Whether to show ratio (e.g. 7:8). Auto-enabled when |notesOccupied - numNotes| > 1.</summary>
         public bool? Ratioed       { get; set; }
 
-        /// <summary>Manual y offset in pixels.</summary>
-        public double YOffset      { get; set; } = 0;
+        /// <summary>Manual y offset in pixels. Defaults to Metrics.GetDouble("Tuplet.yOffset").</summary>
+        public double? YOffset     { get; set; }
+
+        /// <summary>Manual text y offset in pixels. Defaults to Metrics.GetDouble("Tuplet.textYOffset").</summary>
+        public double? TextYOffset { get; set; }
     }
 
     /// <summary>
@@ -61,7 +64,7 @@ namespace VexFlowSharp
     {
         // ── Category ──────────────────────────────────────────────────────────
 
-        public const string CATEGORY = "tuplet";
+        public new const string CATEGORY = "Tuplet";
         public override string GetCategory() => CATEGORY;
 
         // ── Constants ─────────────────────────────────────────────────────────
@@ -152,6 +155,7 @@ namespace VexFlowSharp
                 location = (int)TupletLocation.Top;
 
             ResolveGlyphs();
+            Attach();
         }
 
         // ── Accessors ─────────────────────────────────────────────────────────
@@ -164,6 +168,18 @@ namespace VexFlowSharp
 
         /// <summary>Get the denominator notes-occupied count.</summary>
         public int GetNotesOccupied() => notesOccupied;
+
+        /// <summary>Get the current tuplet location.</summary>
+        public int GetTupletLocation() => location;
+
+        /// <summary>Whether the tuplet bracket is currently drawn.</summary>
+        public bool IsBracketed() => bracketed;
+
+        /// <summary>Get the configured y offset, including the v5 metrics default.</summary>
+        public double GetYOffset() => options.YOffset ?? Metrics.GetDouble("Tuplet.yOffset");
+
+        /// <summary>Get the configured text y offset, including the v5 metrics default.</summary>
+        public double GetTextYOffset() => options.TextYOffset ?? Metrics.GetDouble("Tuplet.textYOffset");
 
         /// <summary>Set the location (TupletLocation.Top or TupletLocation.Bottom).</summary>
         public Tuplet SetTupletLocation(int loc)
@@ -179,6 +195,43 @@ namespace VexFlowSharp
 
         /// <summary>Set whether the ratio is shown.</summary>
         public Tuplet SetRatioed(bool r) { ratioed = r; return this; }
+
+        /// <summary>Attach this tuplet to its notes.</summary>
+        public void Attach()
+        {
+            foreach (var note in notes)
+                note.SetTuplet(this);
+        }
+
+        /// <summary>Detach this tuplet from its notes.</summary>
+        public void Detach()
+        {
+            foreach (var note in notes)
+                note.ResetTuplet(this);
+        }
+
+        /// <summary>Update the denominator note count and refresh note attachments.</summary>
+        public void SetNotesOccupied(int notesOccupied)
+        {
+            Detach();
+            this.notesOccupied = notesOccupied;
+            ResolveGlyphs();
+            Attach();
+        }
+
+        /// <summary>Count tuplets nested between this tuplet and its notes on the same side.</summary>
+        public int GetNestedTupletCount()
+        {
+            int maxOffset = 0;
+            foreach (var note in notes)
+            {
+                var sameSide = note.GetTupletStack()
+                    .FindAll(tuplet => tuplet.location == location);
+                int index = sameSide.IndexOf(this);
+                if (index > maxOffset) maxOffset = index;
+            }
+            return maxOffset;
+        }
 
         // ── Glyph resolution ──────────────────────────────────────────────────
 
@@ -218,6 +271,7 @@ namespace VexFlowSharp
         {
             var firstNote = notes[0];
             double yBase;
+            double nestedTupletYOffset = GetNestedTupletCount() * NESTING_OFFSET * -location;
 
             if (location == (int)TupletLocation.Top)
             {
@@ -272,7 +326,7 @@ namespace VexFlowSharp
                 }
             }
 
-            return yBase + options.YOffset;
+            return yBase + nestedTupletYOffset + GetYOffset();
         }
 
         // ── Draw ──────────────────────────────────────────────────────────────
@@ -285,6 +339,9 @@ namespace VexFlowSharp
         {
             var ctx = CheckContext();
             rendered = true;
+            double bracketPadding = Metrics.GetDouble("Tuplet.bracket.padding");
+            double bracketThickness = Metrics.GetDouble("Tuplet.bracket.lineWidth");
+            double bracketLegLength = Metrics.GetDouble("Tuplet.bracket.legLength");
 
             var firstNote = notes[0] as StemmableNote;
             var lastNote  = notes[notes.Count - 1] as StemmableNote;
@@ -297,8 +354,9 @@ namespace VexFlowSharp
             }
             else if (firstNote != null && lastNote != null)
             {
-                xPos       = firstNote.GetTieLeftX() - 5;
-                tupletWidth = lastNote.GetTieRightX() - xPos + 5;
+                xPos       = firstNote.GetTieLeftX() - bracketPadding;
+                tupletWidth = lastNote.GetTieRightX() - xPos + bracketPadding;
+                boundingBox = new BoundingBox(xPos, yPos, tupletWidth + 1, 10);
             }
             else
             {
@@ -309,6 +367,7 @@ namespace VexFlowSharp
 
             // Determine y position
             yPos = GetYPosition();
+            boundingBox = new BoundingBox(xPos, location == (int)TupletLocation.Top ? yPos : yPos - 9, tupletWidth + (bracketed ? bracketThickness : 0), 10);
 
             // Calculate visual glyph bounds for centering. Glyph render origins are not
             // necessarily their visual left edges, so account for XMin/XMax bearings.
@@ -321,23 +380,24 @@ namespace VexFlowSharp
             // Draw bracket (filled rectangles like VexFlow)
             if (bracketed)
             {
-                double lineWidth = tupletWidth / 2 - glyphWidth / 2 - 5;
+                double lineWidth = tupletWidth / 2 - glyphWidth / 2 - bracketPadding;
                 if (lineWidth > 0)
                 {
                     // Left segment of horizontal bracket
-                    ctx.FillRect(xPos, yPos, lineWidth, 1);
+                    ctx.FillRect(xPos, yPos, lineWidth, bracketThickness);
                     // Right segment of horizontal bracket
-                    ctx.FillRect(xPos + tupletWidth / 2 + glyphWidth / 2 + 5, yPos, lineWidth, 1);
+                    ctx.FillRect(xPos + tupletWidth / 2 + glyphWidth / 2 + bracketPadding, yPos, lineWidth, bracketThickness);
                     // Left vertical tick
-                    int vertOffset = location == (int)TupletLocation.Bottom ? 1 : 0;
-                    ctx.FillRect(xPos,              yPos + vertOffset, 1, location * 10);
-                    ctx.FillRect(xPos + tupletWidth, yPos + vertOffset, 1, location * 10);
+                    double vertOffset = location == (int)TupletLocation.Bottom ? bracketThickness : 0;
+                    ctx.FillRect(xPos,              yPos + vertOffset, bracketThickness, location * bracketLegLength);
+                    ctx.FillRect(xPos + tupletWidth, yPos + vertOffset, bracketThickness, location * bracketLegLength);
                 }
             }
 
             // Draw numerator glyphs
             double xOffset = 0;
-            double shiftY  = point / 3 - 2;
+            double textOffsetDirection = location == (int)TupletLocation.Top ? -1 : 1;
+            double shiftY  = point / 3 + textOffsetDirection * GetTextYOffset();
             foreach (var glyph in numeratorGlyphs)
             {
                 var metrics = glyph.GetMetrics();
@@ -369,6 +429,8 @@ namespace VexFlowSharp
                     xOffset += metrics?.Width ?? 0;
                 }
             }
+
+            DrawPointerRect();
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
@@ -416,6 +478,13 @@ namespace VexFlowSharp
             foreach (var g in glyphs)
                 total += g.GetMetrics()?.Width ?? 0;
             return total;
+        }
+
+        public override BoundingBox? GetBoundingBox()
+        {
+            if (boundingBox != null) return boundingBox;
+            var glyphSpan = CalculateGlyphSpan();
+            return new BoundingBox(xPos, yPos - 10, Math.Max(tupletWidth, glyphSpan.Width), 10);
         }
     }
 }

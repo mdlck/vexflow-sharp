@@ -1,39 +1,33 @@
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
-// Port of vexflow/src/vibrato.ts (145 lines)
-// Vibrato modifier — wave pattern above note head.
+// Port of vexflow/src/vibrato.ts
+// Vibrato modifier — repeated SMuFL wiggle glyph above note head.
 
+using System;
 using System.Collections.Generic;
 using VexFlowSharp.Common.Formatting;
 
 namespace VexFlowSharp
 {
     /// <summary>
-    /// Rendering options for a vibrato wave.
+    /// Rendering options for a vibrato glyph run.
     /// Port of VexFlow's VibratoRenderOptions interface from vibrato.ts.
     /// </summary>
     public class VibratoRenderOptions
     {
-        /// <summary>Total width of the vibrato wave in pixels.</summary>
-        public double VibratoWidth { get; set; } = 20;
+        /// <summary>SMuFL code point for the vibrato segment.</summary>
+        public int Code { get; set; } = 0xeab0;
 
-        /// <summary>Height of each wave cycle in pixels.</summary>
-        public double WaveHeight { get; set; } = 6;
+        /// <summary>Total requested width of the vibrato run in pixels.</summary>
+        public double Width { get; set; } = Metrics.GetDouble("Vibrato.width");
 
-        /// <summary>Width of each wave cycle in pixels.</summary>
-        public double WaveWidth { get; set; } = 4;
-
-        /// <summary>Vertical girth (bottom-of-wave offset) in pixels.</summary>
-        public double WaveGirth { get; set; } = 2;
-
-        /// <summary>Whether to render a harsh zigzag vibrato instead of a smooth wave.</summary>
+        /// <summary>Compatibility-only: VexFlow 5 renders vibrato as text glyphs, not harsh zigzags.</summary>
         public bool Harsh { get; set; } = false;
     }
 
     /// <summary>
-    /// Vibrato modifier — renders a wave pattern above a note.
-    /// Shared RenderVibrato() static method is also used by VibratoBracket.
+    /// Vibrato modifier — renders repeated SMuFL wiggle glyphs above a note.
     ///
     /// Port of VexFlow's Vibrato class from vibrato.ts.
     /// </summary>
@@ -42,7 +36,7 @@ namespace VexFlowSharp
         // ── Category ──────────────────────────────────────────────────────────
 
         /// <summary>Category string used by ModifierContext to group vibratos.</summary>
-        public const string CATEGORY = "vibratos";
+        public new const string CATEGORY = "Vibrato";
 
         /// <inheritdoc/>
         public override string GetCategory() => CATEGORY;
@@ -50,6 +44,8 @@ namespace VexFlowSharp
         // ── Fields ────────────────────────────────────────────────────────────
 
         private VibratoRenderOptions renderOptions = new VibratoRenderOptions();
+        private string text = string.Empty;
+        private MetricsFontInfo font = Metrics.GetFontInfo("Vibrato");
 
         // ── Constructor ───────────────────────────────────────────────────────
 
@@ -60,7 +56,7 @@ namespace VexFlowSharp
         public Vibrato()
         {
             position = ModifierPosition.Right;
-            SetVibratoWidth(renderOptions.VibratoWidth);
+            SetVibratoWidth(renderOptions.Width);
         }
 
         // ── Properties ────────────────────────────────────────────────────────
@@ -74,87 +70,56 @@ namespace VexFlowSharp
 
         // ── Setters ───────────────────────────────────────────────────────────
 
-        /// <summary>Set the vibrato width and update the modifier width.</summary>
+        public string GetText() => text;
+        public int GetVibratoCode() => renderOptions.Code;
+
+        /// <summary>Set the vibrato width and update the repeated glyph text.</summary>
         public Vibrato SetVibratoWidth(double w)
         {
-            renderOptions.VibratoWidth = w;
+            renderOptions.Width = w;
+            text = char.ConvertFromUtf32(renderOptions.Code);
+
+            double segmentWidth = GetSegmentWidth();
+            if (segmentWidth <= 0)
+                throw new VexFlowException("CannotSetVibratoWidth", "Cannot set vibrato width if width is 0");
+
+            int items = (int)Math.Round(renderOptions.Width / segmentWidth);
+            for (int i = 1; i < items; i++)
+                text += char.ConvertFromUtf32(renderOptions.Code);
+
             SetWidth(w);
             return this;
         }
 
-        /// <summary>Set harsh vibrato mode. Returns this for fluent chaining.</summary>
+        /// <summary>Compatibility shim. VexFlow 5 vibrato no longer has a harsh rendering mode.</summary>
         public Vibrato SetHarsh(bool harsh)
         {
             renderOptions.Harsh = harsh;
             return this;
         }
 
+        public Vibrato SetVibratoCode(int code)
+        {
+            renderOptions.Code = code;
+            return SetVibratoWidth(renderOptions.Width);
+        }
+
         /// <summary>Set all vibrato render options at once.</summary>
         public Vibrato SetVibratoRenderOptions(VibratoRenderOptions opts)
         {
             renderOptions = opts;
-            SetWidth(opts.VibratoWidth);
-            return this;
+            return SetVibratoWidth(opts.Width);
         }
 
-        // ── Static rendering ──────────────────────────────────────────────────
-
-        /// <summary>
-        /// Shared static vibrato wave renderer — used by both Vibrato.Draw() and VibratoBracket.Draw().
-        ///
-        /// For harsh=false: smooth wave using quadratic curves.
-        /// For harsh=true: zigzag wave using straight lines.
-        ///
-        /// Port of VexFlow's Vibrato.renderVibrato() static from vibrato.ts (lines 105-144).
-        /// </summary>
-        public static void RenderVibrato(RenderContext ctx, double x, double y, VibratoRenderOptions opts)
+        public double GetSegmentWidth()
         {
-            double numWaves = opts.VibratoWidth / opts.WaveWidth;
+            return TextFormatter.Create(font.Family, font.Size).GetWidthForTextInPx(char.ConvertFromUtf32(renderOptions.Code));
+        }
 
-            ctx.BeginPath();
-
-            if (opts.Harsh)
-            {
-                // Zigzag wave (harsh vibrato) — straight lines
-                ctx.MoveTo(x, y + opts.WaveGirth + 1);
-                for (int i = 0; i < (int)(numWaves / 2); i++)
-                {
-                    ctx.LineTo(x + opts.WaveWidth, y - opts.WaveHeight / 2);
-                    x += opts.WaveWidth;
-                    ctx.LineTo(x + opts.WaveWidth, y + opts.WaveHeight / 2);
-                    x += opts.WaveWidth;
-                }
-                // Return pass
-                for (int i = 0; i < (int)(numWaves / 2); i++)
-                {
-                    ctx.LineTo(x - opts.WaveWidth, y - opts.WaveHeight / 2 + opts.WaveGirth + 1);
-                    x -= opts.WaveWidth;
-                    ctx.LineTo(x - opts.WaveWidth, y + opts.WaveHeight / 2 + opts.WaveGirth + 1);
-                    x -= opts.WaveWidth;
-                }
-                ctx.Fill();
-            }
-            else
-            {
-                // Smooth wave — quadratic bezier curves
-                ctx.MoveTo(x, y + opts.WaveGirth);
-                for (int i = 0; i < (int)(numWaves / 2); i++)
-                {
-                    ctx.QuadraticCurveTo(x + opts.WaveWidth / 2, y - opts.WaveHeight / 2, x + opts.WaveWidth, y);
-                    x += opts.WaveWidth;
-                    ctx.QuadraticCurveTo(x + opts.WaveWidth / 2, y + opts.WaveHeight / 2, x + opts.WaveWidth, y);
-                    x += opts.WaveWidth;
-                }
-                // Return pass
-                for (int i = 0; i < (int)(numWaves / 2); i++)
-                {
-                    ctx.QuadraticCurveTo(x - opts.WaveWidth / 2, y + opts.WaveHeight / 2 + opts.WaveGirth, x - opts.WaveWidth, y + opts.WaveGirth);
-                    x -= opts.WaveWidth;
-                    ctx.QuadraticCurveTo(x - opts.WaveWidth / 2, y - opts.WaveHeight / 2 + opts.WaveGirth, x - opts.WaveWidth, y + opts.WaveGirth);
-                    x -= opts.WaveWidth;
-                }
-                ctx.Fill();
-            }
+        public void RenderText(RenderContext ctx, double x, double y)
+        {
+            ctx.SetFont(font.Family, font.Size, font.Weight, font.Style);
+            ctx.FillText(text, x, y);
         }
 
         // ── Format ────────────────────────────────────────────────────────────
@@ -171,10 +136,10 @@ namespace VexFlowSharp
 
             double textLine = state.TopTextLine;
             double width = 0;
-            double shift = state.RightShift - 7;
+            double shift = state.RightShift - Metrics.GetDouble("Vibrato.rightShift");
 
-            // Vibratos are always on top — increment top_text_line
-            state.TopTextLine += 1;
+            // Vibratos are always on top.
+            state.TopTextLine += Metrics.GetDouble("Vibrato.textLineIncrement");
 
             // Format each vibrato
             for (int i = 0; i < vibratos.Count; i++)
@@ -193,8 +158,8 @@ namespace VexFlowSharp
         // ── Draw ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Draw the vibrato wave above the attached note.
-        /// Port of VexFlow's Vibrato.draw() from vibrato.ts (lines 88-99).
+        /// Draw the vibrato glyph run above the attached note.
+        /// Port of VexFlow's Vibrato.draw() from vibrato.ts.
         /// </summary>
         public override void Draw()
         {
@@ -202,11 +167,11 @@ namespace VexFlowSharp
             var note = (Note)GetNote();
             rendered = true;
 
-            double startX = note.GetAbsoluteX() + xShift;
-            double y = note.GetYForTopText(textLine) + 2;
+            var start = note.GetModifierStartXY(ModifierPosition.Right, GetIndex() ?? 0);
+            double x = start.X + xShift;
+            double y = note.GetYForTopText(textLine) + Metrics.GetDouble("Vibrato.yShift");
 
-            renderOptions.VibratoWidth = GetWidth();
-            RenderVibrato(ctx, startX, y, renderOptions);
+            RenderText(ctx, x, y);
         }
     }
 }

@@ -29,6 +29,8 @@ namespace VexFlowSharp
     /// </summary>
     public abstract class Modifier : Element
     {
+        public new const string CATEGORY = "Modifier";
+
         // The note this modifier is attached to. Typed as Element? because Note.cs
         // does not exist yet; plan 02-03 will narrow this when Note is defined.
         protected Element? note;
@@ -54,6 +56,8 @@ namespace VexFlowSharp
             spacingFromNextModifier = 0;
         }
 
+        public override string GetCategory() => CATEGORY;
+
         /// <summary>Called when position changes. Override to react to position updates.</summary>
         protected virtual void Reset() { }
 
@@ -72,7 +76,7 @@ namespace VexFlowSharp
             => note ?? throw new VexFlowException("NoNote", "Modifier has no note.");
 
         /// <summary>Set the attached note element. Returns this for fluent chaining.</summary>
-        public Modifier SetNote(Element n) { note = n; return this; }
+        public virtual Modifier SetNote(Element n) { note = n; return this; }
 
         // ── Index ──────────────────────────────────────────────────────────────
 

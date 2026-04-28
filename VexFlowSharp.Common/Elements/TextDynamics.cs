@@ -22,7 +22,7 @@ namespace VexFlowSharp
     {
         // ── Category ──────────────────────────────────────────────────────────
 
-        public const string CATEGORY = "textdynamics";
+        public new const string CATEGORY = "TextDynamics";
         public override string GetCategory() => CATEGORY;
 
         // ── Fields ────────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ namespace VexFlowSharp
         private readonly string sequence;
 
         /// <summary>Staff line where dynamics are rendered (default 0; draw() applies -3 offset like VexFlow).</summary>
-        private double line = 0;
+        private double line = Metrics.GetDouble("TextDynamics.line");
 
         /// <summary>Glyph font scale for rendering. Matches Tables.NOTATION_FONT_SCALE default.</summary>
         private double glyphFontSize;
@@ -51,7 +51,8 @@ namespace VexFlowSharp
         public TextDynamics(NoteStruct noteStruct, string dynamics) : base(noteStruct)
         {
             sequence = (dynamics ?? "").ToLowerInvariant();
-            glyphFontSize = Tables.NOTATION_FONT_SCALE;
+            line = Metrics.GetDouble("TextDynamics.line");
+            glyphFontSize = Metrics.GetDouble("TextDynamics.glyphFontSize");
         }
 
         /// <summary>
@@ -125,8 +126,7 @@ namespace VexFlowSharp
             rendered = true;
 
             double x = GetAbsoluteX();
-            // VexFlow: getYForLine(this.line + -3) — offset of -3 places dynamics below the staff
-            double y = stave.GetYForLine(line + -3);
+            double y = stave.GetYForLine(line + Metrics.GetDouble("TextDynamics.lineOffset"));
 
             double curX = x;
             foreach (char c in sequence)

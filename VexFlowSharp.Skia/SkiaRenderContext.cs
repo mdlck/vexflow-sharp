@@ -17,16 +17,32 @@ namespace VexFlowSharp.Skia
         private SKPath _currentPath = new SKPath();
         private SKPaint _fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = SKColors.Black };
         private SKPaint _strokePaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = SKColors.Black, StrokeWidth = 1 };
+        private string _fillStyle = "black";
+        private string _strokeStyle = "black";
         private string _backgroundFillStyle = "#FFFFFF";
         private string _currentFont = "Arial";
         private double _fontSize = 10;
         private string _fontWeight = "normal";
         private string _fontStyle = "normal";
+        private string _shadowColor = "transparent";
+        private double _shadowBlur = 0;
 
         // Paint state stack — SKCanvas.Save/Restore only saves transform/clip,
         // not paint colors. We maintain our own stack to mirror HTML5 canvas semantics.
-        private readonly Stack<(SKColor fillColor, SKColor strokeColor, float strokeWidth)> _paintStack
-            = new Stack<(SKColor, SKColor, float)>();
+        private readonly Stack<(SKColor fillColor,
+                                string fillStyle,
+                                SKColor strokeColor,
+                                string strokeStyle,
+                                float strokeWidth,
+                                SKStrokeCap strokeCap,
+                                SKPathEffect? pathEffect,
+                                string fontFamily,
+                                double fontSize,
+                                string fontWeight,
+                                string fontStyle,
+                                string shadowColor,
+                                double shadowBlur)> _paintStack
+            = new Stack<(SKColor, string, SKColor, string, float, SKStrokeCap, SKPathEffect?, string, double, string, string, string, double)>();
 
         public SkiaRenderContext(int width, int height)
         {
@@ -49,7 +65,19 @@ namespace VexFlowSharp.Skia
         public override RenderContext Save()
         {
             _canvas.Save();
-            _paintStack.Push((_fillPaint.Color, _strokePaint.Color, _strokePaint.StrokeWidth));
+            _paintStack.Push((_fillPaint.Color,
+                              _fillStyle,
+                              _strokePaint.Color,
+                              _strokeStyle,
+                              _strokePaint.StrokeWidth,
+                              _strokePaint.StrokeCap,
+                              _strokePaint.PathEffect,
+                              _currentFont,
+                              _fontSize,
+                              _fontWeight,
+                              _fontStyle,
+                              _shadowColor,
+                              _shadowBlur));
             return this;
         }
 
@@ -58,10 +86,33 @@ namespace VexFlowSharp.Skia
             _canvas.Restore();
             if (_paintStack.Count > 0)
             {
-                var (fillColor, strokeColor, strokeWidth) = _paintStack.Pop();
+                var (fillColor,
+                     fillStyle,
+                     strokeColor,
+                     strokeStyle,
+                     strokeWidth,
+                     strokeCap,
+                     pathEffect,
+                     fontFamily,
+                     fontSize,
+                     fontWeight,
+                     fontStyle,
+                     shadowColor,
+                     shadowBlur) = _paintStack.Pop();
                 _fillPaint.Color = fillColor;
+                _fillStyle = fillStyle;
                 _strokePaint.Color = strokeColor;
+                _strokeStyle = strokeStyle;
                 _strokePaint.StrokeWidth = strokeWidth;
+                _strokePaint.StrokeCap = strokeCap;
+                _strokePaint.PathEffect = pathEffect;
+                _currentFont = fontFamily;
+                _fontSize = fontSize;
+                _fontWeight = fontWeight;
+                _fontStyle = fontStyle;
+                _fillPaint.TextSize = (float)fontSize;
+                _shadowColor = shadowColor;
+                _shadowBlur = shadowBlur;
             }
             return this;
         }
@@ -70,6 +121,7 @@ namespace VexFlowSharp.Skia
 
         public override RenderContext SetFillStyle(string style)
         {
+            _fillStyle = style;
             _fillPaint.Color = ParseColor(style);
             return this;
         }
@@ -82,19 +134,34 @@ namespace VexFlowSharp.Skia
 
         public override RenderContext SetStrokeStyle(string style)
         {
+            _strokeStyle = style;
             _strokePaint.Color = ParseColor(style);
             return this;
+        }
+
+        public override string FillStyle
+        {
+            get => _fillStyle;
+            set => SetFillStyle(value);
+        }
+
+        public override string StrokeStyle
+        {
+            get => _strokeStyle;
+            set => SetStrokeStyle(value);
         }
 
         public override RenderContext SetShadowColor(string color)
         {
             // SkiaSharp shadow requires SKMaskFilter or manual blurring; stored for future use
+            _shadowColor = color;
             return this;
         }
 
         public override RenderContext SetShadowBlur(double blur)
         {
             // Stored for future use
+            _shadowBlur = blur;
             return this;
         }
 
@@ -123,7 +190,10 @@ namespace VexFlowSharp.Skia
             }
             else
             {
-                _strokePaint.PathEffect = SKPathEffect.CreateDash(dashPattern.Select(d => (float)d).ToArray(), 0);
+                var normalizedDashPattern = dashPattern.Length % 2 == 0
+                    ? dashPattern
+                    : dashPattern.Concat(dashPattern).ToArray();
+                _strokePaint.PathEffect = SKPathEffect.CreateDash(normalizedDashPattern.Select(d => (float)d).ToArray(), 0);
             }
             return this;
         }
@@ -133,6 +203,21 @@ namespace VexFlowSharp.Skia
         public override RenderContext Scale(double x, double y)
         {
             _canvas.Scale((float)x, (float)y);
+            return this;
+        }
+
+        public override RenderContext OpenRotation(double degrees, double x, double y)
+        {
+            Save();
+            _canvas.Translate((float)x, (float)y);
+            _canvas.RotateDegrees((float)degrees);
+            _canvas.Translate((float)-x, (float)-y);
+            return this;
+        }
+
+        public override RenderContext CloseRotation()
+        {
+            Restore();
             return this;
         }
 

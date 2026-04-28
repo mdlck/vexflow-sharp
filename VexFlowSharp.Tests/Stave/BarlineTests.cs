@@ -2,6 +2,7 @@
 // MIT License
 
 using NUnit.Framework;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.StaveTests
 {
@@ -107,6 +108,30 @@ namespace VexFlowSharp.Tests.StaveTests
             var b = new Barline(BarlineType.Single);
             b.SetType(BarlineType.End);
             Assert.That(b.GetBarlineType(), Is.EqualTo(BarlineType.End));
+        }
+
+        [Test]
+        public void DrawRepeatBegin_UsesMetricDotGeometry()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 20, 200);
+            stave.SetContext(ctx);
+            var barline = new Barline(BarlineType.RepeatBegin, xPos: 100);
+
+            barline.Draw(stave, 0);
+
+            var arcs = ctx.GetCalls("Arc").ToArray();
+            Assert.That(arcs, Has.Length.EqualTo(2));
+
+            double radius = Metrics.GetDouble("Barline.repeat.dotRadius");
+            double dotX = 100
+                + Metrics.GetDouble("Barline.repeat.thinBarShiftBegin")
+                + Metrics.GetDouble("Barline.repeat.dotOffset")
+                + radius / 2;
+
+            Assert.That(arcs[0].Args[0], Is.EqualTo(dotX).Within(0.0001));
+            Assert.That(arcs[0].Args[2], Is.EqualTo(radius).Within(0.0001));
+            Assert.That(arcs[1].Args[1] - arcs[0].Args[1], Is.EqualTo(stave.GetSpacingBetweenLines()).Within(0.0001));
         }
     }
 }

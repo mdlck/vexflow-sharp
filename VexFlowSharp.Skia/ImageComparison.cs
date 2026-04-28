@@ -18,6 +18,13 @@ namespace VexFlowSharp.Skia
         public const int PerChannelTolerance = 5;
 
         /// <summary>
+        /// Threshold for PNG comparisons across different rendering engines.
+        /// SkiaSharp and node-canvas can rasterize the same glyph outlines with
+        /// visibly equivalent layout but different ink density.
+        /// </summary>
+        public const double CrossEngineThresholdPercent = 11.0;
+
+        /// <summary>
         /// Computes the percentage of pixels that differ between two PNG byte arrays.
         /// Pixels are considered different if any R, G, or B channel differs by more than PerChannelTolerance.
         /// </summary>

@@ -14,6 +14,15 @@ namespace VexFlowSharp.Tests.Note
         }
 
         [Test]
+        public void Category_IsV5Stem()
+        {
+            var stem = new Stem();
+
+            Assert.That(Stem.CATEGORY, Is.EqualTo("Stem"));
+            Assert.That(stem.GetCategory(), Is.EqualTo(Stem.CATEGORY));
+        }
+
+        [Test]
         public void DOWN_ConstantIsMinusOne()
         {
             Assert.That(Stem.DOWN, Is.EqualTo(-1));
@@ -87,6 +96,18 @@ namespace VexFlowSharp.Tests.Note
             // but we can verify the flag was set by drawing would be different
             // For this test, we just confirm AdjustHeightForFlag doesn't throw
             Assert.That(stem.GetHeight(), Is.EqualTo(beforeHeight));
+            Assert.That(stem.GetRenderHeightAdjustment(),
+                Is.EqualTo(Metrics.GetDouble("Stem.heightAdjustmentForFlag", -3)));
+        }
+
+        [Test]
+        public void AdjustHeightForBeam_UsesHalfStemWidth()
+        {
+            var stem = new Stem();
+
+            stem.AdjustHeightForBeam();
+
+            Assert.That(stem.GetRenderHeightAdjustment(), Is.EqualTo(-Stem.WIDTH / 2));
         }
 
         [Test]

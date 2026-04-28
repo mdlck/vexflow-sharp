@@ -30,6 +30,8 @@ namespace VexFlowSharp
     /// </summary>
     public class GraceNote : StaveNote
     {
+        public new const string CATEGORY = "GraceNote";
+
         // ── Constants ──────────────────────────────────────────────────────────
 
         /// <summary>
@@ -88,6 +90,18 @@ namespace VexFlowSharp
         /// </summary>
         public override double GetStaveNoteScale() => SCALE;
 
+        public override string GetCategory() => CATEGORY;
+
+        public override double GetStemExtension()
+        {
+            if (stemExtensionOverride.HasValue)
+                return stemExtensionOverride.Value;
+
+            double ret = base.GetStemExtension();
+            double scale = GetStaveNoteScale();
+            return Stem.HEIGHT * scale - Stem.HEIGHT + ret;
+        }
+
         // ── Draw override ──────────────────────────────────────────────────────
 
         /// <summary>
@@ -117,57 +131,73 @@ namespace VexFlowSharp
         {
             var ctx = CheckContext();
             double staveNoteScale = GetStaveNoteScale();
-            double offsetScale = staveNoteScale / 0.66;
-
-            int stemDirection = GetStemDirection();
-            var noteHeadBounds = GetNoteHeadBounds();
-            double noteStemHeight = stem!.GetHeight();
-            double x = GetAbsoluteX();
-
-            // Compute y starting point based on stem direction
-            double y = stemDirection == Stem.DOWN
-                ? noteHeadBounds.YTop - noteStemHeight
-                : noteHeadBounds.YBottom - noteStemHeight;
-
-            double defaultStemExtension = stemDirection == Stem.DOWN
-                ? glyphProps.StemDownExtension
-                : glyphProps.StemUpExtension;
-
-            double defaultOffsetY = Tables.STEM_HEIGHT;
-            defaultOffsetY -= defaultOffsetY / 2.8;
-            defaultOffsetY += defaultStemExtension;
-            y += defaultOffsetY * staveNoteScale * stemDirection;
-
-            // Slash offsets (magic numbers based on scale 0.66)
-            double x1Offset, y1Offset, x2Offset, y2Offset;
-            if (stemDirection == Stem.UP)
-            {
-                x1Offset = 1;
-                y1Offset = 0;
-                x2Offset = 13;
-                y2Offset = -9;
-            }
-            else
-            {
-                x1Offset = -4;
-                y1Offset = 1;
-                x2Offset = 13;
-                y2Offset = 9;
-            }
-
-            double x1 = x + x1Offset * offsetScale;
-            double y1 = y + y1Offset * offsetScale;
-            double x2 = x1 + x2Offset * offsetScale;
-            double y2 = y1 + y2Offset * offsetScale;
+            var slashBBox = beam != null
+                ? CalcBeamedNotesSlashBBox(8 * staveNoteScale, 8 * staveNoteScale, 6 * staveNoteScale, 5 * staveNoteScale)
+                : CalcUnbeamedSlashBBox(staveNoteScale);
 
             ctx.Save();
-            ctx.SetLineWidth(1 * offsetScale);
+            ctx.SetLineWidth(1 * staveNoteScale);
             ctx.BeginPath();
-            ctx.MoveTo(x1, y1);
-            ctx.LineTo(x2, y2);
+            ctx.MoveTo(slashBBox.X1, slashBBox.Y1);
+            ctx.LineTo(slashBBox.X2, slashBBox.Y2);
             ctx.ClosePath();
             ctx.Stroke();
             ctx.Restore();
+        }
+
+        private (double X1, double Y1, double X2, double Y2) CalcUnbeamedSlashBBox(double scale)
+        {
+            int stemDirection = GetStemDirection();
+            var noteHeadBounds = GetNoteHeadBounds();
+            double noteHeadWidth = GetGlyphWidth();
+            double x = stemDirection == Stem.DOWN ? GetAbsoluteX() : GetAbsoluteX() + noteHeadWidth;
+            double defaultOffsetY = Tables.STEM_HEIGHT * scale / 2.0;
+            double y = stemDirection == Stem.DOWN
+                ? noteHeadBounds.YBottom + defaultOffsetY
+                : noteHeadBounds.YTop - defaultOffsetY;
+
+            return stemDirection == Stem.DOWN
+                ? (x - noteHeadWidth, y - noteHeadWidth, x + noteHeadWidth, y + noteHeadWidth)
+                : (x - noteHeadWidth, y + noteHeadWidth, x + noteHeadWidth, y - noteHeadWidth);
+        }
+
+        private (double X1, double Y1, double X2, double Y2) CalcBeamedNotesSlashBBox(
+            double slashStemOffset,
+            double slashBeamOffset,
+            double protrusionStem,
+            double protrusionBeam)
+        {
+            if (beam == null)
+                throw new VexFlowException("NoBeam", "Can't calculate without a beam.");
+
+            if (!beam.PostFormatted)
+                beam.PostFormat();
+
+            double beamSlope = beam.Slope;
+            bool isBeamEndNote = beam.Notes[beam.Notes.Count - 1] == this;
+            int scaleX = isBeamEndNote ? -1 : 1;
+            double beamAngle = System.Math.Atan(beamSlope * scaleX);
+
+            double iPointDx = System.Math.Cos(beamAngle) * slashBeamOffset;
+            double iPointDy = System.Math.Sin(beamAngle) * slashBeamOffset;
+
+            slashStemOffset *= GetStemDirection();
+            double slashAngle = System.Math.Atan((iPointDy - slashStemOffset) / iPointDx);
+            double protrusionStemDeltaX = System.Math.Cos(slashAngle) * protrusionStem * scaleX;
+            double protrusionStemDeltaY = System.Math.Sin(slashAngle) * protrusionStem;
+            double protrusionBeamDeltaX = System.Math.Cos(slashAngle) * protrusionBeam * scaleX;
+            double protrusionBeamDeltaY = System.Math.Sin(slashAngle) * protrusionBeam;
+
+            double stemX = GetStemX();
+            double firstStemX = beam.Notes[0].GetStemX();
+            double stemY = beam.GetBeamYToDraw() + (stemX - firstStemX) * beamSlope;
+
+            return (
+                stemX - protrusionStemDeltaX,
+                stemY + slashStemOffset - protrusionStemDeltaY,
+                stemX + iPointDx * scaleX + protrusionBeamDeltaX,
+                stemY + iPointDy + protrusionBeamDeltaY
+            );
         }
     }
 }

@@ -131,7 +131,7 @@ namespace VexFlowSharp.Common.Elements
     {
         // ── Category ──────────────────────────────────────────────────────────
 
-        public const string CATEGORY = "Beam";
+        public new const string CATEGORY = "Beam";
         public override string GetCategory() => CATEGORY;
 
         // ── Static beam-direction constants ───────────────────────────────────
@@ -154,7 +154,7 @@ namespace VexFlowSharp.Common.Elements
         /// <summary>Render options for this beam.</summary>
         public BeamRenderOptions RenderOptions { get; }
 
-        private readonly int stemDirection;
+        private int stemDirection;
         private readonly int ticks;
         private double yShift;
         private readonly List<int> breakOnIndices;
@@ -195,7 +195,10 @@ namespace VexFlowSharp.Common.Elements
             {
                 var note = notes[i];
                 if (autoStem)
+                {
                     note.SetStemDirection(computedStemDir);
+                    stemDirection = computedStemDir;
+                }
                 note.SetBeam(this);
             }
 
@@ -461,6 +464,22 @@ namespace VexFlowSharp.Common.Elements
                     note.SetStemDirection(stemDir);
             }
 
+            // ── getTuplets ───────────────────────────────────────────────────
+            var allTuplets = new List<Tuplet>();
+            foreach (var group in noteGroups)
+            {
+                Tuplet? tuplet = null;
+                foreach (var note in group)
+                {
+                    if (note.GetTuplet() is Tuplet noteTuplet && tuplet != noteTuplet)
+                    {
+                        tuplet = noteTuplet;
+                        if (!allTuplets.Contains(tuplet))
+                            allTuplets.Add(tuplet);
+                    }
+                }
+            }
+
             // ── getBeamGroups — filter to groups > 1 note, all beamable ──────
             var beamedNoteGroups = noteGroups
                 .Where(group =>
@@ -485,6 +504,32 @@ namespace VexFlowSharp.Common.Elements
                     beam.RenderOptions.FlatBeamOffset = config.FlatBeamOffset;
                 }
                 beams.Add(beam);
+            }
+
+            // Reformat tuplets after beam attachment, matching v5 beam.ts.
+            foreach (var tuplet in allTuplets)
+            {
+                var tupletNotes = tuplet.GetNotes();
+                if (tupletNotes.Count == 0) continue;
+
+                if (tupletNotes[0] is VexFlowSharp.StemmableNote first)
+                {
+                    int direction = first.GetStemDirection() == VexFlowSharp.Stem.DOWN
+                        ? (int)TupletLocation.Bottom
+                        : (int)TupletLocation.Top;
+                    tuplet.SetTupletLocation(direction);
+                }
+
+                bool bracketed = false;
+                foreach (var note in tupletNotes)
+                {
+                    if (note is not VexFlowSharp.StemmableNote stemmable || !stemmable.HasBeam())
+                    {
+                        bracketed = true;
+                        break;
+                    }
+                }
+                tuplet.SetBracketed(bracketed);
             }
 
             return beams;
@@ -932,7 +977,7 @@ namespace VexFlowSharp.Common.Elements
         /// </summary>
         protected void DrawBeamLines(VexFlowSharp.RenderContext ctx)
         {
-            var validDurations = new[] { "4", "8", "16", "32", "64" };
+            var validDurations = new[] { "4", "8", "16", "32", "64", "128" };
 
             var firstNote = Notes[0];
             double beamY = GetBeamYToDraw();
@@ -988,7 +1033,7 @@ namespace VexFlowSharp.Common.Elements
         {
             if (PostFormatted) return;
 
-            if (RenderOptions.FlatBeams)
+            if (Notes[0] is VexFlowSharp.TabNote || RenderOptions.FlatBeams)
                 CalculateFlatSlope();
             else
                 CalculateSlope();

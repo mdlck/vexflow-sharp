@@ -8,6 +8,15 @@ namespace VexFlowSharp.Tests.Note
     public class NoteHeadTests
     {
         [Test]
+        public void Category_IsV5NoteHead()
+        {
+            var nh = new NoteHead(new NoteHeadStruct { Duration = "4", NoteType = "n" });
+
+            Assert.That(NoteHead.CATEGORY, Is.EqualTo("NoteHead"));
+            Assert.That(nh.GetCategory(), Is.EqualTo(NoteHead.CATEGORY));
+        }
+
+        [Test]
         public void Constructor_WithLine3_StoresLine()
         {
             // Line 3 = B4 in treble clef (middle line)
@@ -81,6 +90,20 @@ namespace VexFlowSharp.Tests.Note
         }
 
         [Test]
+        public void GetWidth_UsesGlyphMetricsWhenAvailable()
+        {
+            var nh = new NoteHead(new NoteHeadStruct
+            {
+                Duration = "4",
+                NoteType = "n",
+            });
+
+            var expected = new Glyph(nh.GetGlyphCode(), Tables.NOTATION_FONT_SCALE).GetMetrics()!.Width;
+
+            Assert.That(nh.GetWidth(), Is.EqualTo(expected).Within(0.0001));
+        }
+
+        [Test]
         public void IsDisplaced_DefaultsFalse()
         {
             var nh = new NoteHead(new NoteHeadStruct { Duration = "4", NoteType = "n" });
@@ -93,6 +116,24 @@ namespace VexFlowSharp.Tests.Note
             var nh = new NoteHead(new NoteHeadStruct { Duration = "4", NoteType = "n" });
             nh.SetDisplaced(true);
             Assert.That(nh.IsDisplaced(), Is.True);
+        }
+
+        [Test]
+        public void GetAbsoluteX_AppliesV5DisplacedNoteheadShift()
+        {
+            var nh = new NoteHead(new NoteHeadStruct
+            {
+                Duration = "4",
+                NoteType = "n",
+                X = 20,
+                XShift = 3,
+                Displaced = true,
+                StemDirection = Stem.UP,
+            });
+
+            var expected = 20 + 3 + nh.GetWidth() - Stem.WIDTH / 2.0;
+
+            Assert.That(nh.GetAbsoluteX(), Is.EqualTo(expected).Within(0.0001));
         }
 
         [Test]

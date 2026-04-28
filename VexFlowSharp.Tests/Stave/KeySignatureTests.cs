@@ -140,6 +140,35 @@ namespace VexFlowSharp.Tests.StaveTests
             Assert.That(ksCSharp.GetWidth(), Is.GreaterThan(ksG.GetWidth()));
         }
 
+        [Test]
+        public void KeySignature_D_WidthUsesMetricAccidentalSpacing()
+        {
+            var ks = new KeySignature("D");
+            var (code, _) = Tables.AccidentalCodes("#");
+            double scale = (Tables.NOTATION_FONT_SCALE * 72.0) / (BravuraGlyphs.Data.Resolution * 100.0);
+            Assert.That(BravuraGlyphs.Data.Glyphs.TryGetValue(code, out var glyph), Is.True);
+
+            double glyphWidth = (glyph!.XMax - glyph.XMin) * scale;
+            double expected = glyphWidth * 2 + Metrics.GetDouble("KeySignature.accidentalSpacing");
+
+            Assert.That(ks.GetWidth(), Is.EqualTo(expected).Within(0.0001));
+        }
+
+        [Test]
+        public void KeySignature_CancelPreviousKey_AddsNaturals()
+        {
+            var ks = new KeySignature("C", "G");
+            Assert.That(ks.GetAccidentalCount(), Is.EqualTo(1));
+            Assert.That(ks.GetWidth(), Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void KeySignature_CancelDifferentAccidentalType_CancelsAllPreviousAccidentals()
+        {
+            var ks = new KeySignature("F", "D");
+            Assert.That(ks.GetAccidentalCount(), Is.EqualTo(3));
+        }
+
         // ── Position ─────────────────────────────────────────────────────────
 
         [Test]

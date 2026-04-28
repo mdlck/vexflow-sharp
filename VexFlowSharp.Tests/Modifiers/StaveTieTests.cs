@@ -5,6 +5,7 @@
 // Ports key test cases from vexflow/tests/stavetie_tests.ts.
 
 using NUnit.Framework;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.Modifiers
 {
@@ -17,31 +18,31 @@ namespace VexFlowSharp.Tests.Modifiers
         // ── StaveTieRenderOptions defaults ────────────────────────────────────
 
         [Test]
-        public void StaveTieOptions_DefaultCp1Is36()
+        public void StaveTieOptions_DefaultCp1MatchesV5()
         {
             var opts = new StaveTieRenderOptions();
-            Assert.AreEqual(36.0, opts.Cp1, 1e-9);
+            Assert.AreEqual(Metrics.GetDouble("StaveTie.cp1"), opts.Cp1, 1e-9);
         }
 
         [Test]
-        public void StaveTieOptions_DefaultCp2Is36()
+        public void StaveTieOptions_DefaultCp2MatchesV5()
         {
             var opts = new StaveTieRenderOptions();
-            Assert.AreEqual(36.0, opts.Cp2, 1e-9);
+            Assert.AreEqual(Metrics.GetDouble("StaveTie.cp2"), opts.Cp2, 1e-9);
         }
 
         [Test]
         public void StaveTieOptions_DefaultYShiftIs7()
         {
             var opts = new StaveTieRenderOptions();
-            Assert.AreEqual(7.0, opts.YShift, 1e-9);
+            Assert.AreEqual(Metrics.GetDouble("StaveTie.yShift"), opts.YShift, 1e-9);
         }
 
         [Test]
         public void StaveTieOptions_DefaultThicknessIs2()
         {
             var opts = new StaveTieRenderOptions();
-            Assert.AreEqual(2.0, opts.Thickness, 1e-9);
+            Assert.AreEqual(Metrics.GetDouble("StaveTie.thickness"), opts.Thickness, 1e-9);
         }
 
         // ── Constructor ───────────────────────────────────────────────────────
@@ -125,7 +126,8 @@ namespace VexFlowSharp.Tests.Modifiers
         {
             var tieNotes = new TieNotes();
             var tie      = new StaveTie(tieNotes);
-            Assert.AreEqual("StaveTie", tie.GetCategory());
+            Assert.AreEqual(StaveTie.CATEGORY, tie.GetCategory());
+            Assert.AreEqual("StaveTie", StaveTie.CATEGORY);
         }
 
         // ── SetDirection ─────────────────────────────────────────────────────
@@ -137,6 +139,29 @@ namespace VexFlowSharp.Tests.Modifiers
             var tie      = new StaveTie(tieNotes);
             var result   = tie.SetDirection(1);
             Assert.AreSame(tie, result);
+        }
+
+        [Test]
+        public void Draw_CloseNotesUsesMetricControlPoints()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 40, 200);
+            var first = new StaveNote(new StaveNoteStruct { Keys = new[] { "c/4" }, Duration = "4" });
+            var last = new StaveNote(new StaveNoteStruct { Keys = new[] { "c/4" }, Duration = "4" });
+            first.SetStave(stave).SetX(60).PreFormat();
+            last.SetStave(stave).SetX(65).PreFormat();
+            var tie = new StaveTie(new TieNotes { FirstNote = first, LastNote = last }).SetDirection(1);
+            tie.SetContext(ctx);
+
+            tie.Draw();
+
+            var curves = ctx.GetCalls("QuadraticCurveTo").ToArray();
+            Assert.That(curves, Has.Length.EqualTo(2));
+
+            double averageY = (first.GetTieYForBottom() + last.GetTieYForBottom()) / 2.0
+                + Metrics.GetDouble("StaveTie.yShift");
+            Assert.That(curves[0].Args[1], Is.EqualTo(averageY + Metrics.GetDouble("StaveTie.closeNoteCp1")).Within(0.0001));
+            Assert.That(curves[1].Args[1], Is.EqualTo(averageY + Metrics.GetDouble("StaveTie.closeNoteCp2")).Within(0.0001));
         }
     }
 }

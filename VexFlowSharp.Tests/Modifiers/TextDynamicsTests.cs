@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using VexFlowSharp;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.Modifiers
 {
@@ -14,6 +15,7 @@ namespace VexFlowSharp.Tests.Modifiers
         {
             var td = new TextDynamics("f");
             Assert.AreEqual(12.0, td.GetWidth(), 1e-9);
+            Assert.That(td.GetLine(), Is.EqualTo(Metrics.GetDouble("TextDynamics.line")));
         }
 
         [Test]
@@ -65,6 +67,22 @@ namespace VexFlowSharp.Tests.Modifiers
             var td = new TextDynamics("x");
             // x is not a valid dynamics letter — GetWidth returns 0, Draw throws
             Assert.AreEqual(0.0, td.GetWidth(), 1e-9);
+            Assert.Throws<System.InvalidOperationException>(() => td.PreFormat());
+        }
+
+        [Test]
+        public void Draw_RendersDynamicsGlyphOutline()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 60, 200);
+            stave.SetContext(ctx);
+            var td = new TextDynamics("f");
+            td.SetX(20).SetStave(stave).SetContext(ctx);
+
+            td.Draw();
+
+            Assert.That(ctx.HasCall("BeginPath"), Is.True);
+            Assert.That(ctx.HasCall("Fill"), Is.True);
         }
     }
 }

@@ -28,19 +28,19 @@ namespace VexFlowSharp
     public class CurveOptions
     {
         /// <summary>Stroke thickness of the bezier arc fill path.</summary>
-        public double Thickness { get; set; } = 2;
+        public double Thickness { get; set; } = Metrics.GetDouble("Curve.thickness");
 
         /// <summary>Horizontal shift applied to both anchor x positions.</summary>
-        public double X_Shift { get; set; } = 0;
+        public double X_Shift { get; set; } = Metrics.GetDouble("Curve.xShift");
 
         /// <summary>Vertical shift applied to both anchor y positions (scaled by direction).</summary>
-        public double Y_Shift { get; set; } = 10;
+        public double Y_Shift { get; set; } = Metrics.GetDouble("Curve.yShift");
 
         /// <summary>
         /// Control point y-offset for the bezier arc height.
         /// Default cp y value from VexFlow's render_options.cps[n].y = 10.
         /// </summary>
-        public double CpHeight { get; set; } = 10;
+        public double CpHeight { get; set; } = Metrics.GetDouble("Curve.cpHeight");
 
         /// <summary>Whether to invert the curve direction relative to the stem direction.</summary>
         public bool Invert { get; set; } = false;
@@ -62,6 +62,8 @@ namespace VexFlowSharp
     /// </summary>
     public class Curve : Element
     {
+        public new const string CATEGORY = "Curve";
+
         private readonly Note? from;
         private readonly Note? to;
         private readonly CurveOptions renderOptions;
@@ -78,6 +80,10 @@ namespace VexFlowSharp
             this.to            = to;
             this.renderOptions = options ?? new CurveOptions();
         }
+
+        public Note? GetFromNote() => from;
+        public Note? GetToNote() => to;
+        public CurveOptions GetRenderOptions() => renderOptions;
 
         /// <summary>
         /// Returns true if this is a partial curve (one note is null).
@@ -98,8 +104,10 @@ namespace VexFlowSharp
         private void RenderCurve(double firstX, double firstY, double lastX, double lastY,
                                   int direction, RenderContext ctx)
         {
+            ApplyStyle();
             double cpHeight  = renderOptions.CpHeight;
             double thickness = renderOptions.Thickness;
+            bool dashed = !string.IsNullOrWhiteSpace(GetStyle()?.LineDash);
 
             // cp_spacing = (last_x - first_x) / (cps.length + 2), cps.length = 2 → divide by 4
             double cpSpacing = (lastX - firstX) / 4.0;
@@ -114,14 +122,19 @@ namespace VexFlowSharp
             ctx.MoveTo(firstX, firstY);
             ctx.BezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, lastX, lastY);
 
-            // Return pass (thickness) — offset the y by thickness in the curve direction
-            ctx.BezierCurveTo(
-                cp2X, cp2Y + thickness * direction,
-                cp1X, cp1Y + thickness * direction,
-                firstX, firstY
-            );
+            if (!dashed)
+            {
+                // Return pass (thickness) — offset the y by thickness in the curve direction
+                ctx.BezierCurveTo(
+                    cp2X, cp2Y + thickness * direction,
+                    cp1X, cp1Y + thickness * direction,
+                    firstX, firstY
+                );
+            }
+            ctx.Stroke();
             ctx.ClosePath();
-            ctx.Fill();
+            if (!dashed) ctx.Fill();
+            RestoreStyle();
         }
 
         /// <summary>
@@ -194,6 +207,6 @@ namespace VexFlowSharp
         }
 
         /// <inheritdoc />
-        public override string GetCategory() => "Curve";
+        public override string GetCategory() => CATEGORY;
     }
 }

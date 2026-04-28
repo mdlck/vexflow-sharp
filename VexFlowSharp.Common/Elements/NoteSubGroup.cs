@@ -25,7 +25,7 @@ namespace VexFlowSharp
         // ── Category ──────────────────────────────────────────────────────────
 
         /// <summary>Category string used by ModifierContext for dispatch.</summary>
-        public static string CATEGORY = "notesubgroups";
+        public new const string CATEGORY = "NoteSubGroup";
 
         // ── Fields ────────────────────────────────────────────────────────────
 
@@ -71,6 +71,9 @@ namespace VexFlowSharp
 
         /// <summary>Get the formatted width (valid after PreFormat).</summary>
         public new double GetWidth() => width;
+
+        /// <summary>Get the notes formatted inside this subgroup.</summary>
+        public List<Note> GetSubNotes() => subNotes;
 
         // ── PreFormat ─────────────────────────────────────────────────────────
 

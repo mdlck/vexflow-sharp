@@ -20,16 +20,16 @@ namespace VexFlowSharp.Common.Formatting
     public class SystemOptions
     {
         /// <summary>X origin of the system. Default 10.</summary>
-        public double X { get; set; } = 10;
+        public double X { get; set; } = Metrics.GetDouble("System.x");
 
         /// <summary>Y origin of the system. Default 10.</summary>
-        public double Y { get; set; } = 10;
+        public double Y { get; set; } = Metrics.GetDouble("System.y");
 
         /// <summary>Width of the system. Default 500.</summary>
-        public double Width { get; set; } = 500;
+        public double Width { get; set; } = Metrics.GetDouble("System.width");
 
         /// <summary>Space between staves in stave-space units. Default 12.</summary>
-        public double SpaceBetweenStaves { get; set; } = 12;
+        public double SpaceBetweenStaves { get; set; } = Metrics.GetDouble("System.spaceBetweenStaves");
 
         /// <summary>Whether to use auto-width based on minimum total width. Default false.</summary>
         public bool AutoWidth { get; set; } = false;
@@ -41,10 +41,10 @@ namespace VexFlowSharp.Common.Formatting
         public bool NoPadding { get; set; } = false;
 
         /// <summary>Number of formatter tuning iterations. Default 0.</summary>
-        public int FormatIterations { get; set; } = 0;
+        public int FormatIterations { get; set; } = (int)Metrics.GetDouble("System.formatIterations");
 
         /// <summary>Learning rate for formatter Tune() calls. Default 0.5.</summary>
-        public double Alpha { get; set; } = 0.5;
+        public double Alpha { get; set; } = Metrics.GetDouble("System.alpha");
 
         /// <summary>Emit formatter debug info. Default false.</summary>
         public bool DebugFormatter { get; set; } = false;
@@ -103,6 +103,10 @@ namespace VexFlowSharp.Common.Formatting
     /// </summary>
     public class System : VexFlowSharp.Element
     {
+        public new const string CATEGORY = "System";
+
+        public override string GetCategory() => CATEGORY;
+
         // ── Fields ────────────────────────────────────────────────────────────
 
         private readonly SystemOptions options;
@@ -127,7 +131,7 @@ namespace VexFlowSharp.Common.Formatting
             this.options = options ?? new SystemOptions();
 
             // If no width specified and noJustification is false, switch to autoWidth
-            if (!this.options.NoJustification && this.options.Width == 500 && options == null)
+            if (!this.options.NoJustification && this.options.Width == Metrics.GetDouble("System.width") && options == null)
                 this.options.AutoWidth = true;
 
             formatter      = new Formatter();
@@ -334,6 +338,9 @@ namespace VexFlowSharp.Common.Formatting
 
             formatCalled = true;
         }
+
+        public override VexFlowSharp.BoundingBox? GetBoundingBox()
+            => new VexFlowSharp.BoundingBox(options.X, options.Y, options.Width, lastY - options.Y);
 
         // ── Draw ──────────────────────────────────────────────────────────────
 

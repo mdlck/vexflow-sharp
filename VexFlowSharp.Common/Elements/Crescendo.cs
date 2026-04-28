@@ -22,7 +22,7 @@ namespace VexFlowSharp
     {
         // ── Category ──────────────────────────────────────────────────────────
 
-        public const string CATEGORY = "crescendo";
+        public new const string CATEGORY = "Crescendo";
         public override string GetCategory() => CATEGORY;
 
         // ── Fields ────────────────────────────────────────────────────────────
@@ -31,10 +31,10 @@ namespace VexFlowSharp
         private bool decrescendo;
 
         /// <summary>Full height at the open end of the hairpin in pixels.</summary>
-        private double height = 15;
+        private double height = Metrics.GetDouble("Crescendo.height");
 
         /// <summary>Staff line on which the hairpin is centred.</summary>
-        private double line = 0;
+        private double line = Metrics.GetDouble("Crescendo.line");
 
         /// <summary>Horizontal extension on the left side (expand start by this amount).</summary>
         private double extendLeft  = 0;
@@ -58,7 +58,7 @@ namespace VexFlowSharp
         public Crescendo(NoteStruct noteStruct) : base(noteStruct)
         {
             decrescendo = false;
-            line = 0;
+            line = Metrics.GetDouble("Crescendo.line");
         }
 
         /// <summary>
@@ -84,6 +84,9 @@ namespace VexFlowSharp
 
         /// <summary>Set the full hairpin height at the open end.</summary>
         public Crescendo SetHeight(double h) { height = h; return this; }
+
+        /// <summary>Get the staff line for placement.</summary>
+        public double GetLine() => line;
 
         /// <summary>Set the staff line for placement.</summary>
         public Crescendo SetLine(double l) { line = l; return this; }
@@ -157,8 +160,9 @@ namespace VexFlowSharp
                 ? nextContext.GetX() + extendRight
                 : stave.GetX() + stave.GetWidth();
 
-            // VexFlow: getYForLine(this.line + -3) + 1
-            double y = stave.GetYForLine(line + -3) + 1 + yShift;
+            double y = stave.GetYForLine(line + Metrics.GetDouble("Crescendo.lineOffset"))
+                + Metrics.GetDouble("Crescendo.yOffset")
+                + yShift;
 
             RenderHairpin(ctx, beginX, endX, y, height, decrescendo);
         }

@@ -26,6 +26,10 @@ namespace VexFlowSharp
     /// </summary>
     public class Clef : StaveModifier
     {
+        public new const string CATEGORY = "Clef";
+
+        public override string GetCategory() => CATEGORY;
+
         /// <summary>
         /// Map of clef type names to glyph codes and staff-line positions.
         /// Port of VexFlow's Clef.types getter from clef.ts.

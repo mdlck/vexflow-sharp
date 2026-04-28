@@ -14,8 +14,10 @@
 //   - All standard durations construct without error
 
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using VexFlowSharp;
+using VexFlowSharp.Common.Formatting;
 
 namespace VexFlowSharp.Tests.Note
 {
@@ -271,6 +273,57 @@ namespace VexFlowSharp.Tests.Note
             Assert.That(n.GetNoteHeads()[1].IsDisplaced(), Is.False);
         }
 
+        [Test]
+        public void StaveNote_SetKeyStyle_PreservesStyleAcrossReset()
+        {
+            var n = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/5", "d/5" },
+                StemDirection = Stem.UP,
+            });
+            n.SetKeyStyle(1, new ElementStyle { FillStyle = "red", StrokeStyle = "blue" });
+
+            n.SetStemDirection(Stem.DOWN);
+
+            var style = n.GetKeyStyle(1);
+            Assert.That(style, Is.Not.Null);
+            Assert.That(style!.FillStyle, Is.EqualTo("red"));
+            Assert.That(style.StrokeStyle, Is.EqualTo("blue"));
+        }
+
+        [Test]
+        public void StaveNote_SetKeyLine_PreservesKeyStyle()
+        {
+            var n = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/5" },
+                StemDirection = Stem.UP,
+            });
+            n.SetKeyStyle(0, new ElementStyle { FillStyle = "green" });
+
+            n.SetKeyLine(0, 2.5);
+
+            Assert.That(n.GetKeyStyle(0)?.FillStyle, Is.EqualTo("green"));
+            Assert.That(n.GetKeyLine(0), Is.EqualTo(2.5));
+        }
+
+        [Test]
+        public void StaveNote_UnisonKeys_MarkKeyPropsDisplacedForModifierLayout()
+        {
+            var n = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/5", "c/5" },
+                StemDirection = Stem.DOWN,
+            });
+
+            var props = n.GetKeyProps();
+            Assert.That(props[0].Displaced, Is.True);
+            Assert.That(props[1].Displaced, Is.True);
+        }
+
         // ── StaveNote_StaveLine ───────────────────────────────────────────────
 
         /// <summary>
@@ -361,6 +414,23 @@ namespace VexFlowSharp.Tests.Note
             Assert.DoesNotThrow(() => n.SetStave(stave));
         }
 
+        [Test]
+        public void StaveNote_XNoteheadStemUp_UsesStemAnchorYOffset()
+        {
+            var stave = new Stave(10, 10, 400);
+            var n = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/4/x2" },
+                StemDirection = Stem.UP,
+            });
+
+            n.SetStave(stave);
+
+            var expectedBaseY = stave.GetYForNote(0) - Tables.NoteHeadStemYOffsets["noteheadXBlack"].Up * Tables.STAVE_LINE_DISTANCE;
+            Assert.That(n.CheckStem().GetExtents().BaseY, Is.EqualTo(expectedBaseY).Within(0.001));
+        }
+
         // ── StaveNote_Duration_Rest ───────────────────────────────────────────
 
         /// <summary>
@@ -435,6 +505,101 @@ namespace VexFlowSharp.Tests.Note
                     () => new StaveNote(new StaveNoteStruct { Duration = dur, Keys = new[] { "r/4" } }),
                     $"Rest duration '{dur}' should construct without exception");
             }
+        }
+
+        [Test]
+        public void StaveNote_RestTextMetrics_ExposeGlyphBounds()
+        {
+            var n = new StaveNote(new StaveNoteStruct { Duration = "32r", Keys = new[] { "r/4" } });
+            var metrics = n.GetNoteHeads()[0].GetTextMetrics();
+
+            Assert.That(metrics.ActualBoundingBoxAscent, Is.GreaterThan(0));
+            Assert.That(metrics.ActualBoundingBoxDescent, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void StaveNote_GetModifierStartXY_RestUsesV5RestShift()
+        {
+            var stave = new Stave(10, 10, 400);
+            var n = new StaveNote(new StaveNoteStruct { Duration = "32r", Keys = new[] { "r/4" } });
+            n.SetStave(stave);
+            n.SetX(100);
+            n.PreFormat();
+
+            var xy = n.GetModifierStartXY(ModifierPosition.Right, 0);
+
+            Assert.That(xy.X, Is.EqualTo(100 + n.GetGlyphWidth() + 2).Within(0.001));
+            Assert.That(xy.Y, Is.EqualTo(stave.GetYForNote(3) - 1.5 * stave.GetSpacingBetweenLines()).Within(0.001));
+        }
+
+        [Test]
+        public void StaveNote_GetModifierStartXY_ForceFlagRightAddsFlagWidth()
+        {
+            var stave = new Stave(10, 10, 400);
+            var n = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "8",
+                Keys = new[] { "c/4", "e/4" },
+                StemDirection = Stem.UP,
+            });
+            n.SetStave(stave);
+            n.SetX(100);
+            n.PreFormat();
+
+            var plain = n.GetModifierStartXY(ModifierPosition.Right, 0);
+            var forced = n.GetModifierStartXY(ModifierPosition.Right, 0, new StaveNoteModifierStartOptions { ForceFlagRight = true });
+
+            Assert.That(forced.X, Is.GreaterThan(plain.X + 1));
+            Assert.That(plain.Y, Is.EqualTo(stave.GetYForNote(0)).Within(0.001));
+        }
+
+        [Test]
+        public void StaveNote_Format_UnisonSameStyleDoesNotShift()
+        {
+            var upper = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/4" },
+                StemDirection = Stem.UP,
+            });
+            var lower = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/4" },
+                StemDirection = Stem.UP,
+            });
+            var state = new ModifierContextState();
+
+            StaveNote.Format(new List<StaveNote> { upper, lower }, state);
+
+            Assert.That(upper.GetXShift(), Is.EqualTo(0));
+            Assert.That(lower.GetXShift(), Is.EqualTo(0));
+            Assert.That(state.RightShift, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void StaveNote_Format_UnisonDifferentStyleShiftsUpperVoice()
+        {
+            var upper = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/4" },
+                StemDirection = Stem.UP,
+            });
+            var lower = new StaveNote(new StaveNoteStruct
+            {
+                Duration = "4",
+                Keys = new[] { "c/4" },
+                StemDirection = Stem.UP,
+            });
+            lower.SetStyle(new ElementStyle { FillStyle = "red" });
+            var state = new ModifierContextState();
+
+            StaveNote.Format(new List<StaveNote> { upper, lower }, state);
+
+            Assert.That(upper.GetXShift(), Is.GreaterThan(0));
+            Assert.That(lower.GetXShift(), Is.EqualTo(0));
+            Assert.That(state.RightShift, Is.EqualTo(upper.GetXShift()));
         }
 
         // ── StaveNote_IsChord ─────────────────────────────────────────────────

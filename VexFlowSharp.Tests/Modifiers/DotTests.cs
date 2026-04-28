@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using VexFlowSharp;
 using VexFlowSharp.Common.Formatting;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.Modifiers
 {
@@ -23,24 +24,33 @@ namespace VexFlowSharp.Tests.Modifiers
         [Test]
         public void DotCount_ViaWidth_DefaultIsOne()
         {
-            // Dot width starts at 5 (matches VexFlow dot.ts constructor setWidth(5))
             var dot = new Dot();
-            Assert.That(dot.GetWidth(), Is.EqualTo(5.0));
+            Assert.That(dot.GetWidth(), Is.EqualTo(Metrics.GetDouble("Dot.width")));
         }
 
         [Test]
         public void DotRadius_DefaultIsTwo()
         {
             var dot = new Dot();
-            Assert.That(dot.GetRadius(), Is.EqualTo(2.0).Within(1e-9));
+            Assert.That(dot.GetRadius(), Is.EqualTo(Metrics.GetDouble("Dot.radius")).Within(1e-9));
+        }
+
+        [Test]
+        public void GraceNote_UsesMetricScaleAndWidth()
+        {
+            var dot = new Dot();
+            dot.SetNote(new GraceNote(new GraceNoteStruct { Keys = new[] { "c/4" }, Duration = "8" }));
+
+            Assert.That(dot.GetRadius(), Is.EqualTo(Metrics.GetDouble("Dot.radius") * Metrics.GetDouble("Dot.graceScale")).Within(1e-9));
+            Assert.That(dot.GetWidth(), Is.EqualTo(Metrics.GetDouble("Dot.graceWidth")).Within(1e-9));
         }
 
         [Test]
         public void DotCategory_IsDots()
         {
-            Assert.That(Dot.CATEGORY, Is.EqualTo("dots"));
+            Assert.That(Dot.CATEGORY, Is.EqualTo("Dot"));
             var dot = new Dot();
-            Assert.That(dot.GetCategory(), Is.EqualTo("dots"));
+            Assert.That(dot.GetCategory(), Is.EqualTo("Dot"));
         }
 
         // ── Format static method ──────────────────────────────────────────────
@@ -116,7 +126,7 @@ namespace VexFlowSharp.Tests.Modifiers
         public void Basic_SingleVoiceDottedNotes()
         {
             // Verify Dot.CATEGORY matches the ModifierContext category key
-            Assert.That(Dot.CATEGORY, Is.EqualTo("dots"));
+            Assert.That(Dot.CATEGORY, Is.EqualTo("Dot"));
             // Verify position is RIGHT for any new dot
             var dot = new Dot();
             Assert.That(dot.GetPosition(), Is.EqualTo(ModifierPosition.Right));
@@ -131,6 +141,30 @@ namespace VexFlowSharp.Tests.Modifiers
             dot1.SetXShift(10);
             Assert.That(dot2.GetXShift(), Is.EqualTo(0),
                 "dot2 should not inherit dot1 xShift — each dot is independent");
+        }
+
+        [Test]
+        public void Draw_TabNote_UsesStemBaseYLikeV5()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new TabStave(10, 20, 300);
+            stave.SetContext(ctx);
+            var note = new TabNote(new TabNoteStruct
+            {
+                Duration = "4",
+                Positions = new[] { new TabNotePosition { Str = 3, Fret = 5 } },
+            }, drawStem: true);
+            note.SetStave(stave).SetContext(ctx);
+            note.PreFormat();
+
+            var dot = new Dot();
+            note.AddModifier(dot);
+            dot.SetContext(ctx);
+            dot.Draw();
+
+            var arc = ctx.GetCall("Arc").Args;
+            Assert.That(dot.IsRendered(), Is.True);
+            Assert.That(arc[1], Is.EqualTo(note.GetStemExtents().BaseY).Within(0.0001));
         }
     }
 }

@@ -31,6 +31,7 @@ namespace VexFlowSharp.Tests.Note
         {
             var n = new GhostNote("4");
             Assert.That(n.GetWidth(), Is.EqualTo(0));
+            Assert.That(n.GetCategory(), Is.EqualTo(GhostNote.CATEGORY));
         }
 
         // ── Rest ───────────────────────────────────────────────────────────────

@@ -58,7 +58,7 @@ namespace VexFlowSharp
         // ── Category ──────────────────────────────────────────────────────────
 
         /// <summary>Category string used by ModifierContext to group accidentals.</summary>
-        public const string CATEGORY = "accidentals";
+        public new const string CATEGORY = "Accidental";
 
         /// <inheritdoc/>
         public override string GetCategory() => CATEGORY;
@@ -73,10 +73,6 @@ namespace VexFlowSharp
 
         /// <summary>Font scale for rendering the glyph.</summary>
         private double fontScale;
-
-        // Padding between accidental and parentheses
-        private const double ParenLeftPadding  = 2;
-        private const double ParenRightPadding = 2;
 
         // ── Constructor ───────────────────────────────────────────────────────
 
@@ -96,18 +92,36 @@ namespace VexFlowSharp
             Tables.AccidentalCodes(type); // throws VexFlowException if unknown
         }
 
+        protected override void Reset()
+        {
+            fontScale = Tables.NOTATION_FONT_SCALE;
+            if (cautionary)
+                fontScale = Metrics.GetDouble("Accidental.cautionary.fontSize");
+            if (note is GraceNote)
+                fontScale = Metrics.GetDouble("Accidental.grace.fontSize");
+        }
+
+        public override Modifier SetNote(Element n)
+        {
+            base.SetNote(n);
+            Reset();
+            return this;
+        }
+
         // ── Accessors ─────────────────────────────────────────────────────────
 
         /// <summary>Mark this accidental as cautionary (adds parentheses in Draw).</summary>
         public Accidental SetAsCautionary()
         {
             cautionary = true;
-            fontScale  = 28;
+            Reset();
             return this;
         }
 
         /// <summary>Returns true if this is a cautionary accidental.</summary>
         public bool IsCautionary() => cautionary;
+
+        public double GetFontScale() => fontScale;
 
         /// <summary>
         /// Get glyph width for this accidental (used by Format to measure column widths).
@@ -123,7 +137,8 @@ namespace VexFlowSharp
             var (rightCode, _) = Tables.AccidentalCodes("}");
             double parenW = Glyph.GetWidth(leftCode, fontScale)
                           + Glyph.GetWidth(rightCode, fontScale)
-                          + ParenLeftPadding + ParenRightPadding;
+                          + Metrics.GetDouble("Accidental.parenLeftPadding")
+                          + Metrics.GetDouble("Accidental.parenRightPadding");
             return glyphW + parenW;
         }
 
@@ -154,10 +169,10 @@ namespace VexFlowSharp
         {
             if (accidentals == null || accidentals.Count == 0) return false;
 
-            double noteheadAccidentalPadding = Tables.ACCIDENTAL_NOTEHEAD_PADDING;
+            double noteheadAccidentalPadding = Metrics.GetDouble("Accidental.noteheadAccidentalPadding");
             double leftShift = state.LeftShift + noteheadAccidentalPadding;
-            double accidentalSpacing = Tables.ACCIDENTAL_SPACING;
-            double additionalPadding = Tables.ACCIDENTAL_LEFT_PADDING;
+            double accidentalSpacing = Metrics.GetDouble("Accidental.accidentalSpacing");
+            double additionalPadding = Metrics.GetDouble("Accidental.leftPadding");
 
             // ── Step 1: Collect line positions ────────────────────────────────
 
@@ -457,11 +472,11 @@ namespace VexFlowSharp
                 // Draw right paren, then accidental, then left paren (right to left)
                 RenderGlyph(ctx, accX, accY, fontScale, rightCode);
                 accX -= Glyph.GetWidth(rightCode, fontScale);
-                accX -= ParenRightPadding;
+                accX -= Metrics.GetDouble("Accidental.parenRightPadding");
                 accX -= parenRightPaddingAdj;
                 RenderGlyph(ctx, accX, accY, fontScale, code);
                 accX -= Glyph.GetWidth(code, fontScale);
-                accX -= ParenLeftPadding;
+                accX -= Metrics.GetDouble("Accidental.parenLeftPadding");
                 RenderGlyph(ctx, accX, accY, fontScale, leftCode);
             }
         }

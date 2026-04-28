@@ -41,6 +41,9 @@ namespace VexFlowSharp
         /// <summary>Number of beams for beamed notes.</summary>
         public int BeamCount { get; set; } = 0;
 
+        /// <summary>Stem extension used when this note is attached to a beam.</summary>
+        public double StemBeamExtension { get; set; } = 0;
+
         /// <summary>Extension of stem above the note (pixels).</summary>
         public double StemUpExtension { get; set; } = 0;
 
@@ -129,6 +132,9 @@ namespace VexFlowSharp
 
         /// <summary>Ticks per whole note.</summary>
         public const int RESOLUTION = 16384;
+
+        /// <summary>Decimal places used for render coordinate precision.</summary>
+        public const int RENDER_PRECISION_PLACES = 3;
 
         /// <summary>Stem width in pixels.</summary>
         public const double STEM_WIDTH = 1.5;
@@ -250,6 +256,17 @@ namespace VexFlowSharp
                 },
             };
 
+        /// <summary>
+        /// SMuFL stem anchor Y offsets for noteheads, in staff spaces.
+        /// Positive values are above the notehead center.
+        /// </summary>
+        public static readonly Dictionary<string, (double Up, double Down)> NoteHeadStemYOffsets =
+            new Dictionary<string, (double Up, double Down)>
+            {
+                ["noteheadXBlack"] = (0.444, -0.44),
+                ["noteheadXHalf"] = (0.412, -0.412),
+            };
+
         // Duration code tables — each duration maps to common + type-specific GlyphProps
         private static readonly Dictionary<string, GlyphProps> _durationCommon;
         private static readonly Dictionary<string, GlyphProps> _durationRest;
@@ -314,6 +331,16 @@ namespace VexFlowSharp
                 { "C#",  ("#", 7) },
                 { "A#m", ("#", 7) },
             };
+            for (int i = 0; i <= 14; i++)
+            {
+                _keySignatures[$"flats_{i}"] = (i == 0 ? null : "b", i);
+                _keySignatures[$"sharps_{i}"] = (i == 0 ? null : "#", i);
+            }
+            _keySignatures["Dbm"] = ("b", 8);
+            _keySignatures["Gbm"] = ("b", 9);
+            _keySignatures["G#"] = ("#", 8);
+            _keySignatures["D#"] = ("#", 9);
+            _keySignatures["A#"] = ("#", 10);
 
             // ── Clefs ─────────────────────────────────────────────────────────
             // line_shift values from tables.ts
@@ -406,12 +433,12 @@ namespace VexFlowSharp
                 { "1",   new GlyphProps { Stem = false, Flag = false, StemUpExtension = -STEM_HEIGHT, StemDownExtension = -STEM_HEIGHT, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
                 { "2",   new GlyphProps { Stem = true,  Flag = false, StemUpExtension = 0, StemDownExtension = 0, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
                 { "4",   new GlyphProps { Stem = true,  Flag = false, StemUpExtension = 0, StemDownExtension = 0, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
-                { "8",   new GlyphProps { Stem = true,  Flag = true,  BeamCount = 1, CodeFlagUpStem = "flag8thUp",   CodeFlagDownStem = "flag8thDown",   StemUpExtension = 0, StemDownExtension = 0, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
-                { "16",  new GlyphProps { Stem = true,  Flag = true,  BeamCount = 2, CodeFlagUpStem = "flag16thUp",  CodeFlagDownStem = "flag16thDown",  StemUpExtension = 0, StemDownExtension = 0, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
-                { "32",  new GlyphProps { Stem = true,  Flag = true,  BeamCount = 3, CodeFlagUpStem = "flag32ndUp",  CodeFlagDownStem = "flag32ndDown",  StemUpExtension = 9,  StemDownExtension = 9,  DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
-                { "64",  new GlyphProps { Stem = true,  Flag = true,  BeamCount = 4, CodeFlagUpStem = "flag64thUp",  CodeFlagDownStem = "flag64thDown",  StemUpExtension = 13, StemDownExtension = 13, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
-                { "128", new GlyphProps { Stem = true,  Flag = true,  BeamCount = 5, CodeFlagUpStem = "flag128thUp", CodeFlagDownStem = "flag128thDown", StemUpExtension = 22, StemDownExtension = 22, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
-                { "256", new GlyphProps { Stem = true,  Flag = true,  BeamCount = 6, CodeFlagUpStem = "flag256thUp", CodeFlagDownStem = "flag256thDown", StemUpExtension = 24, StemDownExtension = 24, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
+                { "8",   new GlyphProps { Stem = true,  Flag = true,  BeamCount = 1, StemBeamExtension = 0,    CodeFlagUpStem = "flag8thUp",   CodeFlagDownStem = "flag8thDown",   StemUpExtension = 0, StemDownExtension = 0, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
+                { "16",  new GlyphProps { Stem = true,  Flag = true,  BeamCount = 2, StemBeamExtension = 0,    CodeFlagUpStem = "flag16thUp",  CodeFlagDownStem = "flag16thDown",  StemUpExtension = 0, StemDownExtension = 0, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
+                { "32",  new GlyphProps { Stem = true,  Flag = true,  BeamCount = 3, StemBeamExtension = 7.5,  CodeFlagUpStem = "flag32ndUp",  CodeFlagDownStem = "flag32ndDown",  StemUpExtension = 9,  StemDownExtension = 9,  DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
+                { "64",  new GlyphProps { Stem = true,  Flag = true,  BeamCount = 4, StemBeamExtension = 15,   CodeFlagUpStem = "flag64thUp",  CodeFlagDownStem = "flag64thDown",  StemUpExtension = 13, StemDownExtension = 13, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
+                { "128", new GlyphProps { Stem = true,  Flag = true,  BeamCount = 5, StemBeamExtension = 22.5, CodeFlagUpStem = "flag128thUp", CodeFlagDownStem = "flag128thDown", StemUpExtension = 22, StemDownExtension = 22, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
+                { "256", new GlyphProps { Stem = true,  Flag = true,  BeamCount = 6, StemBeamExtension = 25,   CodeFlagUpStem = "flag256thUp", CodeFlagDownStem = "flag256thDown", StemUpExtension = 24, StemDownExtension = 24, DotShiftY = 0, LineAbove = 0, LineBelow = 0 } },
             };
 
             // Rest code_head lookup per duration
@@ -490,12 +517,16 @@ namespace VexFlowSharp
 
             var notes = accidentalLines[keySpec.Acc];
             for (int i = 0; i < keySpec.Num; i++)
-                result.Add((keySpec.Acc, notes[i]));
+                result.Add((keySpec.Acc, notes[i % notes.Length]));
             return result;
         }
 
         /// <summary>Whether the given key signature spec is known.</summary>
         public static bool HasKeySignature(string spec) => _keySignatures.ContainsKey(spec);
+
+        /// <summary>Return the known key signature specs and their accidental counts.</summary>
+        public static Dictionary<string, (string? Accidental, int Num)> GetKeySignatures()
+            => new Dictionary<string, (string? Accidental, int Num)>(_keySignatures);
 
         // ── Key properties method ─────────────────────────────────────────────
 
@@ -718,6 +749,7 @@ namespace VexFlowSharp
                     Stem              = common.Stem,
                     Flag              = common.Flag,
                     BeamCount         = common.BeamCount,
+                    StemBeamExtension = common.StemBeamExtension,
                     CodeFlagUpStem    = common.CodeFlagUpStem,
                     CodeFlagDownStem  = common.CodeFlagDownStem,
                     StemUpExtension   = common.StemUpExtension,
@@ -801,6 +833,12 @@ namespace VexFlowSharp
             { "+-",  ("accidentalKucukMucennebSharp",    -1) },
             { "bs",  ("accidentalBakiyeFlat",  -1) },
             { "bss", ("accidentalBuyukMucennebFlat", -1) },
+            { "o",   ("accidentalSori", -1) },
+            { "k",   ("accidentalKoron", -1) },
+            { "bbs", ("accidentalBuyukMucennebSharp", -1) },
+            { "++-", ("accidentalBuyukMucennebSharp", -1) },
+            { "ashs", ("accidentalBuyukMucennebSharp", -1) },
+            { "afhf", ("accidentalBuyukMucennebSharp", -1) },
         };
 
         /// <summary>
@@ -811,7 +849,7 @@ namespace VexFlowSharp
         {
             if (_accidentals.TryGetValue(acc, out var result))
                 return result;
-            throw new VexFlowException("BadArguments", $"Unknown accidental: {acc}");
+            return (acc, 0);
         }
 
         // ── Articulation codes ────────────────────────────────────────────────
@@ -878,8 +916,10 @@ namespace VexFlowSharp
             new Dictionary<string, string>
             {
                 ["mordent"]          = "ornamentShortTrill",
+                ["mordentInverted"]  = "ornamentMordent",
                 ["mordent_inverted"] = "ornamentMordent",
                 ["turn"]             = "ornamentTurn",
+                ["turnInverted"]     = "ornamentTurnSlash",
                 ["turn_inverted"]    = "ornamentTurnSlash",
                 ["tr"]               = "ornamentTrill",
                 ["upprall"]          = "ornamentPrecompSlideTrillDAnglebert",
@@ -902,6 +942,12 @@ namespace VexFlowSharp
                 ["jazzTurn"]         = "brassJazzTurn",
                 ["smear"]            = "brassSmear",
             };
+
+        /// <summary>
+        /// Return the SMuFL glyph code for an ornament type, passing through direct glyph names.
+        /// </summary>
+        public static string OrnamentCode(string ornament)
+            => OrnamentCodes.TryGetValue(ornament, out var code) ? code : ornament;
 
         // ── Font ──────────────────────────────────────────────────────────────
 

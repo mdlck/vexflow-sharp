@@ -25,6 +25,8 @@ namespace VexFlowSharp
     {
         public double Width { get; set; }
         public double Height { get; set; }
+        public double ActualBoundingBoxAscent { get; set; }
+        public double ActualBoundingBoxDescent { get; set; }
         public double XMin { get; set; }
         public double XMax { get; set; }
         public double XShift { get; set; }
@@ -45,6 +47,8 @@ namespace VexFlowSharp
     /// </summary>
     public class Glyph : Element
     {
+        public new const string CATEGORY = "Glyph";
+
         private const int RENDER_PRECISION_PLACES = 3;
         private static readonly double _precision = Math.Pow(10, RENDER_PRECISION_PLACES); // 1000.0
 
@@ -76,6 +80,8 @@ namespace VexFlowSharp
             _scale = (point * 72.0) / (data.Resolution * 100.0);
             data.Glyphs.TryGetValue(code, out _metrics);
         }
+
+        public override string GetCategory() => CATEGORY;
 
         /// <summary>
         /// Walk the pre-parsed integer outline array and draw a filled path via the RenderContext.
@@ -228,6 +234,8 @@ namespace VexFlowSharp
             {
                 Width  = (_metrics.XMax - _metrics.XMin) * _scale,
                 Height = _metrics.Ha * _scale,
+                ActualBoundingBoxAscent = Math.Max(0, (_metrics.YMax ?? _metrics.Ha) * _scale),
+                ActualBoundingBoxDescent = Math.Max(0, -(_metrics.YMin ?? 0) * _scale),
                 XMin   = _metrics.XMin * _scale,
                 XMax   = _metrics.XMax * _scale,
                 XShift = 0,
@@ -241,7 +249,7 @@ namespace VexFlowSharp
         /// <param name="xPos">X position in screen coordinates.</param>
         /// <param name="yPos">Y position in screen coordinates.</param>
         /// <returns>GlyphMetrics describing the rendered glyph's dimensions and position.</returns>
-        public GlyphMetrics Render(RenderContext ctx, double xPos, double yPos)
+        public virtual GlyphMetrics Render(RenderContext ctx, double xPos, double yPos)
         {
             if (_metrics?.CachedOutline == null)
                 throw new InvalidOperationException($"Glyph '{_code}' has no cached outline data.");
@@ -252,6 +260,8 @@ namespace VexFlowSharp
             {
                 Width = (_metrics.XMax - _metrics.XMin) * _scale,
                 Height = _metrics.Ha * _scale,
+                ActualBoundingBoxAscent = Math.Max(0, (_metrics.YMax ?? _metrics.Ha) * _scale),
+                ActualBoundingBoxDescent = Math.Max(0, -(_metrics.YMin ?? 0) * _scale),
                 XMin = _metrics.XMin * _scale,
                 XMax = _metrics.XMax * _scale,
                 XShift = 0,

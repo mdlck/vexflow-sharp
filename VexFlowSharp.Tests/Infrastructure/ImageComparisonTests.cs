@@ -84,5 +84,11 @@ namespace VexFlowSharp.Tests.Infrastructure
         {
             Assert.That(ImageComparison.DefaultThresholdPercent, Is.EqualTo(2.0));
         }
+
+        [Test]
+        public void CrossEngineThreshold_IsEleven()
+        {
+            Assert.That(ImageComparison.CrossEngineThresholdPercent, Is.EqualTo(11.0));
+        }
     }
 }

@@ -40,6 +40,10 @@ namespace VexFlowSharp
     /// </summary>
     public class StaveConnector : Element
     {
+        public new const string CATEGORY = "StaveConnector";
+
+        public override string GetCategory() => CATEGORY;
+
         // ── Static type string mapping ────────────────────────────────────────
 
         private static readonly Dictionary<string, StaveConnectorType> TypeStringMap =
@@ -65,7 +69,7 @@ namespace VexFlowSharp
 
         private StaveConnectorType type;
         private double xShift = 0;
-        private double width  = 3;
+        private double width  = Metrics.GetDouble("StaveConnector.width");
 
         private readonly List<(string Content, double ShiftX, double ShiftY)> texts =
             new List<(string, double, double)>();
@@ -128,6 +132,8 @@ namespace VexFlowSharp
             return this;
         }
 
+        public IReadOnlyList<(string Content, double ShiftX, double ShiftY)> GetTexts() => texts;
+
         // ── Draw ──────────────────────────────────────────────────────────────
 
         /// <summary>
@@ -158,13 +164,13 @@ namespace VexFlowSharp
             {
                 case StaveConnectorType.Single:     // same as SingleLeft (value = 1)
                 case StaveConnectorType.SingleRight:
-                    connectorWidth = 1;
+                    connectorWidth = Metrics.GetDouble("StaveConnector.singleLineWidth");
                     break;
 
                 case StaveConnectorType.Double:
-                    topX -= width + 2;
+                    topX -= width + Metrics.GetDouble("StaveConnector.doubleXOffset");
                     topY -= thickness;
-                    attachmentHeight += 0.5;
+                    attachmentHeight += Metrics.GetDouble("StaveConnector.doubleHeightAdjustment");
                     break;
 
                 case StaveConnectorType.Brace:
@@ -226,7 +232,7 @@ namespace VexFlowSharp
                     break;
 
                 case StaveConnectorType.ThinDouble:
-                    connectorWidth = 1;
+                    connectorWidth = Metrics.GetDouble("StaveConnector.singleLineWidth");
                     attachmentHeight -= thickness;
                     break;
 
@@ -250,21 +256,21 @@ namespace VexFlowSharp
 
             // ThinDouble draws a parallel line 3px to the left
             if (type == StaveConnectorType.ThinDouble)
-                ctx.FillRect(topX - 3, topY, connectorWidth, attachmentHeight);
+                ctx.FillRect(topX - Metrics.GetDouble("StaveConnector.thinDoubleGap"), topY, connectorWidth, attachmentHeight);
 
             // Draw text labels
             ctx.Save();
-            ctx.SetLineWidth(2);
+            ctx.SetLineWidth(Metrics.GetDouble("StaveConnector.textLineWidth"));
 
             foreach (var (content, shiftX, shiftY) in texts)
             {
                 var measure  = ctx.MeasureText(content);
                 double textW = measure.Width;
-                double tx    = topStave.GetX() - textW - 24 + shiftX;
+                double tx    = topStave.GetX() - textW - Metrics.GetDouble("StaveConnector.textXOffset") + shiftX;
                 double ty    = (topStave.GetYForLine(0) +
                                 bottomStave.GetYForLine(bottomStave.GetNumLines() - 1)) / 2.0
                                + shiftY;
-                ctx.FillText(content, tx, ty + 4);
+                ctx.FillText(content, tx, ty + Metrics.GetDouble("StaveConnector.textYOffset"));
             }
 
             ctx.Restore();
@@ -292,20 +298,20 @@ namespace VexFlowSharp
                     "A BoldDoubleLeft or BoldDoubleRight type must be provided.");
             }
 
-            double xShiftLocal     = 3;
-            double variableWidth   = 3.5; // width avoids anti-aliasing issues
-            const double thickLineOffset = 2; // aesthetic offset
+            double xShiftLocal = Metrics.GetDouble("StaveConnector.boldDoubleLeftXShift");
+            double variableWidth = Metrics.GetDouble("StaveConnector.boldDoubleLeftWidth");
+            double thickLineOffset = Metrics.GetDouble("StaveConnector.boldDoubleThickLineOffset");
 
             if (connectorType == StaveConnectorType.BoldDoubleRight)
             {
-                xShiftLocal   = -5;   // flips the thin line to the right side
-                variableWidth = 3;
+                xShiftLocal = Metrics.GetDouble("StaveConnector.boldDoubleRightXShift");
+                variableWidth = Metrics.GetDouble("StaveConnector.boldDoubleRightWidth");
             }
 
             double height = botY - topY;
 
             // Thin line
-            ctx.FillRect(topX + xShiftLocal, topY, 1, height);
+            ctx.FillRect(topX + xShiftLocal, topY, Metrics.GetDouble("StaveConnector.singleLineWidth"), height);
             // Thick line
             ctx.FillRect(topX - thickLineOffset, topY, variableWidth, height);
         }

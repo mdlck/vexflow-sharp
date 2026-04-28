@@ -32,6 +32,8 @@ namespace VexFlowSharp
     /// </summary>
     public class Stem : Element
     {
+        public new const string CATEGORY = "Stem";
+
         // Stem directions
         public const int UP = 1;
         public const int DOWN = -1;
@@ -54,6 +56,8 @@ namespace VexFlowSharp
         protected double stemUpYBaseOffset;
         protected double stemDownYBaseOffset;
         protected double renderHeightAdjustment;
+
+        public override string GetCategory() => CATEGORY;
 
         /// <summary>
         /// Construct a Stem from the given options. All fields default to zero/false.
@@ -106,6 +110,18 @@ namespace VexFlowSharp
         /// <summary>Get the current stem extension.</summary>
         public double GetExtension() => stemExtension;
 
+        /// <summary>Whether the stem is currently visible.</summary>
+        public bool IsVisible() => !hide;
+
+        /// <summary>Whether this stem is currently configured as a stemlet.</summary>
+        public bool IsStemlet() => isStemlet;
+
+        /// <summary>Get the configured stemlet height.</summary>
+        public double GetStemletHeight() => stemletHeight;
+
+        /// <summary>Get the render-only height adjustment applied for flags or beams.</summary>
+        public double GetRenderHeightAdjustment() => renderHeightAdjustment;
+
         /// <summary>Set the y bounds for the top/bottom noteheads.</summary>
         public void SetYBounds(double yTop, double yBottom)
         {
@@ -154,11 +170,11 @@ namespace VexFlowSharp
         }
 
         /// <summary>
-        /// Adjusts renderHeightAdjustment to trim the stem tip for a flag (-3px).
+        /// Adjusts renderHeightAdjustment to trim the stem tip for a flag.
         /// </summary>
         public void AdjustHeightForFlag()
         {
-            renderHeightAdjustment = -3;
+            renderHeightAdjustment = Metrics.GetDouble("Stem.heightAdjustmentForFlag", -3);
         }
 
         /// <summary>

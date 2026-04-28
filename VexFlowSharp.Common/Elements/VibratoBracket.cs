@@ -4,7 +4,7 @@
 // MIT License
 //
 // Port of vexflow/src/vibratobracket.ts (96 lines)
-// VibratoBracket — vibrato wave spanning multiple notes, delegating to Vibrato.RenderVibrato().
+// VibratoBracket — vibrato glyph run spanning multiple notes.
 
 namespace VexFlowSharp
 {
@@ -18,21 +18,15 @@ namespace VexFlowSharp
     /// </summary>
     public class VibratoBracket : Element
     {
+        public new const string CATEGORY = "VibratoBracket";
+
         // ── Fields ────────────────────────────────────────────────────────────
 
         private readonly Note? start;
         private readonly Note? stop;
 
         private int line = 1;
-
-        private readonly VibratoRenderOptions renderOptions = new VibratoRenderOptions
-        {
-            Harsh       = false,
-            WaveHeight  = 6,
-            WaveWidth   = 4,
-            WaveGirth   = 2,
-            VibratoWidth = 0,
-        };
+        private readonly Vibrato vibrato = new Vibrato();
 
         // ── Constructor ───────────────────────────────────────────────────────
 
@@ -53,11 +47,22 @@ namespace VexFlowSharp
         /// <summary>Set the staff line position for this bracket.</summary>
         public VibratoBracket SetLine(int l) { line = l; return this; }
 
-        /// <summary>Set harsh zigzag vibrato mode.</summary>
-        public VibratoBracket SetHarsh(bool harsh) { renderOptions.Harsh = harsh; return this; }
+        /// <summary>Compatibility shim. VexFlow 5 vibrato brackets use text glyphs.</summary>
+        public VibratoBracket SetHarsh(bool harsh) { vibrato.SetHarsh(harsh); return this; }
 
         /// <summary>Override the vibrato wave width.</summary>
-        public VibratoBracket SetVibratoWidth(double w) { renderOptions.VibratoWidth = w; return this; }
+        public VibratoBracket SetVibratoWidth(double w) { vibrato.SetVibratoWidth(w); return this; }
+
+        public VibratoBracket SetVibratoCode(int code) { vibrato.SetVibratoCode(code); return this; }
+
+        public Note? GetStart() => start;
+        public Note? GetStop() => stop;
+        public int GetLine() => line;
+        public bool IsHarsh() => vibrato.IsHarsh;
+        public int GetVibratoCode() => vibrato.GetVibratoCode();
+        public double GetVibratoWidth() => vibrato.GetWidth();
+
+        public override string GetCategory() => CATEGORY;
 
         // ── Draw ──────────────────────────────────────────────────────────────
 
@@ -87,13 +92,13 @@ namespace VexFlowSharp
             // Compute stop x — from stop note, or stave tie-end x
             double stopX = 0;
             if (stop != null)
-                stopX = stop.GetAbsoluteX() - stop.GetWidth() - 5;
+                stopX = stop.GetAbsoluteX() - stop.GetWidth() - Metrics.GetDouble("VibratoBracket.stopNoteOffset");
             else if (start != null)
-                stopX = start.CheckStave().GetTieEndX() - 10;
+                stopX = start.CheckStave().GetTieEndX() - Metrics.GetDouble("VibratoBracket.tieEndOffset");
 
-            renderOptions.VibratoWidth = stopX - startX;
+            vibrato.SetVibratoWidth(stopX - startX);
 
-            Vibrato.RenderVibrato(ctx, startX, y, renderOptions);
+            vibrato.RenderText(ctx, startX, y);
         }
     }
 }

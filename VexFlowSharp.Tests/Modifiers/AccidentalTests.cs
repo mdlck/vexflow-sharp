@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using VexFlowSharp;
 using VexFlowSharp.Common.Formatting;
+using VexFlowSharp.Tests.Rendering;
 
 namespace VexFlowSharp.Tests.Modifiers
 {
@@ -16,14 +17,14 @@ namespace VexFlowSharp.Tests.Modifiers
         [Test]
         public void Accidental_Category_IsAccidentals()
         {
-            Assert.That(Accidental.CATEGORY, Is.EqualTo("accidentals"));
+            Assert.That(Accidental.CATEGORY, Is.EqualTo("Accidental"));
         }
 
         [Test]
         public void Accidental_GetCategory_IsAccidentals()
         {
             var acc = new Accidental("#");
-            Assert.That(acc.GetCategory(), Is.EqualTo("accidentals"));
+            Assert.That(acc.GetCategory(), Is.EqualTo("Accidental"));
         }
 
         [Test]
@@ -89,6 +90,60 @@ namespace VexFlowSharp.Tests.Modifiers
             // Cautionary is wider (parentheses added)
             Assert.That(widthAfter, Is.GreaterThan(widthBefore),
                 "Cautionary accidental should be wider than plain accidental");
+        }
+
+        [Test]
+        public void Cautionary_UsesV5MetricFontSize()
+        {
+            var acc = new Accidental("#").SetAsCautionary();
+
+            Assert.That(acc.GetFontScale(), Is.EqualTo(Metrics.GetDouble("Accidental.cautionary.fontSize")));
+        }
+
+        [Test]
+        public void Cautionary_WidthIncludesMetricParenthesisPadding()
+        {
+            var acc = new Accidental("#").SetAsCautionary();
+            var (code, _) = Tables.AccidentalCodes("#");
+            var (leftCode, _) = Tables.AccidentalCodes("{");
+            var (rightCode, _) = Tables.AccidentalCodes("}");
+            double fontScale = Metrics.GetDouble("Accidental.cautionary.fontSize");
+
+            double expected = Glyph.GetWidth(code, fontScale)
+                + Glyph.GetWidth(leftCode, fontScale)
+                + Glyph.GetWidth(rightCode, fontScale)
+                + Metrics.GetDouble("Accidental.parenLeftPadding")
+                + Metrics.GetDouble("Accidental.parenRightPadding");
+
+            Assert.That(acc.GetWidth(), Is.EqualTo(expected).Within(0.0001));
+        }
+
+        [Test]
+        public void SetNote_GraceNoteResetsToGraceFontSize()
+        {
+            var acc = new Accidental("#");
+            var grace = new GraceNote(new GraceNoteStruct { Keys = new[] { "c/4" }, Duration = "8" });
+
+            acc.SetNote(grace);
+
+            Assert.That(acc.GetFontScale(), Is.EqualTo(Metrics.GetDouble("Accidental.grace.fontSize")));
+        }
+
+        [Test]
+        public void Draw_CautionaryRendersParenthesesAndAccidentalGlyphs()
+        {
+            var ctx = new RecordingRenderContext();
+            var stave = new Stave(10, 20, 300);
+            stave.SetContext(ctx);
+            var note = new StaveNote(new StaveNoteStruct { Keys = new[] { "c/4" }, Duration = "4" });
+            var acc = new Accidental("#").SetAsCautionary();
+            note.SetStave(stave).SetX(100).AddModifier(acc);
+            note.PreFormat();
+            acc.SetContext(ctx);
+
+            acc.Draw();
+
+            Assert.That(ctx.GetCalls("Fill").Count(), Is.EqualTo(3));
         }
 
         // ── AccidentalColumnsTable ────────────────────────────────────────────
@@ -277,7 +332,7 @@ namespace VexFlowSharp.Tests.Modifiers
         {
             // Verify that Accidental.CATEGORY matches the key used to wire ModifierContext.
             // This confirms that the applyAccidentals() chain would find them.
-            Assert.That(Accidental.CATEGORY, Is.EqualTo("accidentals"));
+            Assert.That(Accidental.CATEGORY, Is.EqualTo("Accidental"));
 
             // Verify all standard accidental types parse without exception
             var types = new[] { "#", "##", "b", "bb", "n" };
@@ -287,6 +342,23 @@ namespace VexFlowSharp.Tests.Modifiers
                 Assert.That(acc.Type, Is.EqualTo(t), $"Accidental type '{t}' should round-trip");
                 Assert.That(acc.GetWidth(), Is.GreaterThan(0),
                     $"Accidental '{t}' should have positive glyph width");
+            }
+        }
+
+        [Test]
+        public void V5AliasesAndRawGlyphNames_ConstructAndMeasure()
+        {
+            var types = new[]
+            {
+                "db", "d", "++", "+", "+-", "bs", "bss", "o", "k",
+                "bbs", "++-", "ashs", "afhf", "accidentalSharp"
+            };
+
+            foreach (var type in types)
+            {
+                var acc = new Accidental(type);
+                Assert.That(acc.Type, Is.EqualTo(type));
+                Assert.That(acc.GetWidth(), Is.GreaterThan(0), $"Accidental '{type}' should have positive glyph width");
             }
         }
     }
