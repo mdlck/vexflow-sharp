@@ -1,7 +1,11 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using SysNumerics = System.Numerics;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityFont = UnityEngine.Font;
+using UnityFontStyle = UnityEngine.FontStyle;
 
 namespace VexFlowSharp.Unity
 {
@@ -28,10 +32,24 @@ namespace VexFlowSharp.Unity
         private double _fontSize = 10;
         private string _fontWeight = "normal";
         private string _fontStyle = "normal";
+        private UnityFont? _unityFont;
+        private UnityFontStyle _unityFontStyle = UnityFontStyle.Normal;
+        private static readonly Dictionary<string, UnityFont?> _fontCache =
+            new Dictionary<string, UnityFont?>(StringComparer.OrdinalIgnoreCase);
 
         // Transform + paint state stack (Painter2D has no Save/Restore -- maintained manually)
-        private readonly Stack<(SysNumerics.Matrix3x2 transform, Color fillColor, Color strokeColor, float lineWidth)> _stateStack
-            = new Stack<(SysNumerics.Matrix3x2, Color, Color, float)>();
+        private readonly Stack<(SysNumerics.Matrix3x2 transform,
+                                Color fillColor,
+                                Color strokeColor,
+                                float lineWidth,
+                                LineCap lineCap,
+                                string fontFamily,
+                                double fontSize,
+                                string fontWeight,
+                                string fontStyle,
+                                UnityFont? unityFont,
+                                UnityFontStyle unityFontStyle)> _stateStack
+            = new Stack<(SysNumerics.Matrix3x2, Color, Color, float, LineCap, string, double, string, string, UnityFont?, UnityFontStyle)>();
         private SysNumerics.Matrix3x2 _currentTransform = SysNumerics.Matrix3x2.Identity;
 
         /// <summary>
@@ -73,7 +91,17 @@ namespace VexFlowSharp.Unity
 
         public override RenderContext Save()
         {
-            _stateStack.Push((_currentTransform, _fillColor, _strokeColor, _lineWidth));
+            _stateStack.Push((_currentTransform,
+                              _fillColor,
+                              _strokeColor,
+                              _lineWidth,
+                              _lineCap,
+                              _currentFont,
+                              _fontSize,
+                              _fontWeight,
+                              _fontStyle,
+                              _unityFont,
+                              _unityFontStyle));
             return this;
         }
 
@@ -86,6 +114,13 @@ namespace VexFlowSharp.Unity
                 _fillColor = s.fillColor;
                 _strokeColor = s.strokeColor;
                 _lineWidth = s.lineWidth;
+                _lineCap = s.lineCap;
+                _currentFont = s.fontFamily;
+                _fontSize = s.fontSize;
+                _fontWeight = s.fontWeight;
+                _fontStyle = s.fontStyle;
+                _unityFont = s.unityFont;
+                _unityFontStyle = s.unityFontStyle;
             }
             return this;
         }
@@ -288,11 +323,14 @@ namespace VexFlowSharp.Unity
         public override RenderContext FillText(string text, double x, double y)
         {
             var label = _owner.GetOrCreateLabel();
+            var position = TransformPoint(x, y);
             label.text = text;
-            label.style.left = (float)x;
-            label.style.top = (float)y;
+            label.style.left = position.x;
+            label.style.top = position.y;
             label.style.color = _fillColor;
-            label.style.fontSize = (float)_fontSize;
+            label.style.fontSize = FontSizeToPixels(_fontSize);
+            label.style.unityFont = _unityFont;
+            label.style.unityFontStyleAndWeight = _unityFontStyle;
             return this;
         }
 
@@ -304,6 +342,8 @@ namespace VexFlowSharp.Unity
             _fontSize = size;
             _fontWeight = weight;
             _fontStyle = style;
+            _unityFont = ResolveUnityFont(family);
+            _unityFontStyle = ResolveFontStyle(weight, style);
             return this;
         }
 
@@ -316,12 +356,13 @@ namespace VexFlowSharp.Unity
         {
             // Heuristic approximation -- Painter2D has no text measurement API.
             // Mirrors the TextFormatter fallback used for non-measurable backends.
+            double fontSizeInPixels = FontSizeToPixels(_fontSize);
             return new TextMeasure
             {
                 X = 0,
                 Y = 0,
-                Width = text.Length * _fontSize * 0.6,
-                Height = _fontSize,
+                Width = text.Length * fontSizeInPixels * 0.6,
+                Height = fontSizeInPixels,
             };
         }
 
@@ -333,6 +374,104 @@ namespace VexFlowSharp.Unity
                 new SysNumerics.Vector2((float)x, (float)y),
                 _currentTransform);
             return new Vector2(pt.X, pt.Y);
+        }
+
+        private static float FontSizeToPixels(double sizeInPoints)
+            => (float)(sizeInPoints * Metrics.GetDouble("TextFormatter.ptToPx"));
+
+        private static UnityFont? ResolveUnityFont(string familyList)
+        {
+            var families = familyList
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(NormalizeFamilyName)
+                .ToArray();
+
+            if (families.Length > 1)
+            {
+                families = families
+                    .OrderBy(IsLikelyMusicFontFamily)
+                    .ToArray();
+            }
+
+            foreach (var family in families)
+            {
+                if (_fontCache.TryGetValue(family, out var cached))
+                    return cached;
+
+                var font = LoadUnityFont(family);
+                _fontCache[family] = font;
+                if (font != null) return font;
+            }
+
+            return null;
+        }
+
+        private static UnityFont? LoadUnityFont(string family)
+        {
+            foreach (var resourceName in GetResourceFontNames(family))
+            {
+                var font = Resources.Load<UnityFont>($"Fonts/{resourceName}");
+                if (font != null) return font;
+            }
+
+            try
+            {
+                return UnityFont.CreateDynamicFontFromOSFont(family, 16);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static IEnumerable<string> GetResourceFontNames(string family)
+        {
+            switch (family.ToLowerInvariant())
+            {
+                case "academico":
+                    yield return "Academico";
+                    break;
+                case "bravura":
+                    yield return "Bravura";
+                    break;
+            }
+        }
+
+        private static string NormalizeFamilyName(string family)
+        {
+            var trimmed = family.Trim();
+            if (trimmed.Length >= 2
+                && ((trimmed[0] == '\'' && trimmed[trimmed.Length - 1] == '\'')
+                    || (trimmed[0] == '"' && trimmed[trimmed.Length - 1] == '"')))
+            {
+                return trimmed.Substring(1, trimmed.Length - 2).Trim();
+            }
+
+            return trimmed;
+        }
+
+        private static bool IsLikelyMusicFontFamily(string family)
+        {
+            var lower = family.ToLowerInvariant();
+            return lower == "bravura"
+                || lower == "petaluma"
+                || lower == "gonville"
+                || lower == "gootville"
+                || lower == "leland"
+                || lower == "leipzig"
+                || lower == "musejazz"
+                || lower == "sebastian"
+                || lower.StartsWith("finale", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static UnityFontStyle ResolveFontStyle(string weight, string style)
+        {
+            bool bold = weight.IndexOf("bold", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool italic = style.IndexOf("italic", StringComparison.OrdinalIgnoreCase) >= 0;
+            if (bold && italic) return UnityFontStyle.BoldAndItalic;
+            if (bold) return UnityFontStyle.Bold;
+            if (italic) return UnityFontStyle.Italic;
+            return UnityFontStyle.Normal;
         }
 
         private static Color ParseColor(string style)
