@@ -1,6 +1,6 @@
 # VexFlowSharp
 
-VexFlowSharp is a C# port of [VexFlow](https://github.com/0xfe/vexflow), the open-source music notation rendering library.
+VexFlowSharp is a C# port of [VexFlow](https://www.vexflow.com/), the open-source music notation rendering library. Since VexFlow 5, the upstream source lives in the [VexFlow GitHub repository](https://github.com/vexflow/vexflow).
 
 It brings the VexFlow 5 API shape to .NET and Unity while keeping the rendering backend-neutral. If you already know VexFlow, most concepts should feel familiar: `Factory`, `EasyScore`, `System`, voices, tickables, staves, modifiers, beams, ties, and the formatter all map closely to their JavaScript counterparts.
 
