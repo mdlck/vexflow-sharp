@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -119,7 +117,7 @@ namespace VexFlowSharp.Common.Formatting
         // ── Static helpers ────────────────────────────────────────────────────
 
         /// <summary>Return the next TickContext in the parent tContexts list, or null.</summary>
-        public static TickContext? GetNextContext(TickContext tc)
+        public static TickContext GetNextContext(TickContext tc)
         {
             var list  = tc.tContexts;
             int index = list.IndexOf(tc);
@@ -173,7 +171,7 @@ namespace VexFlowSharp.Common.Formatting
         /// Move this context and update neighboring freedom metrics.
         /// Port of TickContext.move() used by Formatter.tune().
         /// </summary>
-        public TickContext Move(double shift, TickContext? previous = null, TickContext? next = null)
+        public TickContext Move(double shift, TickContext previous = null, TickContext next = null)
         {
             SetX(GetX() + shift);
             formatterMetrics.FreedomLeft += shift;
@@ -226,7 +224,7 @@ namespace VexFlowSharp.Common.Formatting
         public Dictionary<int, VexFlowSharp.Tickable> GetTickablesByVoice() => tickablesByVoice;
 
         /// <summary>Get the tickable for a specific voice index.</summary>
-        public VexFlowSharp.Tickable? GetTickableForVoice(int voiceIndex)
+        public VexFlowSharp.Tickable GetTickableForVoice(int voiceIndex)
         {
             tickablesByVoice.TryGetValue(voiceIndex, out var t);
             return t;

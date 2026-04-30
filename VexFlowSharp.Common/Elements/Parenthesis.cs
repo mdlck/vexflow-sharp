@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -42,7 +40,7 @@ namespace VexFlowSharp
             }
         }
 
-        public static bool Format(List<Parenthesis>? parentheses, ModifierContextState state)
+        public static bool Format(List<Parenthesis> parentheses, ModifierContextState state)
         {
             if (parentheses == null || parentheses.Count == 0) return false;
 

@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -34,12 +32,12 @@ namespace VexFlowSharp
         private readonly int numberOfMeasures;
         private readonly bool hasPaddingLeft;
         private readonly bool hasPaddingRight;
-        private Stave? stave;
+        private Stave stave;
         private (double Left, double Right) xs = (double.NaN, double.NaN);
 
         public MultiMeasureRestRenderOptions RenderOptions { get; }
 
-        public MultiMeasureRest(int numberOfMeasures, MultiMeasureRestRenderOptions? options = null)
+        public MultiMeasureRest(int numberOfMeasures, MultiMeasureRestRenderOptions options = null)
         {
             this.numberOfMeasures = numberOfMeasures;
             RenderOptions = options ?? new MultiMeasureRestRenderOptions();
@@ -65,7 +63,7 @@ namespace VexFlowSharp
             return this;
         }
 
-        public Stave? GetStave() => stave;
+        public Stave GetStave() => stave;
 
         public Stave CheckStave()
             => stave ?? throw new VexFlowException("NoStave", "No stave attached to instance.");

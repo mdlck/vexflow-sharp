@@ -32,10 +32,10 @@ namespace VexFlowSharp.Unity
         private double _fontSize = 10;
         private string _fontWeight = "normal";
         private string _fontStyle = "normal";
-        private UnityFont? _unityFont;
+        private UnityFont _unityFont;
         private UnityFontStyle _unityFontStyle = UnityFontStyle.Normal;
-        private static readonly Dictionary<string, UnityFont?> _fontCache =
-            new Dictionary<string, UnityFont?>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, UnityFont> _fontCache =
+            new Dictionary<string, UnityFont>(StringComparer.OrdinalIgnoreCase);
 
         // Transform + paint state stack (Painter2D has no Save/Restore -- maintained manually)
         private readonly Stack<(SysNumerics.Matrix3x2 transform,
@@ -47,9 +47,9 @@ namespace VexFlowSharp.Unity
                                 double fontSize,
                                 string fontWeight,
                                 string fontStyle,
-                                UnityFont? unityFont,
+                                UnityFont unityFont,
                                 UnityFontStyle unityFontStyle)> _stateStack
-            = new Stack<(SysNumerics.Matrix3x2, Color, Color, float, LineCap, string, double, string, string, UnityFont?, UnityFontStyle)>();
+            = new Stack<(SysNumerics.Matrix3x2, Color, Color, float, LineCap, string, double, string, string, UnityFont, UnityFontStyle)>();
         private SysNumerics.Matrix3x2 _currentTransform = SysNumerics.Matrix3x2.Identity;
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace VexFlowSharp.Unity
         /// </summary>
         internal UIElementsRenderContext(VexFlowElement owner)
         {
-            _p = null!;
+            _p = null;
             _owner = owner;
         }
 
@@ -379,7 +379,7 @@ namespace VexFlowSharp.Unity
         private static float FontSizeToPixels(double sizeInPoints)
             => (float)(sizeInPoints * Metrics.GetDouble("TextFormatter.ptToPx"));
 
-        private static UnityFont? ResolveUnityFont(string familyList)
+        private static UnityFont ResolveUnityFont(string familyList)
         {
             var families = familyList
                 .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
@@ -406,7 +406,7 @@ namespace VexFlowSharp.Unity
             return null;
         }
 
-        private static UnityFont? LoadUnityFont(string family)
+        private static UnityFont LoadUnityFont(string family)
         {
             foreach (var resourceName in GetResourceFontNames(family))
             {

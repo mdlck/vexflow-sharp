@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -41,9 +39,9 @@ namespace VexFlowSharp
         protected bool preFormatted;
 
         protected readonly Voice voice;
-        protected Formatter? formatter;
+        protected Formatter formatter;
         private readonly List<Beam> beams;
-        private StaveTie? slur;
+        private StaveTie slur;
 
         public GraceNoteGroupRenderOptions RenderOptions { get; }
 
@@ -97,7 +95,7 @@ namespace VexFlowSharp
         /// <summary>Whether this group renders a slur to the main note.</summary>
         public bool GetShowSlur() => showSlur;
 
-        public GraceNoteGroup BeamNotes(List<GraceNote>? notes = null)
+        public GraceNoteGroup BeamNotes(List<GraceNote> notes = null)
         {
             notes ??= graceNotes;
             if (notes.Count > 1)
@@ -123,7 +121,7 @@ namespace VexFlowSharp
             if (gracenoteGroups == null || gracenoteGroups.Count == 0) return false;
 
             var groupList = new List<(double Shift, GraceNoteGroup Group, double Spacing)>();
-            Note? prevNote = null;
+            Note prevNote = null;
             double shift = 0;
 
             foreach (var gracenoteGroup in gracenoteGroups)
@@ -193,7 +191,7 @@ namespace VexFlowSharp
             PreFormat();
         }
 
-        private Note? TryGetAttachedNote()
+        private Note TryGetAttachedNote()
         {
             try { return GetNote() as Note; }
             catch { return null; }
@@ -213,7 +211,7 @@ namespace VexFlowSharp
 
             // Retrieve the stave from the main note — required for positioning
             var mainNote = note as Note;
-            var mainStave = mainNote?.GetStave();
+            var mainStave = mainNote.GetStave();
             if (mainStave == null) return;
 
             PreFormat();

@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -24,10 +22,10 @@ namespace VexFlowSharp
         // ── Fields ────────────────────────────────────────────────────────────
 
         /// <summary>The stem for this note (null until BuildStem is called).</summary>
-        protected Stem? stem;
+        protected Stem stem;
 
         /// <summary>The flag glyph for this note (null until BuildFlag is called).</summary>
-        protected Glyph? flag;
+        protected Glyph flag;
 
         /// <summary>Current stem direction: Stem.UP (1) or Stem.DOWN (-1).</summary>
         protected int stemDirection = Stem.UP;
@@ -39,7 +37,7 @@ namespace VexFlowSharp
         protected bool beamable;
 
         /// <summary>The Beam this note belongs to (null if not beamed).</summary>
-        protected Beam? beam;
+        protected Beam beam;
 
         // ── Constructor ───────────────────────────────────────────────────────
 
@@ -56,7 +54,7 @@ namespace VexFlowSharp
         public override bool HasStem() => glyphProps.Stem;
 
         /// <summary>Get the stem (may be null if BuildStem not called yet).</summary>
-        public Stem? GetStem() => stem;
+        public Stem GetStem() => stem;
 
         /// <summary>Get the stem; throw if not built.</summary>
         public Stem CheckStem()

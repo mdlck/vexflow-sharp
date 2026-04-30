@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -10,17 +8,17 @@ namespace VexFlowSharp
 {
     public class StaveLineTextOptions
     {
-        public string? Text { get; set; }
-        public MetricsFontInfo? Font { get; set; }
+        public string Text { get; set; }
+        public MetricsFontInfo Font { get; set; }
     }
 
     public class StaveLineParams
     {
-        public StaveNote From { get; set; } = null!;
-        public StaveNote To { get; set; } = null!;
+        public StaveNote From { get; set; } = null;
+        public StaveNote To { get; set; } = null;
         public List<int> FirstIndexes { get; set; } = new List<int>();
         public List<int> LastIndexes { get; set; } = new List<int>();
-        public StaveLineTextOptions? Options { get; set; }
+        public StaveLineTextOptions Options { get; set; }
     }
 
     /// <summary>
@@ -36,7 +34,7 @@ namespace VexFlowSharp
         private readonly StaveNote to;
         private readonly List<int> firstIndexes;
         private readonly List<int> lastIndexes;
-        private readonly string? text;
+        private readonly string text;
         private readonly MetricsFontInfo font;
 
         public StaveLine(StaveLineParams parameters)
@@ -45,15 +43,15 @@ namespace VexFlowSharp
             to = parameters.To;
             firstIndexes = parameters.FirstIndexes.Count > 0 ? parameters.FirstIndexes : new List<int> { 0 };
             lastIndexes = parameters.LastIndexes.Count > 0 ? parameters.LastIndexes : new List<int> { 0 };
-            text = parameters.Options?.Text;
-            font = parameters.Options?.Font ?? Metrics.GetFontInfo("StaveText");
+            text = parameters.Options.Text;
+            font = parameters.Options.Font ?? Metrics.GetFontInfo("StaveText");
         }
 
         public StaveNote GetStart() => from;
         public StaveNote GetStop() => to;
         public IReadOnlyList<int> GetFirstIndexes() => firstIndexes;
         public IReadOnlyList<int> GetLastIndexes() => lastIndexes;
-        public string? GetText() => text;
+        public string GetText() => text;
         public MetricsFontInfo GetFontInfo() => font;
 
         public override void Draw()

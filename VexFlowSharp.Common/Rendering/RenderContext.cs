@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 namespace VexFlowSharp
 {
     /// <summary>
@@ -49,7 +47,7 @@ namespace VexFlowSharp
         public abstract RenderContext Arc(double x, double y, double radius, double startAngle, double endAngle, bool counterclockwise);
         public abstract RenderContext ClosePath();
         public abstract RenderContext Fill();
-        public virtual RenderContext Fill(object? attributes) => Fill();
+        public virtual RenderContext Fill(object attributes) => Fill();
         public abstract RenderContext Stroke();
 
         // Text
@@ -59,7 +57,7 @@ namespace VexFlowSharp
         public abstract TextMeasure MeasureText(string text);
 
         // Grouping (SVG-only; no-op in Canvas/Skia backends)
-        public virtual void OpenGroup(string? cls = null, string? id = null) { }
+        public virtual void OpenGroup(string cls = null, string id = null) { }
         public virtual void CloseGroup() { }
         public virtual void Add(object child) { }
     }

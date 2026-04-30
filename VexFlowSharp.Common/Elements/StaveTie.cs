@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -20,10 +18,10 @@ namespace VexFlowSharp
     public class TieNotes
     {
         /// <summary>The start note of the tie (null = starts at stave left boundary).</summary>
-        public Note? FirstNote { get; set; }
+        public Note FirstNote { get; set; }
 
         /// <summary>The end note of the tie (null = ends at stave right boundary).</summary>
-        public Note? LastNote { get; set; }
+        public Note LastNote { get; set; }
 
         /// <summary>Index into the start note's keys array for tie anchor (default 0).</summary>
         public int FirstIndex { get; set; } = 0;
@@ -32,10 +30,10 @@ namespace VexFlowSharp
         public int LastIndex { get; set; } = 0;
 
         /// <summary>Indexes into the start note's keys array for multi-string tab ties/slides.</summary>
-        public int[]? FirstIndexes { get; set; }
+        public int[] FirstIndexes { get; set; }
 
         /// <summary>Indexes into the end note's keys array for multi-string tab ties/slides.</summary>
-        public int[]? LastIndexes { get; set; }
+        public int[] LastIndexes { get; set; }
     }
 
     /// <summary>
@@ -79,7 +77,7 @@ namespace VexFlowSharp
         public new const string CATEGORY = "StaveTie";
 
         private readonly TieNotes notes;
-        private readonly string? text;
+        private readonly string text;
         public StaveTieRenderOptions RenderOptions => renderOptions;
         private readonly StaveTieRenderOptions renderOptions;
 
@@ -91,7 +89,7 @@ namespace VexFlowSharp
         /// The optional text is rendered as a label (e.g., "H" for hammer-on, "P" for pull-off).
         /// Port of VexFlow's StaveTie constructor from stavetie.ts.
         /// </summary>
-        public StaveTie(TieNotes notes, string? text = null, StaveTieRenderOptions? options = null)
+        public StaveTie(TieNotes notes, string text = null, StaveTieRenderOptions options = null)
         {
             this.notes         = notes;
             this.text          = text;
@@ -112,7 +110,7 @@ namespace VexFlowSharp
         }
 
         /// <summary>Get the optional tie text label.</summary>
-        public string? GetText() => text;
+        public string GetText() => text;
 
         /// <summary>Get the explicit tie direction, or 0 when direction is inferred.</summary>
         public int GetDirection() => direction;
@@ -202,7 +200,7 @@ namespace VexFlowSharp
             centerX += renderOptions.TextShiftX;
 
             // Get y from stave top text line
-            var stave = notes.FirstNote?.GetStave() ?? notes.LastNote?.GetStave();
+            var stave = notes.FirstNote.GetStave() ?? notes.LastNote.GetStave();
             if (stave != null)
             {
                 double y = stave.GetYForTopText() - 1;

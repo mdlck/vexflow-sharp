@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -18,7 +16,7 @@ namespace VexFlowSharp
         private readonly KeySignature keySignature;
         private bool preFormatted;
 
-        public KeySigNote(string keySpec, string? cancelKeySpec = null, string[]? alterKeySpec = null)
+        public KeySigNote(string keySpec, string cancelKeySpec = null, string[] alterKeySpec = null)
             : base(new NoteStruct { Duration = "b" })
         {
             keySignature = new KeySignature(keySpec, cancelKeySpec);

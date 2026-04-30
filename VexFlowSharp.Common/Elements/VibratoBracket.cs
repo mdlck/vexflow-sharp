@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -22,8 +20,8 @@ namespace VexFlowSharp
 
         // ── Fields ────────────────────────────────────────────────────────────
 
-        private readonly Note? start;
-        private readonly Note? stop;
+        private readonly Note start;
+        private readonly Note stop;
 
         private int line = 1;
         private readonly Vibrato vibrato = new Vibrato();
@@ -36,7 +34,7 @@ namespace VexFlowSharp
         /// </summary>
         /// <param name="start">Note where the bracket begins. Null = from stave start.</param>
         /// <param name="stop">Note where the bracket ends. Null = to stave end.</param>
-        public VibratoBracket(Note? start = null, Note? stop = null)
+        public VibratoBracket(Note start = null, Note stop = null)
         {
             this.start = start;
             this.stop  = stop;
@@ -55,8 +53,8 @@ namespace VexFlowSharp
 
         public VibratoBracket SetVibratoCode(int code) { vibrato.SetVibratoCode(code); return this; }
 
-        public Note? GetStart() => start;
-        public Note? GetStop() => stop;
+        public Note GetStart() => start;
+        public Note GetStop() => stop;
         public int GetLine() => line;
         public bool IsHarsh() => vibrato.IsHarsh;
         public int GetVibratoCode() => vibrato.GetVibratoCode();

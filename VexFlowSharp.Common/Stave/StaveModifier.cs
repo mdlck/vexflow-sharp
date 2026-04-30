@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -46,8 +44,8 @@ namespace VexFlowSharp
         protected double x = 0;
         protected double padding = 10;
         protected StaveModifierPosition position = StaveModifierPosition.Above;
-        protected Stave? stave;
-        protected LayoutMetrics? layoutMetrics;
+        protected Stave stave;
+        protected LayoutMetrics layoutMetrics;
 
         // ── Width ──────────────────────────────────────────────────────────────
 
@@ -87,7 +85,7 @@ namespace VexFlowSharp
         // ── Stave ─────────────────────────────────────────────────────────────
 
         /// <summary>Get the associated stave (may be null).</summary>
-        public Stave? GetStave() => stave;
+        public Stave GetStave() => stave;
 
         /// <summary>Set the associated stave. Returns this for fluent chaining.</summary>
         public StaveModifier SetStave(Stave s) { stave = s; return this; }
@@ -99,7 +97,7 @@ namespace VexFlowSharp
         // ── Layout Metrics ────────────────────────────────────────────────────
 
         /// <summary>Get layout metrics (may be null).</summary>
-        public LayoutMetrics? GetLayoutMetrics() => layoutMetrics;
+        public LayoutMetrics GetLayoutMetrics() => layoutMetrics;
 
         /// <summary>Set layout metrics. Returns this for fluent chaining.</summary>
         public StaveModifier SetLayoutMetrics(LayoutMetrics lm) { layoutMetrics = lm; return this; }

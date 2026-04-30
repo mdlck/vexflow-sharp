@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -11,15 +9,15 @@ namespace VexFlowSharp
     /// </summary>
     public class StemOptions
     {
-        public double XBegin { get; set; }
-        public double XEnd { get; set; }
-        public double YTop { get; set; }
-        public double YBottom { get; set; }
-        public double StemExtension { get; set; }
-        public int StemDirection { get; set; }
-        public bool Hide { get; set; }
-        public bool IsStemlet { get; set; }
-        public double StemletHeight { get; set; }
+        public double? XBegin { get; set; }
+        public double? XEnd { get; set; }
+        public double? YTop { get; set; }
+        public double? YBottom { get; set; }
+        public double? StemExtension { get; set; }
+        public int? StemDirection { get; set; }
+        public bool? Hide { get; set; }
+        public bool? IsStemlet { get; set; }
+        public double? StemletHeight { get; set; }
         public double StemUpYOffset { get; set; }
         public double StemDownYOffset { get; set; }
         public double StemUpYBaseOffset { get; set; }
@@ -62,23 +60,24 @@ namespace VexFlowSharp
         /// <summary>
         /// Construct a Stem from the given options. All fields default to zero/false.
         /// </summary>
-        public Stem(StemOptions? options = null)
+        public Stem(StemOptions options = null)
         {
-            xBegin = options?.XBegin ?? 0;
-            xEnd = options?.XEnd ?? 0;
-            yTop = options?.YTop ?? 0;
-            yBottom = options?.YBottom ?? 0;
-            stemExtension = options?.StemExtension ?? 0;
-            stemDirection = options?.StemDirection ?? 0;
-            hide = options?.Hide ?? false;
-            isStemlet = options?.IsStemlet ?? false;
-            stemletHeight = options?.StemletHeight ?? 0;
+            options ??= new StemOptions();
+            xBegin = options.XBegin ?? 0;
+            xEnd = options.XEnd ?? 0;
+            yTop = options.YTop ?? 0;
+            yBottom = options.YBottom ?? 0;
+            stemExtension = options.StemExtension ?? 0;
+            stemDirection = options.StemDirection ?? 0;
+            hide = options.Hide ?? false;
+            isStemlet = options.IsStemlet ?? false;
+            stemletHeight = options.StemletHeight ?? 0;
             renderHeightAdjustment = 0;
             SetOptions(options);
         }
 
         /// <summary>Update configurable per-options fields (y offsets).</summary>
-        public void SetOptions(StemOptions? options)
+        public void SetOptions(StemOptions options)
         {
             if (options == null) return;
             stemUpYOffset = options.StemUpYOffset;

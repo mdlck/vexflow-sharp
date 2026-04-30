@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -23,7 +21,7 @@ namespace VexFlowSharp
         private readonly GlyphNoteOptions options;
         private bool preFormatted;
 
-        public GlyphNote(string glyph, NoteStruct noteStruct, GlyphNoteOptions? options = null)
+        public GlyphNote(string glyph, NoteStruct noteStruct, GlyphNoteOptions options = null)
             : base(noteStruct)
         {
             this.options = options ?? new GlyphNoteOptions();
@@ -46,7 +44,7 @@ namespace VexFlowSharp
         public override void PreFormat()
         {
             if (preFormatted) return;
-            modifierContext?.PreFormat();
+            modifierContext.PreFormat();
             preFormatted = true;
         }
 

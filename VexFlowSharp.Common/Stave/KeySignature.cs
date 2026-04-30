@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -22,7 +20,7 @@ namespace VexFlowSharp
         public override string GetCategory() => CATEGORY;
 
         private readonly string keySpec;
-        private string? cancelKeySpec;
+        private string cancelKeySpec;
         private readonly double glyphFontScale;
 
         /// <summary>Accidentals to render: (type="#"/"b"/"n", line=staff-line-position).</summary>
@@ -32,7 +30,7 @@ namespace VexFlowSharp
         private bool paddingForced;
 
         /// <summary>Create a key signature for the given key spec (e.g., "G", "Eb", "F#").</summary>
-        public KeySignature(string keySpec, string? cancelKeySpec = null)
+        public KeySignature(string keySpec, string cancelKeySpec = null)
         {
             this.keySpec       = keySpec;
             this.cancelKeySpec = cancelKeySpec;
@@ -69,7 +67,7 @@ namespace VexFlowSharp
         }
 
         public string GetKeySpec() => keySpec;
-        public string? GetCancelKeySpec() => cancelKeySpec;
+        public string GetCancelKeySpec() => cancelKeySpec;
 
         /// <summary>
         /// Force layout calculation based on Tables.KeySignature data and stave clef.

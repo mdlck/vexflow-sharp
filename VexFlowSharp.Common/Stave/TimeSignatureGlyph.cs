@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -23,8 +21,8 @@ namespace VexFlowSharp
         private readonly double botStartX;
         private readonly int lineShift;
 
-        private readonly List<(FontGlyph? Fg, double Scale)> topGlyphs;
-        private readonly List<(FontGlyph? Fg, double Scale)> botGlyphs;
+        private readonly List<(FontGlyph Fg, double Scale)> topGlyphs;
+        private readonly List<(FontGlyph Fg, double Scale)> botGlyphs;
 
         /// <summary>Total width of this composite glyph.</summary>
         public double Width => compositeWidth;
@@ -41,8 +39,8 @@ namespace VexFlowSharp
             timeSignature = timeSig;
             var musicFont = Font.HasAnyFonts() ? Tables.CurrentMusicFont() : BravuraGlyphs.Data;
 
-            topGlyphs = new List<(FontGlyph?, double)>();
-            botGlyphs = new List<(FontGlyph?, double)>();
+            topGlyphs = new List<(FontGlyph, double)>();
+            botGlyphs = new List<(FontGlyph, double)>();
 
             double topWidth = 0;
             double botWidth = 0;
@@ -125,7 +123,7 @@ namespace VexFlowSharp
             double startX = x + topStartX;
             foreach (var (fg, s) in topGlyphs)
             {
-                if (fg?.CachedOutline != null)
+                if (fg.CachedOutline != null)
                 {
                     Glyph.RenderOutline(ctx, fg.CachedOutline, s, startX, topY);
                     startX += (fg.XMax - fg.XMin) * s;
@@ -137,7 +135,7 @@ namespace VexFlowSharp
             startX = x + botStartX;
             foreach (var (fg, s) in botGlyphs)
             {
-                if (fg?.CachedOutline != null)
+                if (fg.CachedOutline != null)
                 {
                     Glyph.RenderOutline(ctx, fg.CachedOutline, s, startX, botY);
                     startX += (fg.XMax - fg.XMin) * s;

@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -15,7 +13,7 @@ namespace VexFlowSharp
 
         private Clef clef;
 
-        public ClefNote(string type, string size = "default", string? annotation = null)
+        public ClefNote(string type, string size = "default", string annotation = null)
             : base(new NoteStruct { Duration = "b" })
         {
             clef = new Clef(type, size, annotation);
@@ -23,7 +21,7 @@ namespace VexFlowSharp
             ignoreTicks = true;
         }
 
-        public ClefNote SetType(string type, string size = "default", string? annotation = null)
+        public ClefNote SetType(string type, string size = "default", string annotation = null)
         {
             clef = new Clef(type, size, annotation);
             SetWidth(clef.GetWidth());
@@ -49,7 +47,7 @@ namespace VexFlowSharp
             clef.Draw(stave, 0);
         }
 
-        public override BoundingBox? GetBoundingBox() => clef.GetBoundingBox();
+        public override BoundingBox GetBoundingBox() => clef.GetBoundingBox();
 
         public override string GetCategory() => CATEGORY;
     }

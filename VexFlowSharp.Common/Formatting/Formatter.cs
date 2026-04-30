@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -44,7 +42,7 @@ namespace VexFlowSharp.Common.Formatting
         public bool AutoBeam { get; set; } = false;
 
         /// <summary>Stave to use for FormatToStave justification.</summary>
-        public VexFlowSharp.Stave? Stave { get; set; }
+        public VexFlowSharp.Stave Stave { get; set; }
     }
 
     /// <summary>
@@ -117,7 +115,7 @@ namespace VexFlowSharp.Common.Formatting
         /// Create a new Formatter with optional options.
         /// Port of Formatter constructor from formatter.ts.
         /// </summary>
-        public Formatter(FormatterOptions? options = null)
+        public Formatter(FormatterOptions options = null)
         {
             formatterOptions = options ?? new FormatterOptions();
             justifyWidth     = 0;
@@ -179,11 +177,11 @@ namespace VexFlowSharp.Common.Formatting
         /// Helper to format and draw a single voice onto a stave.
         /// Port of Formatter.FormatAndDraw() from formatter.ts.
         /// </summary>
-        public static VexFlowSharp.BoundingBox? FormatAndDraw(
+        public static VexFlowSharp.BoundingBox FormatAndDraw(
             VexFlowSharp.RenderContext ctx,
             VexFlowSharp.Stave stave,
             List<VexFlowSharp.StemmableNote> notes,
-            FormatParams? p = null)
+            FormatParams p = null)
         {
             var opts = p ?? new FormatParams();
 
@@ -219,7 +217,7 @@ namespace VexFlowSharp.Common.Formatting
         /// <summary>
         /// Convenience overload matching VexFlow's boolean autoBeam parameter.
         /// </summary>
-        public static VexFlowSharp.BoundingBox? FormatAndDraw(
+        public static VexFlowSharp.BoundingBox FormatAndDraw(
             VexFlowSharp.RenderContext ctx,
             VexFlowSharp.Stave stave,
             List<VexFlowSharp.StemmableNote> notes,
@@ -321,7 +319,7 @@ namespace VexFlowSharp.Common.Formatting
             var staveRegistry = new List<VexFlowSharp.Stave>();
             var contexts      = new List<ModifierContext>();
 
-            int GetStaveId(VexFlowSharp.Stave? stave)
+            int GetStaveId(VexFlowSharp.Stave stave)
             {
                 if (stave == null) return -1;
                 int idx = staveRegistry.IndexOf(stave);
@@ -342,7 +340,7 @@ namespace VexFlowSharp.Common.Formatting
                     long integerTicks = ticksUsed.Numerator;
 
                     // Get the stave for this tickable (null if not set)
-                    VexFlowSharp.Stave? tickableStave = null;
+                    VexFlowSharp.Stave tickableStave = null;
                     if (tickable is VexFlowSharp.Note note)
                         tickableStave = note.GetStave();
 
@@ -374,8 +372,8 @@ namespace VexFlowSharp.Common.Formatting
         /// Pre-format: assign initial X positions based on minimum widths.
         /// Port of Formatter.preFormat() from formatter.ts.
         /// </summary>
-        public double PreFormat(double justifyWidth = 0, List<Voice>? voicesParam = null,
-            VexFlowSharp.Stave? stave = null)
+        public double PreFormat(double justifyWidth = 0, List<Voice> voicesParam = null,
+            VexFlowSharp.Stave stave = null)
         {
             var contexts = tickContexts;
 
@@ -447,14 +445,14 @@ namespace VexFlowSharp.Common.Formatting
 
             // Closure-captured arrays for intermediate values — declared before local functions
             double[] lastMaxNegShifts  = new double[contextList.Count];
-            VexFlowSharp.Tickable?[] lastBackTickables = new VexFlowSharp.Tickable?[contextList.Count];
+            VexFlowSharp.Tickable[] lastBackTickables = new VexFlowSharp.Tickable[contextList.Count];
 
             // Calculate ideal distances between adjacent tick contexts
             double[] CalculateIdealDistances(double targetWidth)
             {
                 var distances = new double[contextList.Count];
                 var maxNegShifts = new double[contextList.Count];
-                var backTickables = new VexFlowSharp.Tickable?[contextList.Count];
+                var backTickables = new VexFlowSharp.Tickable[contextList.Count];
 
                 for (int i = 0; i < contextList.Count; i++)
                 {
@@ -471,7 +469,7 @@ namespace VexFlowSharp.Common.Formatting
 
                     double expectedDistance = 0;
                     double maxNegativeShiftPx = double.PositiveInfinity;
-                    VexFlowSharp.Tickable? backTickable = null;
+                    VexFlowSharp.Tickable backTickable = null;
 
                     // Search backwards for a matching voice in a previous context
                     for (int j = i - 1; j >= 0; j--)
@@ -813,8 +811,8 @@ namespace VexFlowSharp.Common.Formatting
             {
                 long tick    = contexts.List[index];
                 var context  = contexts.Map[tick];
-                TickContext? prevContext = index > 0 ? contexts.Map[contexts.List[index - 1]] : null;
-                TickContext? nextContext = index < contexts.List.Count - 1
+                TickContext prevContext = index > 0 ? contexts.Map[contexts.List[index - 1]] : null;
+                TickContext nextContext = index < contexts.List.Count - 1
                     ? contexts.Map[contexts.List[index + 1]] : null;
 
                 context.Move(shift, prevContext, nextContext);
@@ -966,7 +964,7 @@ namespace VexFlowSharp.Common.Formatting
         /// Port of Formatter.format() from formatter.ts.
         /// </summary>
         public void Format(List<Voice> voicesToFormat, double? justifyWidthParam = null,
-            FormatParams? options = null)
+            FormatParams options = null)
         {
             var opts = options ?? new FormatParams();
             voices = voicesToFormat;
@@ -989,7 +987,7 @@ namespace VexFlowSharp.Common.Formatting
         /// Port of Formatter.formatToStave() from formatter.ts.
         /// </summary>
         public Formatter FormatToStave(List<Voice> voicesToFormat, VexFlowSharp.Stave stave,
-            FormatParams? optionsParam = null)
+            FormatParams optionsParam = null)
         {
             var options = optionsParam ?? new FormatParams();
             options.Stave = stave;
@@ -1014,7 +1012,7 @@ namespace VexFlowSharp.Common.Formatting
         /// <summary>
         /// Get a specific TickContext by tick integer.
         /// </summary>
-        public TickContext? GetTickContext(long tick)
+        public TickContext GetTickContext(long tick)
         {
             tickContexts.Map.TryGetValue(tick, out var tc);
             return tc;
@@ -1059,7 +1057,7 @@ namespace VexFlowSharp.Common.Formatting
         /// Returns the context's FormatterMetrics (via the tickables).
         /// This exists for API symmetry with the TypeScript version.
         /// </summary>
-        public FormatterMetrics? GetTickContextFormatterMetrics(TickContext tc)
+        public FormatterMetrics GetTickContextFormatterMetrics(TickContext tc)
         {
             var tickables = tc.GetTickables();
             if (tickables.Count == 0) return null;

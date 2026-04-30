@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -28,8 +26,8 @@ namespace VexFlowSharp
         public double BottomTextPosition       { get; set; } = Metrics.GetDouble("Stave.bottomTextPosition");  // set to NumLines in ResetLines
         public double VerticalBarWidth         { get; set; } = Metrics.GetDouble("Stave.verticalBarWidth");
         public string FillStyle                { get; set; } = Metrics.GetString("Stave.strokeStyle");
-        public bool   LeftBar                  { get; set; } = true;
-        public bool   RightBar                 { get; set; } = true;
+        public bool?  LeftBar                  { get; set; } = true;
+        public bool?  RightBar                 { get; set; } = true;
         /// <summary>Whether each line is visible. Populated by ResetLines().</summary>
         public List<bool> LineConfig           { get; set; } = new List<bool>();
     }
@@ -59,7 +57,7 @@ namespace VexFlowSharp
         protected int    measure;
         protected bool   formatted;
         protected string clef     = "treble";
-        protected string? endClef;
+        protected string endClef;
 
         protected readonly StaveOptions options;
         protected readonly List<StaveModifier> modifiers;
@@ -71,7 +69,7 @@ namespace VexFlowSharp
         /// Create a stave at (x, y) with the given width.
         /// Automatically adds begin and end barlines.
         /// </summary>
-        public Stave(double x, double y, double width, StaveOptions? options = null)
+        public Stave(double x, double y, double width, StaveOptions options = null)
         {
             this.x      = x;
             this.y      = y;
@@ -88,8 +86,8 @@ namespace VexFlowSharp
             ResetLines();
 
             // Add begin barline (index 0) and end barline (index 1)
-            AddModifier(new Barline(options?.LeftBar  ?? true  ? BarlineType.Single : BarlineType.None));
-            AddEndModifier(new Barline(options?.RightBar ?? true ? BarlineType.Single : BarlineType.None));
+            AddModifier(new Barline(this.options.LeftBar  ?? true  ? BarlineType.Single : BarlineType.None));
+            AddEndModifier(new Barline(this.options.RightBar ?? true ? BarlineType.Single : BarlineType.None));
         }
 
         // ── Lines / geometry setup ────────────────────────────────────────────
@@ -162,7 +160,7 @@ namespace VexFlowSharp
         public double GetBottomY()
             => GetBottomLineY() + options.SpaceBelowStaffLn * options.SpacingBetweenLinesPx;
 
-        public override BoundingBox? GetBoundingBox()
+        public override BoundingBox GetBoundingBox()
             => new BoundingBox(x, y, width, GetBottomY() - y);
 
         private double GetLineWidth()
@@ -207,7 +205,7 @@ namespace VexFlowSharp
 
             double shiftedStartX = startX - x;
             var begBarline = modifiers[0] as Barline;
-            if (begBarline?.GetBarlineType() == BarlineType.RepeatBegin && shiftedStartX > begBarline.GetWidth())
+            if (begBarline.GetBarlineType() == BarlineType.RepeatBegin && shiftedStartX > begBarline.GetWidth())
                 shiftedStartX -= begBarline.GetWidth();
 
             return shiftedStartX;
@@ -401,22 +399,22 @@ namespace VexFlowSharp
         public ElementStyle GetDefaultLedgerLineStyle()
             => MergeStyles(GetStyle(), defaultLedgerLineStyle);
 
-        private static ElementStyle MergeStyles(ElementStyle? baseStyle, ElementStyle? overrideStyle)
+        private static ElementStyle MergeStyles(ElementStyle baseStyle, ElementStyle overrideStyle)
         {
             return new ElementStyle
             {
-                ShadowColor = overrideStyle?.ShadowColor ?? baseStyle?.ShadowColor,
-                ShadowBlur = overrideStyle?.ShadowBlur ?? baseStyle?.ShadowBlur,
-                FillStyle = overrideStyle?.FillStyle ?? baseStyle?.FillStyle,
-                StrokeStyle = overrideStyle?.StrokeStyle ?? baseStyle?.StrokeStyle,
-                LineWidth = overrideStyle?.LineWidth ?? baseStyle?.LineWidth,
-                LineDash = overrideStyle?.LineDash ?? baseStyle?.LineDash,
+                ShadowColor = overrideStyle.ShadowColor ?? baseStyle.ShadowColor,
+                ShadowBlur = overrideStyle.ShadowBlur ?? baseStyle.ShadowBlur,
+                FillStyle = overrideStyle.FillStyle ?? baseStyle.FillStyle,
+                StrokeStyle = overrideStyle.StrokeStyle ?? baseStyle.StrokeStyle,
+                LineWidth = overrideStyle.LineWidth ?? baseStyle.LineWidth,
+                LineDash = overrideStyle.LineDash ?? baseStyle.LineDash,
             };
         }
 
         public string GetClef() => clef;
 
-        public string? GetEndClef() => endClef;
+        public string GetEndClef() => endClef;
 
         public int GetMeasure() => measure;
         public Stave SetMeasure(int m) { measure = m; return this; }
@@ -444,7 +442,7 @@ namespace VexFlowSharp
         }
 
         /// <summary>Get all modifiers, optionally filtered by position and/or category name.</summary>
-        public List<StaveModifier> GetModifiers(StaveModifierPosition? position = null, string? category = null)
+        public List<StaveModifier> GetModifiers(StaveModifierPosition? position = null, string category = null)
         {
             if (position == null && category == null)
                 return modifiers;
@@ -463,7 +461,7 @@ namespace VexFlowSharp
         // ── Convenience add methods ───────────────────────────────────────────
 
         /// <summary>Add a clef to this stave.</summary>
-        public Stave AddClef(string clefType, string size = "default", string? annotation = null,
+        public Stave AddClef(string clefType, string size = "default", string annotation = null,
             StaveModifierPosition position = StaveModifierPosition.Begin)
         {
             if (position == StaveModifierPosition.Begin)
@@ -475,7 +473,7 @@ namespace VexFlowSharp
         }
 
         /// <summary>Add a key signature to this stave.</summary>
-        public Stave AddKeySignature(string keySpec, string? cancelKeySpec = null,
+        public Stave AddKeySignature(string keySpec, string cancelKeySpec = null,
             StaveModifierPosition position = StaveModifierPosition.Begin)
         {
             AddModifier(new KeySignature(keySpec, cancelKeySpec), position);

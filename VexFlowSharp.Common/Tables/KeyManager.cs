@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -16,7 +14,7 @@ namespace VexFlowSharp
         public string Note        { get; set; } = "";
 
         /// <summary>Accidental string, or null/empty if natural.</summary>
-        public string? Accidental { get; set; }
+        public string Accidental { get; set; }
 
         /// <summary>Whether the scale map was mutated by this call.</summary>
         public bool Change        { get; set; }
@@ -30,7 +28,7 @@ namespace VexFlowSharp
     {
         private readonly Music _music;
 
-        private KeyParts _keyParts   = null!;
+        private KeyParts _keyParts   = null;
         private string   _keyString  = "";
         private string   _key        = "";
 

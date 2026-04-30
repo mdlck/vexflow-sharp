@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -122,7 +120,7 @@ namespace VexFlowSharp
         /// Port of Dot.format() from dot.ts — handles staff-line detection and
         /// half-space vertical shift when dots fall on a staff line.
         /// </summary>
-        public static bool Format(List<Dot>? dots, ModifierContextState state)
+        public static bool Format(List<Dot> dots, ModifierContextState state)
         {
             if (dots == null || dots.Count == 0) return false;
 
@@ -167,7 +165,7 @@ namespace VexFlowSharp
             double dotShift          = rightShift;
             double xWidth            = 0;
             double? lastLine         = null;
-            Note?   lastNote         = null;
+            Note   lastNote         = null;
             double? prevDottedSpace  = null;
             double  halfShiftY       = 0;
 

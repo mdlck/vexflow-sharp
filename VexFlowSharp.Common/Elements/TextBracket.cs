@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -16,8 +14,8 @@ namespace VexFlowSharp
 
     public class TextBracketParams
     {
-        public Note Start { get; set; } = null!;
-        public Note Stop { get; set; } = null!;
+        public Note Start { get; set; } = null;
+        public Note Stop { get; set; } = null;
         public string Text { get; set; } = string.Empty;
         public string Superscript { get; set; } = string.Empty;
         public TextBracketPosition Position { get; set; } = TextBracketPosition.Top;
@@ -67,7 +65,7 @@ namespace VexFlowSharp
         public TextBracketPosition GetPosition() => position;
         public double GetLine() => line;
 
-        public TextBracket SetDashed(bool dashed, double[]? dash = null)
+        public TextBracket SetDashed(bool dashed, double[] dash = null)
         {
             RenderOptions.Dashed = dashed;
             if (dash != null) RenderOptions.Dash = dash;

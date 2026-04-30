@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -44,7 +42,7 @@ namespace VexFlowSharp.Common.Elements
     public class BeamConfig
     {
         /// <summary>Custom beat groupings for beam formation. Defaults to [2/8].</summary>
-        public List<Fraction>? Groups { get; set; }
+        public List<Fraction> Groups { get; set; }
 
         /// <summary>Override stem direction for all generated beams.</summary>
         public int? StemDirection { get; set; }
@@ -62,7 +60,7 @@ namespace VexFlowSharp.Common.Elements
         public bool ShowStemlets { get; set; } = false;
 
         /// <summary>Duration string for secondary beam breaks (e.g. "16").</summary>
-        public string? SecondaryBreaks { get; set; }
+        public string SecondaryBreaks { get; set; }
 
         /// <summary>Force flat (horizontal) beams.</summary>
         public bool FlatBeams { get; set; } = false;
@@ -317,7 +315,7 @@ namespace VexFlowSharp.Common.Elements
         /// </summary>
         public static List<Beam> GenerateBeams(
             List<VexFlowSharp.StemmableNote> notes,
-            BeamConfig? config = null)
+            BeamConfig config = null)
         {
             config = config ?? new BeamConfig();
             if (config.Groups == null || config.Groups.Count == 0)
@@ -468,7 +466,7 @@ namespace VexFlowSharp.Common.Elements
             var allTuplets = new List<Tuplet>();
             foreach (var group in noteGroups)
             {
-                Tuplet? tuplet = null;
+                Tuplet tuplet = null;
                 foreach (var note in group)
                 {
                     if (note.GetTuplet() is Tuplet noteTuplet && tuplet != noteTuplet)
@@ -542,7 +540,7 @@ namespace VexFlowSharp.Common.Elements
         public static List<Beam> ApplyAndGetBeams(
             Voice voice,
             int? stemDirection = null,
-            List<Fraction>? groups = null)
+            List<Fraction> groups = null)
         {
             var stemmableNotes = voice.GetTickables()
                 .OfType<VexFlowSharp.StemmableNote>()

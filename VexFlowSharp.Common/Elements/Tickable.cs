@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -77,16 +75,16 @@ namespace VexFlowSharp
         protected List<Modifier> modifiers = new List<Modifier>();
 
         /// <summary>The voice this tickable belongs to (set by Voice.AddTickable).</summary>
-        protected Voice? voice;
+        protected Voice voice;
 
         /// <summary>The tick context this tickable is aligned within (set by TickContext.AddTickable).</summary>
-        protected TickContext? tickContext;
+        protected TickContext tickContext;
 
         /// <summary>Whether this tickable should be center-aligned within its tick context.</summary>
         protected bool centerAligned = false;
 
         /// <summary>The modifier context this tickable is grouped within (set by ModifierContext.AddMember).</summary>
-        protected ModifierContext? modifierContext;
+        protected ModifierContext modifierContext;
 
         protected Tickable()
         {
@@ -107,7 +105,7 @@ namespace VexFlowSharp
         }
 
         /// <summary>Get the rendered width in pixels, including modifier context width.</summary>
-        public double GetWidth() => width + (modifierContext?.GetWidth() ?? 0);
+        public double GetWidth() => width + modifierContext.GetWidth();
 
         /// <summary>Set the rendered width. Returns this for fluent chaining.</summary>
         public Tickable SetWidth(double w)
@@ -142,7 +140,7 @@ namespace VexFlowSharp
         /// Port of Tickable.getTuplet() from tickable.ts.
         /// Tuplets are a Phase 4+ concern; returns null for now.
         /// </summary>
-        public virtual object? GetTuplet() => null;
+        public virtual object GetTuplet() => null;
 
         /// <summary>Get formatter metrics for this tickable.</summary>
         public FormatterMetrics GetMetrics() => formatterMetrics;
@@ -177,7 +175,7 @@ namespace VexFlowSharp
         // ── Voice wiring ──────────────────────────────────────────────────────
 
         /// <summary>Get the voice this tickable belongs to.</summary>
-        public Voice? GetVoice() => voice;
+        public Voice GetVoice() => voice;
 
         /// <summary>Set the associated voice. Returns this for fluent chaining.</summary>
         public Tickable SetVoice(Voice v) { voice = v; return this; }
@@ -185,7 +183,7 @@ namespace VexFlowSharp
         // ── TickContext wiring ────────────────────────────────────────────────
 
         /// <summary>Get the tick context this tickable is aligned within.</summary>
-        public TickContext? GetTickContext() => tickContext;
+        public TickContext GetTickContext() => tickContext;
 
         /// <summary>Set the associated tick context. Returns this for fluent chaining.</summary>
         public Tickable SetTickContext(TickContext tc) { tickContext = tc; return this; }
@@ -219,7 +217,7 @@ namespace VexFlowSharp
         }
 
         /// <summary>Get the modifier context this tickable belongs to.</summary>
-        public ModifierContext? GetModifierContext() => modifierContext;
+        public ModifierContext GetModifierContext() => modifierContext;
 
         // ── Formatter metrics access ──────────────────────────────────────────
 

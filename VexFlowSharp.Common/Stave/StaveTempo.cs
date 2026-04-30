@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -10,12 +8,12 @@ namespace VexFlowSharp
 {
     public class StaveTempoOptions
     {
-        public string? Name { get; set; }
+        public string Name { get; set; }
         public bool Parenthesis { get; set; }
-        public string? Duration { get; set; }
+        public string Duration { get; set; }
         public int Dots { get; set; }
-        public object? Bpm { get; set; }
-        public string? Duration2 { get; set; }
+        public object Bpm { get; set; }
+        public string Duration2 { get; set; }
         public int Dots2 { get; set; }
     }
 

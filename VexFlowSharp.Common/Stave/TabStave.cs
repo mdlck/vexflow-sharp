@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -13,12 +11,12 @@ namespace VexFlowSharp
     {
         public new const string CATEGORY = "TabStave";
 
-        public TabStave(double x, double y, double width, StaveOptions? options = null)
+        public TabStave(double x, double y, double width, StaveOptions options = null)
             : base(x, y, width, MergeOptions(options))
         {
         }
 
-        private static StaveOptions MergeOptions(StaveOptions? options)
+        private static StaveOptions MergeOptions(StaveOptions options)
         {
             options ??= new StaveOptions();
             options.SpacingBetweenLinesPx = Metrics.GetDouble("TabStave.spacingBetweenLinesPx");

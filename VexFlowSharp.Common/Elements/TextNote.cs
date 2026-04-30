@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -12,7 +10,7 @@ namespace VexFlowSharp
         public string Text { get; set; } = "";
         public double? Line { get; set; }
         public TextJustification? Justification { get; set; }
-        public MetricsFontInfo? Font { get; set; }
+        public MetricsFontInfo Font { get; set; }
     }
 
     /// <summary>

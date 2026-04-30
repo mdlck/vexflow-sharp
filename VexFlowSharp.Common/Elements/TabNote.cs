@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -85,7 +83,7 @@ namespace VexFlowSharp
             var formatter = TextFormatter.Create(font.Family, font.Size);
             foreach (var position in positions)
             {
-                string text = position.Fret?.ToString() ?? string.Empty;
+                string text = position.Fret.ToString() ?? string.Empty;
                 if (ghost) text = "(" + text + ")";
                 bool muted = string.Equals(text, "X", StringComparison.OrdinalIgnoreCase);
                 fretTexts.Add(text);
@@ -111,7 +109,7 @@ namespace VexFlowSharp
             return this;
         }
 
-        public override (double X, double Y) GetModifierStartXY(ModifierPosition position, int index, object? options = null)
+        public override (double X, double Y) GetModifierStartXY(ModifierPosition position, int index, object options = null)
         {
             if (!preFormatted)
                 throw new VexFlowException("UnformattedNote", "Can't call GetModifierStartXY on an unformatted note");
@@ -147,7 +145,7 @@ namespace VexFlowSharp
         public override void PreFormat()
         {
             if (preFormatted) return;
-            modifierContext?.PreFormat();
+            modifierContext.PreFormat();
             preFormatted = true;
         }
 

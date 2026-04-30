@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -25,16 +23,16 @@ namespace VexFlowSharp.Api
     public class NoteOptions
     {
         /// <summary>Stem direction: "auto", "up", or "down".</summary>
-        public string? Stem { get; set; }
+        public string Stem { get; set; }
 
         /// <summary>Clef: "treble", "bass", etc.</summary>
-        public string? Clef { get; set; }
+        public string Clef { get; set; }
     }
 
     /// <summary>Default EasyScore options matching VexFlow's clef/time/stem defaults.</summary>
     public class EasyScoreDefaults : NoteOptions
     {
-        public string? Time { get; set; }
+        public string Time { get; set; }
     }
 
     /// <summary>
@@ -44,9 +42,9 @@ namespace VexFlowSharp.Api
     {
         public int? NumBeats { get; set; }
         public int? BeatValue { get; set; }
-        public string? Time { get; set; }
+        public string Time { get; set; }
         public double? SoftmaxFactor { get; set; }
-        public VoiceFormattingOptions? Options { get; set; }
+        public VoiceFormattingOptions Options { get; set; }
     }
 
     /// <summary>
@@ -63,9 +61,9 @@ namespace VexFlowSharp.Api
     /// </summary>
     public class EasyScoreOptions
     {
-        public EasyScoreDefaults? Defaults { get; set; }
+        public EasyScoreDefaults Defaults { get; set; }
         public bool? ThrowOnError { get; set; }
-        public List<Action<Builder, StemmableNote>>? CommitHooks { get; set; }
+        public List<Action<Builder, StemmableNote>> CommitHooks { get; set; }
     }
 
     // ── NotePiece ─────────────────────────────────────────────────────────────
@@ -80,7 +78,7 @@ namespace VexFlowSharp.Api
         public string Key { get; set; } = "";
 
         /// <summary>Accidental string (e.g. "#", "b", "##", null if none).</summary>
-        public string? Accid { get; set; }
+        public string Accid { get; set; }
 
         /// <summary>Octave string (e.g. "4").</summary>
         public string Octave { get; set; } = "4";
@@ -97,7 +95,7 @@ namespace VexFlowSharp.Api
         public List<NotePiece> Chord { get; } = new List<NotePiece>();
         public string Duration { get; set; }
         public int Dots { get; set; } = 0;
-        public string? Type { get; set; }
+        public string Type { get; set; }
         public Dictionary<string, string> Options { get; } = new Dictionary<string, string>();
 
         public Piece(string duration)
@@ -146,10 +144,10 @@ namespace VexFlowSharp.Api
         // ── Reset ─────────────────────────────────────────────────────────────
 
         /// <summary>Reset builder state for a new parse. Port of Builder.reset() from easyscore.ts.</summary>
-        public void Reset(NoteOptions? options = null)
+        public void Reset(NoteOptions options = null)
         {
-            optionStem = options?.Stem ?? "auto";
-            optionClef = options?.Clef ?? "treble";
+            optionStem = options.Stem ?? "auto";
+            optionClef = options.Clef ?? "treble";
             Elements = new List<StemmableNote>();
             rollingDuration = "8";
             ResetPiece();
@@ -166,7 +164,7 @@ namespace VexFlowSharp.Api
         /// Called by SINGLENOTE trigger: adds a single note to the chord list.
         /// Port of Builder.addSingleNote() from easyscore.ts.
         /// </summary>
-        public void AddSingleNote(string key, string? accid, string octave)
+        public void AddSingleNote(string key, string accid, string octave)
         {
             piece.Chord.Add(new NotePiece { Key = key, Accid = accid, Octave = octave });
         }
@@ -175,7 +173,7 @@ namespace VexFlowSharp.Api
         /// Called by CHORD trigger: chord notes were already accumulated via SINGLENOTE (NOTE rule).
         /// Port of Builder.addChord() from easyscore.ts — the chord notes arrive via NOTE rule calls.
         /// </summary>
-        public void AddChord(List<object?> notes)
+        public void AddChord(List<object> notes)
         {
             // Notes already accumulated into piece.Chord by individual NOTE/SINGLENOTE triggers.
             // This is a no-op in the C# port — CHORD's inner NOTE rules already called AddSingleNote.
@@ -185,7 +183,7 @@ namespace VexFlowSharp.Api
         /// Called by DURATION trigger. Sets rolling duration.
         /// Port of Builder.setNoteDuration() from easyscore.ts.
         /// </summary>
-        public void SetNoteDuration(string? duration)
+        public void SetNoteDuration(string duration)
         {
             rollingDuration = piece.Duration = duration ?? rollingDuration;
         }
@@ -194,7 +192,7 @@ namespace VexFlowSharp.Api
         /// Called by TYPE trigger. Sets note type override.
         /// Port of Builder.setNoteType() from easyscore.ts.
         /// </summary>
-        public void SetNoteType(string? type)
+        public void SetNoteType(string type)
         {
             if (type != null) piece.Type = type;
         }
@@ -203,7 +201,7 @@ namespace VexFlowSharp.Api
         /// Called by DOTS trigger. Counts number of dots.
         /// Port of Builder.setNoteDots() from easyscore.ts.
         /// </summary>
-        public void SetNoteDots(List<object?> dots)
+        public void SetNoteDots(List<object> dots)
         {
             if (dots != null) piece.Dots = dots.Count(d => d != null);
         }
@@ -230,7 +228,7 @@ namespace VexFlowSharp.Api
 
             string duration = piece.Duration ?? rollingDuration;
             int dots = piece.Dots;
-            string? type = piece.Type;
+            string type = piece.Type;
 
             // Build keys array: "c#/4", "e/4" etc.
             // Only standard accidentals (bb, b, n, #, ##) are included in the key string.
@@ -247,7 +245,7 @@ namespace VexFlowSharp.Api
 
             // Create note
             StaveNote note;
-            if (type?.ToLower() == "g")
+            if (type.ToLower() == "g")
             {
                 // Ghost note — use duration from piece
                 var ghostNote = factory.GhostNote(new StaveNoteStruct
@@ -419,7 +417,7 @@ namespace VexFlowSharp.Api
             }
         }
 
-        private string? GetOptionValue(string key)
+        private string GetOptionValue(string key)
         {
             return piece.Options.TryGetValue(key, out var value) ? value : null;
         }
@@ -454,9 +452,9 @@ namespace VexFlowSharp.Api
             }
         }
 
-        private static ModifierPosition? ParseModifierPosition(string? position)
+        private static ModifierPosition? ParseModifierPosition(string position)
         {
-            switch (position?.Trim().ToLowerInvariant())
+            switch (position.Trim().ToLowerInvariant())
             {
                 case "center":
                     return ModifierPosition.Center;
@@ -553,7 +551,7 @@ namespace VexFlowSharp.Api
                 // The SINGLENOTE trigger does the same for single notes.
                 // state.Matches: [noteName, accidental|null, octave]
                 string key = (state.Matches.Count > 0 ? state.Matches[0] as string : null) ?? "";
-                string? accid = state.Matches.Count > 1 ? state.Matches[1] as string : null;
+                string accid = state.Matches.Count > 1 ? state.Matches[1] as string : null;
                 string octave = (state.Matches.Count > 2 ? state.Matches[2] as string : null) ?? "4";
                 builder.AddSingleNote(key, accid, octave);
             },
@@ -566,7 +564,7 @@ namespace VexFlowSharp.Api
             Run = (state) =>
             {
                 string key = (state.Matches.Count > 0 ? state.Matches[0] as string : null) ?? "";
-                string? accid = state.Matches.Count > 1 ? state.Matches[1] as string : null;
+                string accid = state.Matches.Count > 1 ? state.Matches[1] as string : null;
                 string octave = (state.Matches.Count > 2 ? state.Matches[2] as string : null) ?? "4";
                 builder.AddSingleNote(key, accid, octave);
             },
@@ -596,7 +594,7 @@ namespace VexFlowSharp.Api
             Run = (state) =>
             {
                 // matches[2] is the type letter (after two slashes)
-                string? t = state.Matches.Count > 2 ? state.Matches[2] as string : null;
+                string t = state.Matches.Count > 2 ? state.Matches[2] as string : null;
                 builder.SetNoteType(t);
             },
         };
@@ -609,7 +607,7 @@ namespace VexFlowSharp.Api
             Run = (state) =>
             {
                 // matches[1] is the duration value (after the slash)
-                string? d = state.Matches.Count > 1 ? state.Matches[1] as string : null;
+                string d = state.Matches.Count > 1 ? state.Matches[1] as string : null;
                 builder.SetNoteDuration(d);
             },
         };
@@ -697,7 +695,7 @@ namespace VexFlowSharp.Api
         /// <summary>Default stem direction for notes: "auto", "up", or "down".</summary>
         public string DefaultStem { get; set; } = "auto";
 
-        /// <summary>Default time signature used by <see cref="Voice(List{Note}, VoiceOptions?)"/>.</summary>
+        /// <summary>Default time signature used by <see cref="Voice(List{Note}, VoiceOptions)"/>.</summary>
         public string DefaultTime { get; set; } = "4/4";
 
         /// <summary>When true, <see cref="Parse"/> throws on parse failure, matching VexFlow's throwOnError option.</summary>
@@ -709,7 +707,7 @@ namespace VexFlowSharp.Api
         /// Create an EasyScore with a bidirectional factory reference.
         /// Port of VexFlow's EasyScore constructor from easyscore.ts.
         /// </summary>
-        public EasyScore(Factory factory, EasyScoreOptions? options = null)
+        public EasyScore(Factory factory, EasyScoreOptions options = null)
         {
             Factory = factory;
             builder = new Builder(factory);
@@ -732,7 +730,7 @@ namespace VexFlowSharp.Api
         ///
         /// Port of VexFlow's EasyScore.notes() from easyscore.ts line 524.
         /// </summary>
-        public List<StemmableNote> Notes(string noteStr, NoteOptions? options = null)
+        public List<StemmableNote> Notes(string noteStr, NoteOptions options = null)
         {
             var result = Parse(noteStr, options);
             if (!result.Success)
@@ -745,7 +743,7 @@ namespace VexFlowSharp.Api
         /// Parse notation and return only concrete stave notes. This is a C# convenience
         /// for callers that do not expect v5 EasyScore ghost notes in the result list.
         /// </summary>
-        public List<StaveNote> StaveNotes(string noteStr, NoteOptions? options = null)
+        public List<StaveNote> StaveNotes(string noteStr, NoteOptions options = null)
         {
             return Notes(noteStr, options).OfType<StaveNote>().ToList();
         }
@@ -754,12 +752,12 @@ namespace VexFlowSharp.Api
         /// Parse a notation string and return the raw parser result.
         /// This mirrors VexFlow's EasyScore.parse() non-throwing path unless <see cref="ThrowOnError"/> is enabled.
         /// </summary>
-        public ParseResult Parse(string noteStr, NoteOptions? options = null)
+        public ParseResult Parse(string noteStr, NoteOptions options = null)
         {
             var opts = new NoteOptions
             {
-                Stem = options?.Stem ?? DefaultStem,
-                Clef = options?.Clef ?? DefaultClef,
+                Stem = options.Stem ?? DefaultStem,
+                Clef = options.Clef ?? DefaultClef,
             };
             builder.Reset(opts);
             var result = parser.Parse(noteStr);
@@ -806,14 +804,14 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a Beam for the given notes and return the same note list for fluent EasyScore composition.</summary>
-        public List<StemmableNote> Beam(List<StemmableNote> notes, FactoryBeamOptions? options = null)
+        public List<StemmableNote> Beam(List<StemmableNote> notes, FactoryBeamOptions options = null)
         {
             Factory.Beam(notes, options);
             return notes;
         }
 
         /// <summary>Create a Tuplet for the given notes and return the same note list for fluent EasyScore composition.</summary>
-        public List<StemmableNote> Tuplet(List<StemmableNote> notes, TupletOptions? options = null)
+        public List<StemmableNote> Tuplet(List<StemmableNote> notes, TupletOptions options = null)
         {
             Factory.Tuplet(notes.Cast<Note>().ToList(), options);
             return notes;
@@ -823,25 +821,25 @@ namespace VexFlowSharp.Api
         /// Create a Voice containing the given notes.
         /// Port of VexFlow's EasyScore.voice() from easyscore.ts line 530.
         /// </summary>
-        public Voice Voice(List<StaveNote> notes, VoiceOptions? options = null)
+        public Voice Voice(List<StaveNote> notes, VoiceOptions options = null)
             => Voice(notes.Cast<Note>().ToList(), options);
 
         /// <summary>Create a Voice containing the given stemmable notes.</summary>
-        public Voice Voice(List<StemmableNote> notes, VoiceOptions? options = null)
+        public Voice Voice(List<StemmableNote> notes, VoiceOptions options = null)
             => Voice(notes.Cast<Note>().ToList(), options);
 
         /// <summary>Create a Voice containing the given notes.</summary>
-        public Voice Voice(List<Note> notes, VoiceOptions? options = null)
+        public Voice Voice(List<Note> notes, VoiceOptions options = null)
         {
             Voice voice;
-            if (!string.IsNullOrWhiteSpace(options?.Time))
+            if (!string.IsNullOrWhiteSpace(options.Time))
                 voice = Factory.Voice(options.Time!);
-            else if (options?.NumBeats != null || options?.BeatValue != null)
-                voice = Factory.Voice(options?.NumBeats, options?.BeatValue);
+            else if (options.NumBeats != null || options.BeatValue != null)
+                voice = Factory.Voice(options.NumBeats, options.BeatValue);
             else
                 voice = Factory.Voice(DefaultTime);
 
-            var softmaxFactor = options?.SoftmaxFactor ?? options?.Options?.SoftmaxFactor;
+            var softmaxFactor = options.SoftmaxFactor ?? options.Options?.SoftmaxFactor;
             if (softmaxFactor.HasValue)
                 voice.SetSoftmaxFactor(softmaxFactor.Value);
 

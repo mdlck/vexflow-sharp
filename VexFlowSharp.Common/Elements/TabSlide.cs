@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -34,7 +32,7 @@ namespace VexFlowSharp
             return first > last ? SLIDE_DOWN : SLIDE_UP;
         }
 
-        private static double GetFirstFret(TabNote? note)
+        private static double GetFirstFret(TabNote note)
         {
             if (note == null || note.GetPositions().Length == 0) return double.NaN;
             return double.TryParse(note.GetPositions()[0].Fret?.ToString(), out var fret) ? fret : double.NaN;

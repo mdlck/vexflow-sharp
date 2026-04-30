@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 using System;
 using System.Collections.Generic;
 using VexFlowSharp.Common.Formatting;
@@ -171,7 +169,7 @@ namespace VexFlowSharp
                 ctx.FillText(text, renderX, annotationY);
             }
 
-            BendPhrase? lastBend = null;
+            BendPhrase lastBend = null;
             double lastBendDrawWidth = 0;
             double lastDrawnWidth = 0;
             if (!string.IsNullOrEmpty(tap))

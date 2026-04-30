@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -191,7 +189,7 @@ namespace VexFlowSharp
         public static bool operator <=(Fraction a, Fraction b) => a.CompareTo(b) <= 0;
         public static bool operator >=(Fraction a, Fraction b) => a.CompareTo(b) >= 0;
 
-        public override bool Equals(object? obj) => obj is Fraction f && Equals(f);
+        public override bool Equals(object obj) => obj is Fraction f && Equals(f);
 
         public override int GetHashCode()
         {

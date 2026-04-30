@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -24,13 +22,13 @@ namespace VexFlowSharp
             }
         }
 
-        public RepeatNote(string type, NoteStruct? noteStruct = null, GlyphNoteOptions? options = null)
+        public RepeatNote(string type, NoteStruct noteStruct = null, GlyphNoteOptions options = null)
             : base(CodeForType(type), MakeNoteStruct(type, noteStruct), options)
         {
             SetCenterAligned(type != "slash");
         }
 
-        private static NoteStruct MakeNoteStruct(string type, NoteStruct? noteStruct)
+        private static NoteStruct MakeNoteStruct(string type, NoteStruct noteStruct)
         {
             var source = noteStruct ?? new NoteStruct();
             return new NoteStruct

@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -52,7 +50,7 @@ namespace VexFlowSharp
 
         private string clefTypeName;
         private string size;
-        private string? annotation;
+        private string annotation;
         private ClefType clefInfo;
         private const double TabClefHorizontalScale = 1.45;
 
@@ -65,7 +63,7 @@ namespace VexFlowSharp
             => sz == "default" ? Tables.NOTATION_FONT_SCALE : (Tables.NOTATION_FONT_SCALE / 3) * 2;
 
         /// <summary>Create a clef of the given type.</summary>
-        public Clef(string type, string size = "default", string? annotation = null)
+        public Clef(string type, string size = "default", string annotation = null)
         {
             this.clefTypeName = type;
             this.size         = size;
@@ -94,7 +92,7 @@ namespace VexFlowSharp
         public ClefType GetClefInfo() => clefInfo;
 
         /// <summary>Change the clef type after construction.</summary>
-        public Clef SetType(string type, string? newSize = null, string? newAnnotation = null)
+        public Clef SetType(string type, string newSize = null, string newAnnotation = null)
         {
             clefTypeName = type;
             if (newSize != null) size = newSize;

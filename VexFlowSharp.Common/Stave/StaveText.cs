@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -16,8 +14,8 @@ namespace VexFlowSharp
 
     public class StaveTextOptions
     {
-        public double ShiftX { get; set; }
-        public double ShiftY { get; set; }
+        public double? ShiftX { get; set; }
+        public double? ShiftY { get; set; }
         public TextJustification? Justification { get; set; }
     }
 
@@ -36,13 +34,14 @@ namespace VexFlowSharp
         private double yShift;
         private TextJustification justification;
 
-        public StaveText(string text, StaveModifierPosition position, StaveTextOptions? options = null)
+        public StaveText(string text, StaveModifierPosition position, StaveTextOptions options = null)
         {
+            options ??= new StaveTextOptions();
             this.text = text;
             this.position = position;
-            xShift = options?.ShiftX ?? 0;
-            yShift = options?.ShiftY ?? 0;
-            justification = options?.Justification ?? TextJustification.Center;
+            xShift = options.ShiftX ?? 0;
+            yShift = options.ShiftY ?? 0;
+            justification = options.Justification ?? TextJustification.Center;
             UpdateMetrics();
         }
 

@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -31,9 +29,9 @@ namespace VexFlowSharp
     {
         public new const string CATEGORY = "Modifier";
 
-        // The note this modifier is attached to. Typed as Element? because Note.cs
+        // The note this modifier is attached to. Typed as Element because Note.cs
         // does not exist yet; plan 02-03 will narrow this when Note is defined.
-        protected Element? note;
+        protected Element note;
 
         /// <summary>Index of the note head within a chord that this modifier targets.</summary>
         protected int? index;

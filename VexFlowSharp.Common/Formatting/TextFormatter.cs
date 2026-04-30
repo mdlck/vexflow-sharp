@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -125,7 +123,7 @@ namespace VexFlowSharp.Common.Formatting
             // Support comma-separated CSS font-family strings (e.g. "PetalumaScript, Arial, sans-serif")
             var requestedFamilies = fontFamily.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
-            TextFormatterInfo? matched = null;
+            TextFormatterInfo matched = null;
             foreach (var requested in requestedFamilies)
             {
                 var trimmed = NormalizeFamilyName(requested);

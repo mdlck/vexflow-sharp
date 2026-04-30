@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -290,8 +288,8 @@ namespace VexFlowSharp
 
                 if (symbol.reportWidth)
                 {
-                    double glyphWidth = note?.GetNoteMetrics().GlyphWidth ?? 0;
-                    if (glyphWidth <= 0) glyphWidth = note?.GetWidth() ?? 0;
+                    double glyphWidth = note.GetNoteMetrics().GlyphWidth;
+                    if (glyphWidth <= 0) glyphWidth = note.GetWidth();
 
                     if (symbol.horizontal == ChordSymbolHorizontalJustify.Right)
                     {
@@ -355,7 +353,7 @@ namespace VexFlowSharp
             ctx.CloseGroup();
         }
 
-        public override BoundingBox? GetBoundingBox()
+        public override BoundingBox GetBoundingBox()
         {
             if (symbolBlocks.Count == 0) return null;
             var first = symbolBlocks[0].GetBoundingBox();

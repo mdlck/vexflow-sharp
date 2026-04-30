@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -13,22 +11,22 @@ namespace VexFlowSharp
     public class ElementStyle
     {
         /// <summary>CSS shadow color.</summary>
-        public string? ShadowColor { get; set; }
+        public string ShadowColor { get; set; }
 
         /// <summary>Shadow blur level.</summary>
         public double? ShadowBlur { get; set; }
 
         /// <summary>CSS fill color.</summary>
-        public string? FillStyle { get; set; }
+        public string FillStyle { get; set; }
 
         /// <summary>CSS stroke color.</summary>
-        public string? StrokeStyle { get; set; }
+        public string StrokeStyle { get; set; }
 
         /// <summary>Line width (default 1.0).</summary>
         public double? LineWidth { get; set; }
 
         /// <summary>Stroke dash pattern, matching SVG stroke-dasharray syntax (e.g. "4 2").</summary>
-        public string? LineDash { get; set; }
+        public string LineDash { get; set; }
     }
 
     /// <summary>
@@ -50,24 +48,24 @@ namespace VexFlowSharp
         public const string CATEGORY = "Element";
 
         // All Element objects keep a list of children that inherit parent style.
-        protected Element? parent;
+        protected Element parent;
         protected List<Element> children = new List<Element>();
 
-        protected ElementStyle? style;
-        protected BoundingBox? boundingBox;
+        protected ElementStyle style;
+        protected BoundingBox boundingBox;
         protected bool rendered = false;
 
         private static int nextId = 1000;
-        private string? id = NewId();
-        private string? type;
+        private string id = NewId();
+        private string type;
         private readonly List<string> classes = new List<string>();
-        private readonly Dictionary<string, string?> attributes = new Dictionary<string, string?>();
-        private Registry? registry;
+        private readonly Dictionary<string, string> attributes = new Dictionary<string, string>();
+        private Registry registry;
 
         /// <summary>
         /// Render context for this element. Typed as RenderContext.
         /// </summary>
-        protected RenderContext? context;
+        protected RenderContext context;
 
         protected Element()
         {
@@ -101,7 +99,7 @@ namespace VexFlowSharp
         /// <summary>
         /// Return the render context if one has been assigned.
         /// </summary>
-        public RenderContext? GetContext() => context;
+        public RenderContext GetContext() => context;
 
         /// <summary>
         /// Set the element style.
@@ -115,7 +113,7 @@ namespace VexFlowSharp
         /// <summary>
         /// Get the element style.
         /// </summary>
-        public ElementStyle? GetStyle() => style;
+        public ElementStyle GetStyle() => style;
 
         /// <summary>Set this element and all child elements to the same style.</summary>
         public Element SetGroupStyle(ElementStyle s)
@@ -146,7 +144,7 @@ namespace VexFlowSharp
         /// <summary>
         /// Apply style to the render context if one is set.
         /// </summary>
-        public Element ApplyStyle(ElementStyle? overrideStyle = null)
+        public Element ApplyStyle(ElementStyle overrideStyle = null)
         {
             var s = overrideStyle ?? style;
             if (s == null || context == null) return this;
@@ -158,7 +156,7 @@ namespace VexFlowSharp
         /// <summary>
         /// Restore context state after ApplyStyle. Calls context.Restore() if a style was set.
         /// </summary>
-        public Element RestoreStyle(ElementStyle? overrideStyle = null)
+        public Element RestoreStyle(ElementStyle overrideStyle = null)
         {
             var s = overrideStyle ?? style;
             if (s == null || context == null) return this;
@@ -181,7 +179,7 @@ namespace VexFlowSharp
         /// <summary>
         /// Get the bounding box for this element. May be null if not yet calculated.
         /// </summary>
-        public virtual BoundingBox? GetBoundingBox() => boundingBox;
+        public virtual BoundingBox GetBoundingBox() => boundingBox;
 
         /// <summary>
         /// Draw the pointer rectangle used by v5 SVG interaction surfaces when enabled by metrics.
@@ -217,7 +215,7 @@ namespace VexFlowSharp
         /// <summary>
         /// Get element id. Returns null if not set.
         /// </summary>
-        public string? GetId() => id;
+        public string GetId() => id;
 
         /// <summary>
         /// Set element id.
@@ -234,7 +232,7 @@ namespace VexFlowSharp
             if (!string.IsNullOrWhiteSpace(className) && !classes.Contains(className))
             {
                 classes.Add(className);
-                registry?.OnUpdate(new RegistryUpdate
+                registry.OnUpdate(new RegistryUpdate
                 {
                     Id = id ?? string.Empty,
                     Name = "class",
@@ -250,7 +248,7 @@ namespace VexFlowSharp
         {
             if (classes.Remove(className))
             {
-                registry?.OnUpdate(new RegistryUpdate
+                registry.OnUpdate(new RegistryUpdate
                 {
                     Id = id ?? string.Empty,
                     Name = "class",
@@ -268,7 +266,7 @@ namespace VexFlowSharp
         public List<string> GetClasses() => new List<string>(classes);
 
         /// <summary>Set a VexFlow-style string attribute.</summary>
-        public Element SetAttribute(string name, string? value)
+        public Element SetAttribute(string name, string value)
         {
             var oldId = id ?? string.Empty;
             var oldValue = GetAttribute(name);
@@ -284,7 +282,7 @@ namespace VexFlowSharp
                 case "class":
                     foreach (var className in classes)
                     {
-                        registry?.OnUpdate(new RegistryUpdate
+                        registry.OnUpdate(new RegistryUpdate
                         {
                             Id = oldId,
                             Name = "class",
@@ -306,7 +304,7 @@ namespace VexFlowSharp
 
             if (name != "class")
             {
-                registry?.OnUpdate(new RegistryUpdate
+                registry.OnUpdate(new RegistryUpdate
                 {
                     Id = oldId,
                     Name = name,
@@ -319,7 +317,7 @@ namespace VexFlowSharp
         }
 
         /// <summary>Get a VexFlow-style string attribute.</summary>
-        public string? GetAttribute(string name)
+        public string GetAttribute(string name)
         {
             return name switch
             {

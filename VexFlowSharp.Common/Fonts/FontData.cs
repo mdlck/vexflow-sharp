@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -29,10 +27,10 @@ namespace VexFlowSharp
         public int Ha { get; set; }
 
         /// <summary>Raw outline string (the 'o' field in VexFlow JSON data).</summary>
-        public string? OutlineString { get; set; }
+        public string OutlineString { get; set; }
 
         /// <summary>Pre-parsed integer outline commands (cached_outline in VexFlow).</summary>
-        public int[]? CachedOutline { get; set; }
+        public int[] CachedOutline { get; set; }
     }
 
     /// <summary>
@@ -48,7 +46,7 @@ namespace VexFlowSharp
         public Dictionary<string, FontGlyph> Glyphs { get; set; } = new Dictionary<string, FontGlyph>();
 
         /// <summary>CSS font-family name (e.g., "Bravura").</summary>
-        public string? FontFamily { get; set; }
+        public string FontFamily { get; set; }
 
         /// <summary>
         /// Units-per-em resolution for this font.
@@ -64,6 +62,6 @@ namespace VexFlowSharp
         public double GlyphScale { get; set; } = 0.72;
 
         /// <summary>ISO datetime string recording when the data file was generated.</summary>
-        public string? GeneratedOn { get; set; }
+        public string GeneratedOn { get; set; }
     }
 }

@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -27,7 +25,7 @@ namespace VexFlowSharp
     public class StaveNoteStruct : NoteStruct
     {
         /// <summary>Clef for this note (default "treble").</summary>
-        public new string? Clef { get; set; }
+        public new string Clef { get; set; }
 
         /// <summary>Octave shift (positive = higher, negative = lower).</summary>
         public new int? OctaveShift { get; set; }
@@ -89,7 +87,7 @@ namespace VexFlowSharp
     /// </summary>
     public class SortedKeyPropEntry
     {
-        public KeyProps KeyProps { get; set; } = null!;
+        public KeyProps KeyProps { get; set; } = null;
         public int Index { get; set; }
     }
 
@@ -174,7 +172,7 @@ namespace VexFlowSharp
         protected StaveNoteRenderOptions renderOptions;
 
         /// <summary>Custom style for ledger lines.</summary>
-        protected ElementStyle? ledgerLineStyle;
+        protected ElementStyle ledgerLineStyle;
 
         /// <summary>Minimum staff line across all noteheads (set in CalculateOptimalStemDirection).</summary>
         public double MinLine { get; private set; }
@@ -236,7 +234,7 @@ namespace VexFlowSharp
         /// </summary>
         protected void Reset()
         {
-            var noteHeadStyles = _noteHeads.Select(noteHead => noteHead?.GetStyle()).ToList();
+            var noteHeadStyles = _noteHeads.Select(noteHead => noteHead.GetStyle()).ToList();
 
             BuildNoteHeads();
 
@@ -357,7 +355,7 @@ namespace VexFlowSharp
             _noteHeads.Clear();
             // Pre-size to hold all note heads (indexed by original key index)
             for (int i = 0; i < keys.Length; i++)
-                _noteHeads.Add(null!);
+                _noteHeads.Add(null);
 
             int stemDir = GetStemDirection();
 
@@ -651,7 +649,7 @@ namespace VexFlowSharp
             {
                 YTop = double.PositiveInfinity,
                 YBottom = double.NegativeInfinity,
-                HighestLine = stave?.GetNumLines() ?? 5,
+                HighestLine = stave.GetNumLines(),
                 LowestLine = 1,
             };
             bounds.HighestNonDisplacedLine = bounds.HighestLine;
@@ -696,9 +694,9 @@ namespace VexFlowSharp
         /// <summary>
         /// Get the bounding box for the entire stave note, including noteheads, stem, flag anchor, and modifiers.
         /// </summary>
-        public override BoundingBox? GetBoundingBox()
+        public override BoundingBox GetBoundingBox()
         {
-            BoundingBox? noteBox = null;
+            BoundingBox noteBox = null;
 
             foreach (var noteHead in _noteHeads)
             {
@@ -828,7 +826,7 @@ namespace VexFlowSharp
         public void SetLedgerLineStyle(ElementStyle s) => ledgerLineStyle = s;
 
         /// <summary>Get the style for ledger lines (may be null).</summary>
-        public ElementStyle? GetLedgerLineStyle() => ledgerLineStyle;
+        public ElementStyle GetLedgerLineStyle() => ledgerLineStyle;
 
         /// <summary>Set the style of a single notehead by key index.</summary>
         public StaveNote SetKeyStyle(int index, ElementStyle style)
@@ -841,7 +839,7 @@ namespace VexFlowSharp
         }
 
         /// <summary>Get the style of a single notehead by key index.</summary>
-        public ElementStyle? GetKeyStyle(int index)
+        public ElementStyle GetKeyStyle(int index)
         {
             if (index < 0 || index >= _noteHeads.Count)
                 throw new VexFlowException("BadArguments", $"Invalid key index: {index}");
@@ -852,7 +850,7 @@ namespace VexFlowSharp
         // ── Beam access ───────────────────────────────────────────────────────
 
         /// <summary>Get the beam reference (null if not beamed).</summary>
-        public VexFlowSharp.Common.Elements.Beam? GetBeam() => beam;
+        public VexFlowSharp.Common.Elements.Beam GetBeam() => beam;
 
         /// <summary>
         /// Attach a beam and update note displacements and stem extension.
@@ -889,7 +887,7 @@ namespace VexFlowSharp
         /// Returns the {x, y} start coordinates for a modifier at the given position and index.
         /// Port of VexFlow stavenote.ts getModifierStartXY().
         /// </summary>
-        public override (double X, double Y) GetModifierStartXY(ModifierPosition position, int index, object? options = null)
+        public override (double X, double Y) GetModifierStartXY(ModifierPosition position, int index, object options = null)
         {
             if (!preFormatted) throw new System.InvalidOperationException("GetModifierStartXY: Note must be preformatted.");
             if (ys.Length == 0)
@@ -904,7 +902,7 @@ namespace VexFlowSharp
             {
                 x = GetGlyphWidth() + xShift + 2;
                 if (stemDirection == Stem.UP && HasFlag() && (GetForceFlagRight(options) || IsInnerNoteIndex(index)))
-                    x += flag?.GetMetrics()?.Width ?? GetGlyphWidth();
+                    x += flag.GetMetrics().Width;
             }
             else if (position == ModifierPosition.Below || position == ModifierPosition.Above)
             {
@@ -922,7 +920,7 @@ namespace VexFlowSharp
             return index == (GetStemDirection() == Stem.UP ? keyProps.Count - 1 : 0);
         }
 
-        private static bool GetForceFlagRight(object? options)
+        private static bool GetForceFlagRight(object options)
         {
             if (options is StaveNoteModifierStartOptions typed) return typed.ForceFlagRight;
             if (options is IDictionary<string, bool> dict &&
@@ -957,7 +955,7 @@ namespace VexFlowSharp
         {
             double tieStartX = GetAbsoluteX();
             double xShiftPx  = GetXShift();
-            return tieStartX + xShiftPx + glyphProps.HeadWidth + stave?.GetSpacingBetweenLines() / 4.0 ?? 0;
+            return tieStartX + xShiftPx + glyphProps.HeadWidth + stave.GetSpacingBetweenLines() / 4.0;
         }
 
         /// <summary>
@@ -1077,16 +1075,16 @@ namespace VexFlowSharp
             RestoreStyle(mergedStyle);
         }
 
-        private static ElementStyle MergeStyles(ElementStyle? baseStyle, ElementStyle? overrideStyle)
+        private static ElementStyle MergeStyles(ElementStyle baseStyle, ElementStyle overrideStyle)
         {
             return new ElementStyle
             {
-                ShadowColor = overrideStyle?.ShadowColor ?? baseStyle?.ShadowColor,
-                ShadowBlur = overrideStyle?.ShadowBlur ?? baseStyle?.ShadowBlur,
-                FillStyle = overrideStyle?.FillStyle ?? baseStyle?.FillStyle,
-                StrokeStyle = overrideStyle?.StrokeStyle ?? baseStyle?.StrokeStyle,
-                LineWidth = overrideStyle?.LineWidth ?? baseStyle?.LineWidth,
-                LineDash = overrideStyle?.LineDash ?? baseStyle?.LineDash,
+                ShadowColor = overrideStyle.ShadowColor ?? baseStyle.ShadowColor,
+                ShadowBlur = overrideStyle.ShadowBlur ?? baseStyle.ShadowBlur,
+                FillStyle = overrideStyle.FillStyle ?? baseStyle.FillStyle,
+                StrokeStyle = overrideStyle.StrokeStyle ?? baseStyle.StrokeStyle,
+                LineWidth = overrideStyle.LineWidth ?? baseStyle.LineWidth,
+                LineDash = overrideStyle.LineDash ?? baseStyle.LineDash,
             };
         }
 
@@ -1108,7 +1106,7 @@ namespace VexFlowSharp
         /// Draw the stem, adjusting its height if a flag will be drawn over it.
         /// Port of StaveNote.drawStem() from stavenote.ts.
         /// </summary>
-        public new void DrawStem(StemOptions? stemOptions = null)
+        public new void DrawStem(StemOptions stemOptions = null)
         {
             var ctx = CheckContext();
 
@@ -1149,8 +1147,8 @@ namespace VexFlowSharp
             double noteStemHeight = stem.GetHeight();
             double flagX = GetStemX() - Stem.WIDTH / 2.0;
             double flagY = GetStemDirection() == Stem.DOWN
-                ? bounds.YTop - noteStemHeight - (metrics?.ActualBoundingBoxDescent ?? 0)
-                : bounds.YBottom - noteStemHeight + (metrics?.ActualBoundingBoxAscent ?? 0);
+                ? bounds.YTop - noteStemHeight - metrics.ActualBoundingBoxDescent
+                : bounds.YBottom - noteStemHeight + metrics.ActualBoundingBoxAscent;
 
             return (flagX, flagY);
         }
@@ -1236,7 +1234,7 @@ namespace VexFlowSharp
         /// <param name="notes">List of StaveNote members in this modifier context.</param>
         /// <param name="state">Shared ModifierContextState to accumulate shifts into.</param>
         /// <returns>True if formatting was applied; false if fewer than 2 notes.</returns>
-        public static bool Format(List<StaveNote>? notes, ModifierContextState state)
+        public static bool Format(List<StaveNote> notes, ModifierContextState state)
         {
             if (notes == null || notes.Count < 2) return false;
 
@@ -1287,9 +1285,9 @@ namespace VexFlowSharp
             for (int i = 0; i < Math.Min(3, notesList.Count); i++)
                 draw[i] = notesList[i].Note.renderOptions.Draw;
 
-            StaveNoteFormatSettings? noteU = null;
-            StaveNoteFormatSettings? noteM = null;
-            StaveNoteFormatSettings? noteL = null;
+            StaveNoteFormatSettings noteU = null;
+            StaveNoteFormatSettings noteM = null;
+            StaveNoteFormatSettings noteL = null;
             int voices = 0;
 
             if (draw[0] && draw[1] && notesList.Count >= 3 && draw[2])
@@ -1498,13 +1496,13 @@ namespace VexFlowSharp
 
         private static string GetNoteHeadCode(StaveNote note, int sortedIndex)
         {
-            string? keyCode = note.sortedKeyProps[sortedIndex].KeyProps.Code;
+            string keyCode = note.sortedKeyProps[sortedIndex].KeyProps.Code;
             if (!string.IsNullOrEmpty(keyCode)) return keyCode!;
             if (!string.IsNullOrEmpty(note.glyphProps.CodeHead)) return note.glyphProps.CodeHead;
             return note.glyphProps.Code;
         }
 
-        private static bool StylesEquivalent(ElementStyle? a, ElementStyle? b)
+        private static bool StylesEquivalent(ElementStyle a, ElementStyle b)
         {
             if (ReferenceEquals(a, b)) return true;
             if (a == null || b == null) return false;
@@ -1573,6 +1571,6 @@ namespace VexFlowSharp
         public double StemMax { get; set; }
         public double StemMin { get; set; }
         public bool IsDisplaced { get; set; }
-        public StaveNote Note { get; set; } = null!;
+        public StaveNote Note { get; set; } = null;
     }
 }

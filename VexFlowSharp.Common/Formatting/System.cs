@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -50,7 +48,7 @@ namespace VexFlowSharp.Common.Formatting
         public bool DebugFormatter { get; set; } = false;
 
         /// <summary>Additional formatting parameters passed to Formatter.Format().</summary>
-        public FormatParams? FormatOptions { get; set; }
+        public FormatParams FormatOptions { get; set; }
     }
 
     /// <summary>
@@ -63,13 +61,13 @@ namespace VexFlowSharp.Common.Formatting
         public List<Voice> Voices { get; set; } = new List<Voice>();
 
         /// <summary>Pre-created Stave, or null to create one from System options.</summary>
-        public VexFlowSharp.Stave? Stave { get; set; }
+        public VexFlowSharp.Stave Stave { get; set; }
 
         /// <summary>Skip justification for this stave's voices. Default false.</summary>
         public bool NoJustification { get; set; } = false;
 
         /// <summary>Optional stave creation options (used when Stave is null).</summary>
-        public VexFlowSharp.StaveOptions? Options { get; set; }
+        public VexFlowSharp.StaveOptions Options { get; set; }
 
         /// <summary>Extra space above this stave in stave-space units.</summary>
         public double SpaceAbove { get; set; } = 0;
@@ -126,7 +124,7 @@ namespace VexFlowSharp.Common.Formatting
         /// Create a new System with the given layout options.
         /// Port of VexFlow's System constructor from system.ts.
         /// </summary>
-        public System(SystemOptions? options = null)
+        public System(SystemOptions options = null)
         {
             this.options = options ?? new SystemOptions();
 
@@ -339,7 +337,7 @@ namespace VexFlowSharp.Common.Formatting
             formatCalled = true;
         }
 
-        public override VexFlowSharp.BoundingBox? GetBoundingBox()
+        public override VexFlowSharp.BoundingBox GetBoundingBox()
             => new VexFlowSharp.BoundingBox(options.X, options.Y, options.Width, lastY - options.Y);
 
         // ── Draw ──────────────────────────────────────────────────────────────

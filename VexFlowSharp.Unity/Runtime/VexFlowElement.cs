@@ -21,7 +21,7 @@ namespace VexFlowSharp.Unity
     {
         // ── Fields ─────────────────────────────────────────────────────────────
 
-        private Factory? _factory;
+        private Factory _factory;
         private readonly UIElementsRenderContext _context;
         private readonly List<Label> _labelPool = new List<Label>();
         private int _activeLabelCount;
@@ -108,7 +108,7 @@ namespace VexFlowSharp.Unity
             _factory.Draw();
             // Clear the Painter2D reference so stale access outside the callback is
             // caught as a null-reference rather than silently drawing into a dead painter
-            _context.SetPainter(null!);
+            _context.SetPainter(null);
 
             // Hide unused pooled labels from previous render cycle
             for (int i = _activeLabelCount; i < _labelPool.Count; i++)

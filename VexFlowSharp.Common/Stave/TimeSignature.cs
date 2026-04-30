@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -32,9 +30,9 @@ namespace VexFlowSharp
         private readonly bool isNumeric;
 
         // For numeric time signatures
-        private readonly TimeSignatureGlyph? numericGlyph;
+        private readonly TimeSignatureGlyph numericGlyph;
         // For special (common/cut) time signatures
-        private readonly string? specialCode;
+        private readonly string specialCode;
 
         // VexFlow 5 measures time signature text through the active Bravura canvas font.
         // The outline-derived width is slightly narrower for numeric signatures.

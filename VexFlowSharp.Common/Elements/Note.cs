@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -50,10 +48,10 @@ namespace VexFlowSharp
         public string Duration { get; set; } = "4";
 
         /// <summary>Array of pitch strings (e.g., ["c/4", "e/4", "g/4"]).</summary>
-        public string[]? Keys { get; set; }
+        public string[] Keys { get; set; }
 
         /// <summary>Note type override (e.g., "r" = rest, "n" = normal, "x" = X-notehead).</summary>
-        public string? Type { get; set; }
+        public string Type { get; set; }
 
         /// <summary>Number of augmentation dots.</summary>
         public int? Dots { get; set; }
@@ -65,7 +63,7 @@ namespace VexFlowSharp
         public int? StemDirection { get; set; }
 
         /// <summary>Clef for this note (default "treble").</summary>
-        public string? Clef { get; set; }
+        public string Clef { get; set; }
 
         /// <summary>Octave shift (positive = higher, negative = lower).</summary>
         public int? OctaveShift { get; set; }
@@ -99,7 +97,7 @@ namespace VexFlowSharp
         protected List<KeyProps> keyProps;
 
         /// <summary>Associated stave (null until SetStave is called).</summary>
-        protected Stave? stave;
+        protected Stave stave;
 
         /// <summary>Duration base string (e.g., "4", "8", "2").</summary>
         protected string duration;
@@ -119,7 +117,7 @@ namespace VexFlowSharp
         protected List<Tuplet> tupletStack = new List<Tuplet>();
 
         /// <summary>The innermost tuplet this note belongs to, if any.</summary>
-        protected Tuplet? tuplet;
+        protected Tuplet tuplet;
 
         /// <summary>Manual X position (used when tickContext is null).</summary>
         protected double x = 0;
@@ -313,7 +311,7 @@ namespace VexFlowSharp
         }
 
         /// <summary>Get the associated stave (may be null).</summary>
-        public Stave? GetStave() => stave;
+        public Stave GetStave() => stave;
 
         /// <summary>Get the associated stave; throws if not set.</summary>
         public Stave CheckStave()
@@ -332,7 +330,7 @@ namespace VexFlowSharp
             mod.SetIndex(index);
             modifiers.Add(mod);
             // Register with the modifier context if already assigned (matches VexFlow note.ts addModifier)
-            modifierContext?.RegisterMember(mod);
+            modifierContext.RegisterMember(mod);
             return this;
         }
 
@@ -349,7 +347,7 @@ namespace VexFlowSharp
         }
 
         /// <summary>Remove this note's association with a tuplet.</summary>
-        public Note ResetTuplet(Tuplet? tuplet = null)
+        public Note ResetTuplet(Tuplet tuplet = null)
         {
             if (tuplet != null)
             {
@@ -373,7 +371,7 @@ namespace VexFlowSharp
         public List<Tuplet> GetTupletStack() => new List<Tuplet>(tupletStack);
 
         /// <summary>Get the innermost tuplet this note belongs to.</summary>
-        public override object? GetTuplet() => tuplet;
+        public override object GetTuplet() => tuplet;
 
         // ── Note metrics ──────────────────────────────────────────────────────
 
@@ -385,8 +383,8 @@ namespace VexFlowSharp
         public override NoteMetrics GetNoteMetrics()
         {
             // Include modifier context state so TickContext allocates space for accidentals/dots.
-            double modLeft  = modifierContext?.GetState().LeftShift  ?? 0;
-            double modRight = modifierContext?.GetState().RightShift ?? 0;
+            double modLeft  = modifierContext.GetState().LeftShift;
+            double modRight = modifierContext.GetState().RightShift;
             double formattedWidth = GetWidth();
             double notePx = formattedWidth - modLeft - modRight - leftDisplacedHeadPx - rightDisplacedHeadPx;
 
@@ -409,8 +407,8 @@ namespace VexFlowSharp
         /// </summary>
         public new NoteMetrics GetMetrics()
         {
-            double modLeft  = modifierContext?.GetState().LeftShift  ?? 0;
-            double modRight = modifierContext?.GetState().RightShift ?? 0;
+            double modLeft  = modifierContext.GetState().LeftShift;
+            double modRight = modifierContext.GetState().RightShift;
             double formattedWidth = GetWidth();
             double notePx = formattedWidth - modLeft - modRight - leftDisplacedHeadPx - rightDisplacedHeadPx;
 
@@ -507,7 +505,7 @@ namespace VexFlowSharp
         /// Port of VexFlow note.ts getModifierStartXY().
         /// Override in StaveNote for position-aware coordinates.
         /// </summary>
-        public virtual (double X, double Y) GetModifierStartXY(ModifierPosition position, int index, object? options = null)
+        public virtual (double X, double Y) GetModifierStartXY(ModifierPosition position, int index, object options = null)
         {
             return (GetAbsoluteX(), 0);
         }

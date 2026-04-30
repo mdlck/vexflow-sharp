@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -76,7 +74,7 @@ namespace VexFlowSharp.Common.Formatting
         protected VoiceMode mode = VoiceMode.STRICT;
 
         /// <summary>Stave this voice is attached to.</summary>
-        protected VexFlowSharp.Stave? stave;
+        protected VexFlowSharp.Stave stave;
 
         /// <summary>All tickables in order of addition.</summary>
         protected readonly List<VexFlowSharp.Tickable> tickables = new List<VexFlowSharp.Tickable>();
@@ -193,16 +191,16 @@ namespace VexFlowSharp.Common.Formatting
         public Voice SetStave(VexFlowSharp.Stave s) { stave = s; return this; }
 
         /// <summary>Get the associated stave.</summary>
-        public VexFlowSharp.Stave? GetStave() => stave;
+        public VexFlowSharp.Stave GetStave() => stave;
 
         /// <summary>Get the associated stave; throws if not set.</summary>
         public VexFlowSharp.Stave CheckStave()
             => stave ?? throw new VexFlowSharp.VexFlowException("NoStave", "No stave attached to voice.");
 
         /// <summary>Get the bounding box that contains all tickables in this voice.</summary>
-        public VexFlowSharp.BoundingBox? GetBoundingBox()
+        public VexFlowSharp.BoundingBox GetBoundingBox()
         {
-            VexFlowSharp.BoundingBox? boundingBox = null;
+            VexFlowSharp.BoundingBox boundingBox = null;
             foreach (var tickable in tickables)
             {
                 if (tickable is VexFlowSharp.Note note && note.GetStave() == null && stave != null)
@@ -335,7 +333,7 @@ namespace VexFlowSharp.Common.Formatting
         /// Draw all tickables. Assigns stave and context from arguments.
         /// Port of Voice.draw() from voice.ts.
         /// </summary>
-        public void Draw(VexFlowSharp.RenderContext ctx, VexFlowSharp.Stave? drawStave = null)
+        public void Draw(VexFlowSharp.RenderContext ctx, VexFlowSharp.Stave drawStave = null)
         {
             var activeStave = drawStave ?? stave;
             foreach (var tickable in tickables)

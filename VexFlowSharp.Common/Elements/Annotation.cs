@@ -408,7 +408,7 @@ namespace VexFlowSharp
         private bool IsBottomJustified()
             => vertJustify == AnnotationVerticalJustify.BELOW || vertJustify == AnnotationVerticalJustify.BOTTOM;
 
-        private Note? TryGetAttachedNote()
+        private Note TryGetAttachedNote()
         {
             try { return GetNote() as Note; }
             catch { return null; }

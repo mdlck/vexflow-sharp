@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -94,7 +92,7 @@ namespace VexFlowSharp
             }
         }
 
-        public PedalMarking SetCustomText(string depress, string? release = null)
+        public PedalMarking SetCustomText(string depress, string release = null)
         {
             depressText = depress ?? string.Empty;
             releaseText = release ?? string.Empty;

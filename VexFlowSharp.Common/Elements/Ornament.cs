@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -99,10 +97,10 @@ namespace VexFlowSharp
         private double? delayXShift;
 
         /// <summary>Accidental glyph above the ornament (e.g., trill with sharp).</summary>
-        public Glyph? AccidentalUpper { get; private set; }
+        public Glyph AccidentalUpper { get; private set; }
 
         /// <summary>Accidental glyph below the ornament.</summary>
-        public Glyph? AccidentalLower { get; private set; }
+        public Glyph AccidentalLower { get; private set; }
 
         /// <summary>Reported width override for jazz ornaments that overlap the next bar.</summary>
         private readonly double reportedWidth;
@@ -153,10 +151,10 @@ namespace VexFlowSharp
         }
 
         /// <summary>SMuFL code of the upper accidental (set via SetUpperAccidental).</summary>
-        private string? accidentalUpperCode;
+        private string accidentalUpperCode;
 
         /// <summary>SMuFL code of the lower accidental (set via SetLowerAccidental).</summary>
-        private string? accidentalLowerCode;
+        private string accidentalLowerCode;
 
         /// <summary>
         /// Set an accidental glyph above the ornament.
@@ -271,7 +269,7 @@ namespace VexFlowSharp
 
         private double GetGlyphHeight()
         {
-            return new Glyph(glyphCode, fontScale).GetMetrics()?.Height ?? Tables.STAVE_LINE_DISTANCE;
+            return new Glyph(glyphCode, fontScale).GetMetrics().Height;
         }
 
         // ── Draw ──────────────────────────────────────────────────────────────
@@ -355,16 +353,16 @@ namespace VexFlowSharp
                 try
                 {
                     var metrics = AccidentalLower.GetMetrics();
-                    double lowerX = glyphX + xShift - (metrics?.Width ?? 0) * 0.5;
+                    double lowerX = glyphX + xShift - metrics.Width * 0.5;
                     AccidentalLower.Render(ctx, lowerX, glyphY);
-                    glyphY -= (metrics?.Height ?? Glyph.GetWidth(accidentalLowerCode, fontScale / 1.3))
+                    glyphY -= (metrics.Height > 0 ? metrics.Height : Glyph.GetWidth(accidentalLowerCode, fontScale / 1.3))
                         + Metrics.GetDouble("Ornament.accidentalLowerPadding");
                 }
                 catch { /* glyph not available — skip */ }
             }
 
             if (Array.IndexOf(OrnamentYShift, Type) >= 0)
-                yShift += new Glyph(glyphCode, fontScale).GetMetrics()?.Height ?? GetWidth();
+                yShift += new Glyph(glyphCode, fontScale).GetMetrics().Height;
 
             // Render ornament glyph
             try
@@ -380,10 +378,10 @@ namespace VexFlowSharp
                 {
                     try
                     {
-                        double ornH = g.GetMetrics()?.Height ?? GetWidth();
+                        double ornH = g.GetMetrics().Height;
                         glyphY -= ornH + Metrics.GetDouble("Ornament.accidentalUpperPadding");
                         var upperMetrics = AccidentalUpper.GetMetrics();
-                        double upperX = glyphX + xShift - (upperMetrics?.Width ?? 0) * 0.5;
+                        double upperX = glyphX + xShift - upperMetrics.Width * 0.5;
                         AccidentalUpper.Render(ctx, upperX, glyphY + yShift);
                     }
                     catch { /* glyph not available — skip */ }

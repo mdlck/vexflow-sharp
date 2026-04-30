@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -85,10 +83,10 @@ namespace VexFlowSharp
         public int? IntValue { get; set; }
 
         /// <summary>Accidental string (e.g., "#", "b", "n") or null.</summary>
-        public string? Accidental { get; set; }
+        public string Accidental { get; set; }
 
         /// <summary>SMuFL code override (for note types like X-noteheads).</summary>
-        public string? Code { get; set; }
+        public string Code { get; set; }
 
         /// <summary>Stroke direction: 1 = up, -1 = down, 0 = none.</summary>
         public int Stroke { get; set; }
@@ -107,13 +105,13 @@ namespace VexFlowSharp
     public class ArticulationStruct
     {
         /// <summary>SMuFL glyph code (used when a single glyph covers both above/below).</summary>
-        public string? Code { get; set; }
+        public string Code { get; set; }
 
         /// <summary>SMuFL glyph code used when the articulation is placed above the note.</summary>
-        public string? AboveCode { get; set; }
+        public string AboveCode { get; set; }
 
         /// <summary>SMuFL glyph code used when the articulation is placed below the note.</summary>
-        public string? BelowCode { get; set; }
+        public string BelowCode { get; set; }
 
         /// <summary>Whether this articulation may sit between staff lines (true) or must sit outside (false).</summary>
         public bool BetweenLines { get; set; }
@@ -203,9 +201,9 @@ namespace VexFlowSharp
 
         private static readonly Dictionary<string, int> _durations;
         private static readonly Dictionary<string, string> _durationAliases;
-        private static readonly Dictionary<string, (string? Acc, int Num)> _keySignatures;
+        private static readonly Dictionary<string, (string Acc, int Num)> _keySignatures;
         private static readonly Dictionary<string, int> _clefs;
-        private static readonly Dictionary<string, (int Index, int? IntVal, string? Accidental, bool IsRest, int? Octave, string? Code, double? ShiftRight)> _notesInfo;
+        private static readonly Dictionary<string, (int Index, int? IntVal, string Accidental, bool IsRest, int? Octave, string Code, double? ShiftRight)> _notesInfo;
         private static readonly Dictionary<int, string> _integerToNoteMap;
 
         // ── AccidentalColumnsTable (port of vexflow/src/tables.ts lines 436–466) ─────
@@ -298,7 +296,7 @@ namespace VexFlowSharp
             };
 
             // ── Key signatures ─────────────────────────────────────────────────
-            _keySignatures = new Dictionary<string, (string?, int)>
+            _keySignatures = new Dictionary<string, (string, int)>
             {
                 { "C",   (null, 0) },
                 { "Am",  (null, 0) },
@@ -360,8 +358,8 @@ namespace VexFlowSharp
             };
 
             // ── Notes info ────────────────────────────────────────────────────
-            // (index, int_val?, accidental?, rest, octave?, code?, shift_right?)
-            _notesInfo = new Dictionary<string, (int, int?, string?, bool, int?, string?, double?)>(StringComparer.Ordinal)
+            // (index, int_val, accidental, rest, octave, code, shift_right)
+            _notesInfo = new Dictionary<string, (int, int?, string, bool, int?, string, double?)>(StringComparer.Ordinal)
             {
                 { "C",   (0, 0,    null, false, null, null, null) },
                 { "CN",  (0, 0,    "n",  false, null, null, null) },
@@ -525,8 +523,8 @@ namespace VexFlowSharp
         public static bool HasKeySignature(string spec) => _keySignatures.ContainsKey(spec);
 
         /// <summary>Return the known key signature specs and their accidental counts.</summary>
-        public static Dictionary<string, (string? Accidental, int Num)> GetKeySignatures()
-            => new Dictionary<string, (string? Accidental, int Num)>(_keySignatures);
+        public static Dictionary<string, (string Accidental, int Num)> GetKeySignatures()
+            => new Dictionary<string, (string Accidental, int Num)>(_keySignatures);
 
         // ── Key properties method ─────────────────────────────────────────────
 
@@ -535,7 +533,7 @@ namespace VexFlowSharp
         /// Port of Tables.keyProperties() from tables.ts.
         /// </summary>
         public static KeyProps KeyProperties(string keyOctaveGlyph, string clef = "treble",
-            Dictionary<string, string>? params_ = null)
+            Dictionary<string, string> params_ = null)
         {
             var pieces = keyOctaveGlyph.Split('/');
             if (pieces.Length < 2)
@@ -568,7 +566,7 @@ namespace VexFlowSharp
             int? intValue = value.IntVal.HasValue ? octave * 12 + value.IntVal.Value : (int?)null;
 
             // Custom notehead from third piece of the key string
-            string? codeOverride = null;
+            string codeOverride = null;
             if (pieces.Length > 2 && !string.IsNullOrEmpty(pieces[2]))
             {
                 var duration = params_ != null && params_.TryGetValue("duration", out var d) ? d : "4";

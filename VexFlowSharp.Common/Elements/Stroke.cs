@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -31,7 +29,7 @@ namespace VexFlowSharp
 
         private readonly bool allVoices;
         private readonly StrokeType type;
-        private Note? noteEnd;
+        private Note noteEnd;
         private readonly double fontScale;
 
         public Stroke(StrokeType type, bool allVoices = true)
@@ -53,9 +51,9 @@ namespace VexFlowSharp
             return this;
         }
 
-        public Note? GetEndNote() => noteEnd;
+        public Note GetEndNote() => noteEnd;
 
-        public static bool Format(List<Stroke>? strokes, ModifierContextState state)
+        public static bool Format(List<Stroke> strokes, ModifierContextState state)
         {
             if (strokes == null || strokes.Count == 0) return false;
 

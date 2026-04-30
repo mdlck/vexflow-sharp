@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -64,8 +62,8 @@ namespace VexFlowSharp
     {
         public new const string CATEGORY = "Curve";
 
-        private readonly Note? from;
-        private readonly Note? to;
+        private readonly Note from;
+        private readonly Note to;
         private readonly CurveOptions renderOptions;
 
         /// <summary>
@@ -74,15 +72,15 @@ namespace VexFlowSharp
         /// (curve starts at stave.GetTieStartX() or ends at stave.GetTieEndX()).
         /// Port of VexFlow's Curve constructor from curve.ts.
         /// </summary>
-        public Curve(Note? from, Note? to, CurveOptions? options = null)
+        public Curve(Note from, Note to, CurveOptions options = null)
         {
             this.from          = from;
             this.to            = to;
             this.renderOptions = options ?? new CurveOptions();
         }
 
-        public Note? GetFromNote() => from;
-        public Note? GetToNote() => to;
+        public Note GetFromNote() => from;
+        public Note GetToNote() => to;
         public CurveOptions GetRenderOptions() => renderOptions;
 
         /// <summary>

@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -165,7 +163,7 @@ namespace VexFlowSharp
         ///
         /// Port of Accidental.format() from accidental.ts.
         /// </summary>
-        public static bool Format(List<Accidental>? accidentals, ModifierContextState state)
+        public static bool Format(List<Accidental> accidentals, ModifierContextState state)
         {
             if (accidentals == null || accidentals.Count == 0) return false;
 
@@ -179,7 +177,7 @@ namespace VexFlowSharp
             var linePositions = new List<(double Y, double Line, double ExtraX,
                 Accidental Acc, double? LineSpace)>();
 
-            Note? prevNote = null;
+            Note prevNote = null;
             double extraXSpaceNeeded = 0;
 
             for (int i = 0; i < accidentals.Count; i++)
@@ -227,7 +225,7 @@ namespace VexFlowSharp
             {
                 var (_, line, extraX, acc, _) = linePositions[i];
 
-                StaveLineAccidentalLayoutMetrics? prior = staveLineMetrics.Count > 0
+                StaveLineAccidentalLayoutMetrics prior = staveLineMetrics.Count > 0
                     ? staveLineMetrics[staveLineMetrics.Count - 1] : null;
 
                 StaveLineAccidentalLayoutMetrics cur;

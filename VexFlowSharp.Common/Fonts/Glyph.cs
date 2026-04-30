@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -32,7 +30,7 @@ namespace VexFlowSharp
         public double XShift { get; set; }
         public double YShift { get; set; }
         public double Scale { get; set; }
-        public int[]? Outline { get; set; }
+        public int[] Outline { get; set; }
     }
 
     /// <summary>
@@ -54,7 +52,7 @@ namespace VexFlowSharp
 
         private readonly string _code;
         private readonly double _scale;
-        private readonly FontGlyph? _metrics;
+        private readonly FontGlyph _metrics;
 
         /// <summary>
         /// Y-shift applied when rendering this glyph (set by StaveModifier.PlaceGlyphOnLine).
@@ -72,7 +70,7 @@ namespace VexFlowSharp
         /// <param name="fontData">
         /// Font data to look up the glyph in. If null, uses the active VexFlow font stack.
         /// </param>
-        public Glyph(string code, double point, FontData? fontData = null)
+        public Glyph(string code, double point, FontData fontData = null)
         {
             _code = code;
             var data = fontData ?? (Font.HasAnyFonts() ? Font.ResolveGlyphFontData(code) : BravuraGlyphs.Data);
@@ -155,7 +153,7 @@ namespace VexFlowSharp
         /// <param name="code">Glyph name key (e.g., "gClef").</param>
         /// <param name="point">Point size (e.g., Tables.NOTATION_FONT_SCALE = 39).</param>
         /// <param name="fontData">Font data to use (defaults to the active VexFlow font stack).</param>
-        public static double GetWidth(string code, double point, FontData? fontData = null)
+        public static double GetWidth(string code, double point, FontData fontData = null)
         {
             var data = fontData ?? (Font.HasAnyFonts() ? Font.ResolveGlyphFontData(code) : BravuraGlyphs.Data);
             if (!data.Glyphs.TryGetValue(code, out var fg) || fg.CachedOutline == null)
@@ -230,7 +228,7 @@ namespace VexFlowSharp
         /// Returns null if the glyph code was not found in the font data.
         /// Port of VexFlow's Glyph.getMetrics() / metrics property from glyph.ts.
         /// </summary>
-        public GlyphMetrics? GetMetrics()
+        public GlyphMetrics GetMetrics()
         {
             if (_metrics == null) return null;
             return new GlyphMetrics
@@ -254,7 +252,7 @@ namespace VexFlowSharp
         /// <returns>GlyphMetrics describing the rendered glyph's dimensions and position.</returns>
         public virtual GlyphMetrics Render(RenderContext ctx, double xPos, double yPos)
         {
-            if (_metrics?.CachedOutline == null)
+            if (_metrics.CachedOutline == null)
                 throw new InvalidOperationException($"Glyph '{_code}' has no cached outline data.");
 
             RenderOutline(ctx, _metrics.CachedOutline, _scale, xPos, yPos);

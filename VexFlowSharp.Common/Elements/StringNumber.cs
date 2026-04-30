@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -32,7 +30,7 @@ namespace VexFlowSharp
 
         private readonly double radius;
         private bool drawCircle;
-        private Note? lastNote;
+        private Note lastNote;
         private string stringNumber;
         private double xOffset;
         private double yOffset;
@@ -102,7 +100,7 @@ namespace VexFlowSharp
             return this;
         }
 
-        public Note? GetLastNote() => lastNote;
+        public Note GetLastNote() => lastNote;
 
         public StringNumber SetDashed(bool isDashed)
         {
@@ -120,7 +118,7 @@ namespace VexFlowSharp
 
         public bool GetDrawCircle() => drawCircle;
 
-        public static bool Format(List<StringNumber>? nums, ModifierContextState state)
+        public static bool Format(List<StringNumber> nums, ModifierContextState state)
         {
             if (nums == null || nums.Count == 0) return false;
 
@@ -128,7 +126,7 @@ namespace VexFlowSharp
             double rightShift = state.RightShift;
             var numsList = new List<(Note Note, StringNumber Num, ModifierPosition Pos, double Line, double ShiftL, double ShiftR)>();
 
-            Note? prevNote = null;
+            Note prevNote = null;
             double extraXSpaceForDisplacedNotehead = 0;
             double shiftRight = 0;
 
@@ -174,7 +172,7 @@ namespace VexFlowSharp
             double xWidthL = 0;
             double xWidthR = 0;
             double? lastLine = null;
-            Note? lastNote = null;
+            Note lastNote = null;
 
             foreach (var item in numsList)
             {

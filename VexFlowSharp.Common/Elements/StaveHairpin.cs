@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -13,8 +11,8 @@ namespace VexFlowSharp
 
     public class StaveHairpinNotes
     {
-        public Note? FirstNote { get; set; }
-        public Note? LastNote { get; set; }
+        public Note FirstNote { get; set; }
+        public Note LastNote { get; set; }
     }
 
     public class StaveHairpinRenderOptions
@@ -44,8 +42,8 @@ namespace VexFlowSharp
         private int hairpin;
         private ModifierPosition position;
         private StaveHairpinNotes notes = new StaveHairpinNotes();
-        private Note? firstNote;
-        private Note? lastNote;
+        private Note firstNote;
+        private Note lastNote;
 
         public StaveHairpinRenderOptions RenderOptions { get; private set; }
 

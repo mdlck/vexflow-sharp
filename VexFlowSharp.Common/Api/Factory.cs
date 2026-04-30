@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -23,14 +21,14 @@ using VexFlowSharp.Common.Formatting;
 namespace VexFlowSharp.Api
 {
     /// <summary>
-    /// Options for <see cref="Factory.Beam(List{StemmableNote}, FactoryBeamOptions?)"/>.
+    /// Options for <see cref="Factory.Beam(List{StemmableNote}, FactoryBeamOptions)"/>.
     /// Mirrors VexFlow 5 Factory.Beam options while keeping C# property names.
     /// </summary>
     public class FactoryBeamOptions
     {
         public bool AutoStem { get; set; } = false;
-        public List<int>? SecondaryBeamBreaks { get; set; }
-        public Dictionary<int, PartialBeamDirection>? PartialBeamDirections { get; set; }
+        public List<int> SecondaryBeamBreaks { get; set; }
+        public Dictionary<int, PartialBeamDirection> PartialBeamDirections { get; set; }
     }
 
     /// <summary>
@@ -40,35 +38,35 @@ namespace VexFlowSharp.Api
     public class FactoryBeamParams
     {
         public List<StemmableNote> Notes { get; set; } = new List<StemmableNote>();
-        public FactoryBeamOptions? Options { get; set; }
+        public FactoryBeamOptions Options { get; set; }
     }
 
     public class FactoryTupletParams
     {
         public List<Note> Notes { get; set; } = new List<Note>();
-        public TupletOptions? Options { get; set; }
+        public TupletOptions Options { get; set; }
     }
 
     public class FactoryCurveParams
     {
-        public Note? From { get; set; }
-        public Note? To { get; set; }
-        public CurveOptions? Options { get; set; }
+        public Note From { get; set; }
+        public Note To { get; set; }
+        public CurveOptions Options { get; set; }
     }
 
     public class FactoryVoiceOptions
     {
         public VoiceTime? Time { get; set; }
-        public string? TimeString { get; set; }
+        public string TimeString { get; set; }
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.TextDynamics(FactoryTextDynamicsOptions?)"/>.
+    /// Options for <see cref="Factory.TextDynamics(FactoryTextDynamicsOptions)"/>.
     /// Mirrors VexFlow 5-style params while keeping C# property names.
     /// </summary>
     public class FactoryTextDynamicsOptions
     {
-        public string? Text { get; set; }
+        public string Text { get; set; }
         public string Dynamics { get; set; } = "p";
         public string Duration { get; set; } = "q";
         public int Dots { get; set; } = 0;
@@ -76,7 +74,7 @@ namespace VexFlowSharp.Api
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.Stave(FactoryStaveOptions?)"/>.
+    /// Options for <see cref="Factory.Stave(FactoryStaveOptions)"/>.
     /// Mirrors VexFlow 5 Factory.Stave params while keeping C# property names.
     /// </summary>
     public class FactoryStaveOptions
@@ -84,11 +82,11 @@ namespace VexFlowSharp.Api
         public double X { get; set; } = 0;
         public double Y { get; set; } = 0;
         public double? Width { get; set; }
-        public StaveOptions? Options { get; set; }
+        public StaveOptions Options { get; set; }
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.TabStave(FactoryTabStaveOptions?)"/>.
+    /// Options for <see cref="Factory.TabStave(FactoryTabStaveOptions)"/>.
     /// Mirrors VexFlow 5 Factory.TabStave params while keeping C# property names.
     /// </summary>
     public class FactoryTabStaveOptions : FactoryStaveOptions
@@ -112,7 +110,7 @@ namespace VexFlowSharp.Api
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.Crescendo(FactoryCrescendoOptions?)"/>.
+    /// Options for <see cref="Factory.Crescendo(FactoryCrescendoOptions)"/>.
     /// Mirrors VexFlow 5-style params while keeping C# property names.
     /// </summary>
     public class FactoryCrescendoOptions
@@ -124,7 +122,7 @@ namespace VexFlowSharp.Api
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.Accidental(FactoryAccidentalOptions?)"/>.
+    /// Options for <see cref="Factory.Accidental(FactoryAccidentalOptions)"/>.
     /// Mirrors VexFlow 5-style params while keeping C# property names.
     /// </summary>
     public class FactoryAccidentalOptions
@@ -134,7 +132,7 @@ namespace VexFlowSharp.Api
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.Vibrato(FactoryVibratoOptions?)"/>.
+    /// Options for <see cref="Factory.Vibrato(FactoryVibratoOptions)"/>.
     /// Mirrors VexFlow 5-style params while keeping C# property names.
     /// </summary>
     public class FactoryVibratoOptions
@@ -142,25 +140,25 @@ namespace VexFlowSharp.Api
         public int? Code { get; set; }
         public double? VibratoWidth { get; set; }
         public bool? Harsh { get; set; }
-        public VibratoRenderOptions? RenderOptions { get; set; }
+        public VibratoRenderOptions RenderOptions { get; set; }
     }
 
     public class FactoryBarNoteOptions
     {
         public BarlineType? Type { get; set; }
-        public string? TypeString { get; set; }
+        public string TypeString { get; set; }
     }
 
     public class FactoryClefNoteNestedOptions
     {
         public string Size { get; set; } = "default";
-        public string? Annotation { get; set; }
+        public string Annotation { get; set; }
     }
 
     public class FactoryClefNoteOptions
     {
         public string Type { get; set; } = "treble";
-        public FactoryClefNoteNestedOptions? Options { get; set; }
+        public FactoryClefNoteNestedOptions Options { get; set; }
     }
 
     public class FactoryTimeSigNoteOptions
@@ -172,12 +170,12 @@ namespace VexFlowSharp.Api
     public class FactoryKeySigNoteOptions
     {
         public string Key { get; set; } = "C";
-        public string? CancelKey { get; set; }
-        public string[]? AlterKey { get; set; }
+        public string CancelKey { get; set; }
+        public string[] AlterKey { get; set; }
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.Annotation(FactoryAnnotationOptions?)"/>.
+    /// Options for <see cref="Factory.Annotation(FactoryAnnotationOptions)"/>.
     /// Mirrors VexFlow 5 Factory.Annotation params while keeping C# property names.
     /// </summary>
     public class FactoryAnnotationOptions
@@ -185,13 +183,13 @@ namespace VexFlowSharp.Api
         public string Text { get; set; } = "p";
         public AnnotationHorizontalJustify? HJustify { get; set; }
         public AnnotationVerticalJustify? VJustify { get; set; }
-        public string? HJustifyString { get; set; }
-        public string? VJustifyString { get; set; }
-        public MetricsFontInfo? Font { get; set; }
+        public string HJustifyString { get; set; }
+        public string VJustifyString { get; set; }
+        public MetricsFontInfo Font { get; set; }
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.Articulation(FactoryArticulationOptions?)"/>.
+    /// Options for <see cref="Factory.Articulation(FactoryArticulationOptions)"/>.
     /// Mirrors VexFlow 5 Factory.Articulation params while keeping C# property names.
     /// </summary>
     public class FactoryArticulationOptions
@@ -202,7 +200,7 @@ namespace VexFlowSharp.Api
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.Fingering(FactoryFingeringOptions?)"/>.
+    /// Options for <see cref="Factory.Fingering(FactoryFingeringOptions)"/>.
     /// Mirrors VexFlow 5 Factory.Fingering params while keeping C# property names.
     /// </summary>
     public class FactoryFingeringOptions
@@ -214,7 +212,7 @@ namespace VexFlowSharp.Api
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.StringNumber(FactoryStringNumberOptions?)"/>.
+    /// Options for <see cref="Factory.StringNumber(FactoryStringNumberOptions)"/>.
     /// Mirrors VexFlow 5 Factory.StringNumber params while keeping C# property names.
     /// </summary>
     public class FactoryStringNumberOptions
@@ -230,45 +228,45 @@ namespace VexFlowSharp.Api
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.Ornament(FactoryOrnamentOptions?)"/>.
+    /// Options for <see cref="Factory.Ornament(FactoryOrnamentOptions)"/>.
     /// Mirrors VexFlow 5 Factory.Ornament params while keeping C# property names.
     /// </summary>
     public class FactoryOrnamentOptions
     {
         public string Type { get; set; } = "tr";
         public ModifierPosition? Position { get; set; }
-        public string? UpperAccidental { get; set; }
-        public string? LowerAccidental { get; set; }
+        public string UpperAccidental { get; set; }
+        public string LowerAccidental { get; set; }
         public bool? Delayed { get; set; }
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.PedalMarking(FactoryPedalMarkingOptions?)"/>.
+    /// Options for <see cref="Factory.PedalMarking(FactoryPedalMarkingOptions)"/>.
     /// Mirrors VexFlow 5 Factory.PedalMarking params while keeping C# property names.
     /// </summary>
     public class FactoryPedalMarkingOptions
     {
-        public List<StaveNote>? Notes { get; set; }
+        public List<StaveNote> Notes { get; set; }
         public string Style { get; set; } = "mixed";
-        public string? DepressText { get; set; }
-        public string? ReleaseText { get; set; }
+        public string DepressText { get; set; }
+        public string ReleaseText { get; set; }
         public int? Line { get; set; }
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.ChordSymbol(FactoryChordSymbolOptions?)"/>.
+    /// Options for <see cref="Factory.ChordSymbol(FactoryChordSymbolOptions)"/>.
     /// Mirrors VexFlow 5 Factory.ChordSymbol params while keeping C# property names.
     /// </summary>
     public class FactoryChordSymbolOptions
     {
         public double? FontSize { get; set; }
-        public string? FontFamily { get; set; }
-        public string? FontWeight { get; set; }
-        public string? FontStyle { get; set; }
+        public string FontFamily { get; set; }
+        public string FontWeight { get; set; }
+        public string FontStyle { get; set; }
         public ChordSymbolHorizontalJustify? HJustify { get; set; }
         public ChordSymbolVerticalJustify? VJustify { get; set; }
-        public string? HJustifyString { get; set; }
-        public string? VJustifyString { get; set; }
+        public string HJustifyString { get; set; }
+        public string VJustifyString { get; set; }
         public bool? ReportWidth { get; set; }
     }
 
@@ -278,14 +276,14 @@ namespace VexFlowSharp.Api
     /// </summary>
     public class FactoryTextBracketOptions
     {
-        public Note Start { get; set; } = null!;
-        public Note Stop { get; set; } = null!;
+        public Note Start { get; set; } = null;
+        public Note Stop { get; set; } = null;
         public string Text { get; set; } = "";
         public string Superscript { get; set; } = "";
         public TextBracketPosition Position { get; set; } = TextBracketPosition.Top;
         public double? Line { get; set; }
         public bool? Dashed { get; set; }
-        public double[]? Dash { get; set; }
+        public double[] Dash { get; set; }
     }
 
     /// <summary>
@@ -294,10 +292,10 @@ namespace VexFlowSharp.Api
     /// </summary>
     public class FactoryStaveTieOptions
     {
-        public TieNotes Notes { get; set; } = null!;
-        public string? Text { get; set; }
+        public TieNotes Notes { get; set; } = null;
+        public string Text { get; set; }
         public int? Direction { get; set; }
-        public StaveTieRenderOptions? RenderOptions { get; set; }
+        public StaveTieRenderOptions RenderOptions { get; set; }
     }
 
     /// <summary>
@@ -306,8 +304,8 @@ namespace VexFlowSharp.Api
     /// </summary>
     public class FactoryVibratoBracketOptions
     {
-        public Note? From { get; set; }
-        public Note? To { get; set; }
+        public Note From { get; set; }
+        public Note To { get; set; }
         public int? Line { get; set; }
         public int? Code { get; set; }
         public bool? Harsh { get; set; }
@@ -327,16 +325,16 @@ namespace VexFlowSharp.Api
     /// </summary>
     public class FactoryStaveConnectorOptions
     {
-        public Stave TopStave { get; set; } = null!;
-        public Stave BottomStave { get; set; } = null!;
+        public Stave TopStave { get; set; } = null;
+        public Stave BottomStave { get; set; } = null;
         public StaveConnectorType? Type { get; set; }
-        public string? TypeString { get; set; }
+        public string TypeString { get; set; }
         public double? XShift { get; set; }
-        public List<FactoryStaveConnectorTextOptions>? Texts { get; set; }
+        public List<FactoryStaveConnectorTextOptions> Texts { get; set; }
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.GraceNoteGroup(FactoryGraceNoteGroupOptions?)"/>.
+    /// Options for <see cref="Factory.GraceNoteGroup(FactoryGraceNoteGroupOptions)"/>.
     /// Mirrors VexFlow 5-style params while keeping C# property names.
     /// </summary>
     public class FactoryGraceNoteGroupOptions
@@ -346,7 +344,7 @@ namespace VexFlowSharp.Api
     }
 
     /// <summary>
-    /// Options for <see cref="Factory.NoteSubGroup(FactoryNoteSubGroupOptions?)"/>.
+    /// Options for <see cref="Factory.NoteSubGroup(FactoryNoteSubGroupOptions)"/>.
     /// Mirrors VexFlow 5-style params while keeping C# property names.
     /// </summary>
     public class FactoryNoteSubGroupOptions
@@ -377,7 +375,7 @@ namespace VexFlowSharp.Api
         private List<VexFlowSharp.Common.Formatting.System> systems =
             new List<VexFlowSharp.Common.Formatting.System>();
 
-        private Stave? currentStave;
+        private Stave currentStave;
 
         // ── Constructor ────────────────────────────────────────────────────────
 
@@ -407,7 +405,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Get the current (most recently created) stave.</summary>
-        public Stave? GetStave() => currentStave;
+        public Stave GetStave() => currentStave;
 
         /// <summary>Get all voices in this factory.</summary>
         public List<Voice> GetVoices() => voices;
@@ -505,7 +503,7 @@ namespace VexFlowSharp.Api
         ///
         /// Port of VexFlow's Factory.System() from factory.ts.
         /// </summary>
-        public VexFlowSharp.Common.Formatting.System System(SystemOptions? options = null)
+        public VexFlowSharp.Common.Formatting.System System(SystemOptions options = null)
         {
             var system = new VexFlowSharp.Common.Formatting.System(options);
             system.SetContext(context);
@@ -521,7 +519,7 @@ namespace VexFlowSharp.Api
         ///
         /// Port of VexFlow's Factory.Stave() from factory.ts.
         /// </summary>
-        public Stave Stave(double x = 0, double y = 0, double? w = null, StaveOptions? options = null)
+        public Stave Stave(double x = 0, double y = 0, double? w = null, StaveOptions options = null)
         {
             options ??= new StaveOptions { SpacingBetweenLinesPx = DefaultStaveSpace };
             var stave = new Stave(x, y, w ?? width - DefaultStaveSpace, options);
@@ -532,7 +530,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a Stave from a VexFlow 5-style params object.</summary>
-        public Stave Stave(FactoryStaveOptions? options)
+        public Stave Stave(FactoryStaveOptions options)
         {
             options ??= new FactoryStaveOptions();
             return Stave(options.X, options.Y, options.Width, options.Options);
@@ -542,7 +540,7 @@ namespace VexFlowSharp.Api
         /// Create a TabStave and set it as the current stave.
         /// Port of VexFlow's Factory.TabStave() from factory.ts.
         /// </summary>
-        public TabStave TabStave(double x = 0, double y = 0, double? w = null, StaveOptions? options = null)
+        public TabStave TabStave(double x = 0, double y = 0, double? w = null, StaveOptions options = null)
         {
             options ??= new StaveOptions { SpacingBetweenLinesPx = DefaultStaveSpace * 1.3 };
             var stave = new TabStave(x, y, w ?? width - DefaultStaveSpace, options);
@@ -553,7 +551,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a TabStave from a VexFlow 5-style params object.</summary>
-        public TabStave TabStave(FactoryTabStaveOptions? options)
+        public TabStave TabStave(FactoryTabStaveOptions options)
         {
             options ??= new FactoryTabStaveOptions();
             return TabStave(options.X, options.Y, options.Width, options.Options);
@@ -590,7 +588,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a GlyphNote, set its stave/context, and add to renderQ.</summary>
-        public GlyphNote GlyphNote(string glyph, NoteStruct noteStruct, GlyphNoteOptions? options = null)
+        public GlyphNote GlyphNote(string glyph, NoteStruct noteStruct, GlyphNoteOptions options = null)
         {
             var note = new GlyphNote(glyph, noteStruct, options);
             if (currentStave != null) note.SetStave(currentStave);
@@ -600,7 +598,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a RepeatNote, set its stave/context, and add to renderQ.</summary>
-        public RepeatNote RepeatNote(string type, NoteStruct? noteStruct = null, GlyphNoteOptions? options = null)
+        public RepeatNote RepeatNote(string type, NoteStruct noteStruct = null, GlyphNoteOptions options = null)
         {
             var note = new RepeatNote(type, noteStruct, options);
             if (currentStave != null) note.SetStave(currentStave);
@@ -620,7 +618,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a BarNote from a VexFlow 5-style params object and add to renderQ.</summary>
-        public BarNote BarNote(FactoryBarNoteOptions? options)
+        public BarNote BarNote(FactoryBarNoteOptions options)
         {
             options ??= new FactoryBarNoteOptions();
             var type = options.Type ?? ParseBarlineType(options.TypeString) ?? BarlineType.Single;
@@ -628,7 +626,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a ClefNote, set its stave/context, and add to renderQ.</summary>
-        public ClefNote ClefNote(string type = "treble", string size = "default", string? annotation = null)
+        public ClefNote ClefNote(string type = "treble", string size = "default", string annotation = null)
         {
             var note = new ClefNote(type, size, annotation);
             if (currentStave != null) note.SetStave(currentStave);
@@ -638,13 +636,13 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a ClefNote from a VexFlow 5-style params object and add to renderQ.</summary>
-        public ClefNote ClefNote(FactoryClefNoteOptions? options)
+        public ClefNote ClefNote(FactoryClefNoteOptions options)
         {
             options ??= new FactoryClefNoteOptions();
             return ClefNote(
                 options.Type,
-                options.Options?.Size ?? "default",
-                options.Options?.Annotation);
+                options.Options.Size ?? "default",
+                options.Options.Annotation);
         }
 
         /// <summary>Create a TimeSigNote, set its stave/context, and add to renderQ.</summary>
@@ -658,7 +656,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a TimeSigNote from a VexFlow 5-style params object and add to renderQ.</summary>
-        public TimeSigNote TimeSigNote(FactoryTimeSigNoteOptions? options)
+        public TimeSigNote TimeSigNote(FactoryTimeSigNoteOptions options)
         {
             options ??= new FactoryTimeSigNoteOptions();
             var note = new TimeSigNote(options.Time, options.CustomPadding ?? 15);
@@ -669,7 +667,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a KeySigNote, set its stave/context, and add to renderQ.</summary>
-        public KeySigNote KeySigNote(string key, string? cancelKey = null, string[]? alterKey = null)
+        public KeySigNote KeySigNote(string key, string cancelKey = null, string[] alterKey = null)
         {
             var note = new KeySigNote(key, cancelKey, alterKey);
             if (currentStave != null) note.SetStave(currentStave);
@@ -684,7 +682,7 @@ namespace VexFlowSharp.Api
             return KeySigNote(options.Key, options.CancelKey, options.AlterKey);
         }
 
-        private static BarlineType? ParseBarlineType(string? type)
+        private static BarlineType? ParseBarlineType(string type)
         {
             if (string.IsNullOrWhiteSpace(type)) return null;
             return type.Trim() switch
@@ -748,7 +746,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a TextDynamics note from a VexFlow 5-style params object and add to renderQ.</summary>
-        public TextDynamics TextDynamics(FactoryTextDynamicsOptions? options)
+        public TextDynamics TextDynamics(FactoryTextDynamicsOptions options)
         {
             options ??= new FactoryTextDynamicsOptions();
             var sequence = options.Text ?? options.Dynamics;
@@ -794,7 +792,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a Crescendo from a VexFlow 5-style params object and add to renderQ.</summary>
-        public Crescendo Crescendo(FactoryCrescendoOptions? options)
+        public Crescendo Crescendo(FactoryCrescendoOptions options)
         {
             options ??= new FactoryCrescendoOptions();
             var crescendo = new Crescendo(options.NoteStruct);
@@ -820,7 +818,7 @@ namespace VexFlowSharp.Api
         /// <summary>
         /// Create a Beam over the given StemmableNotes with VexFlow 5-style factory options and add to renderQ.
         /// </summary>
-        public Beam Beam(List<StemmableNote> notes, FactoryBeamOptions? options)
+        public Beam Beam(List<StemmableNote> notes, FactoryBeamOptions options)
         {
             options ??= new FactoryBeamOptions();
             var beam = new Beam(notes, options.AutoStem);
@@ -848,7 +846,7 @@ namespace VexFlowSharp.Api
         ///
         /// Port of VexFlow's Factory.Tuplet() from factory.ts.
         /// </summary>
-        public Tuplet Tuplet(List<Note> notes, TupletOptions? options = null)
+        public Tuplet Tuplet(List<Note> notes, TupletOptions options = null)
         {
             var tuplet = new Tuplet(notes, options ?? new TupletOptions());
             tuplet.SetContext(context);
@@ -869,7 +867,7 @@ namespace VexFlowSharp.Api
         ///
         /// Port of VexFlow's Factory.Curve() from factory.ts.
         /// </summary>
-        public Curve Curve(Note? from, Note? to, CurveOptions? options = null)
+        public Curve Curve(Note from, Note to, CurveOptions options = null)
         {
             var curve = new Curve(from, to, options ?? new CurveOptions());
             curve.SetContext(context);
@@ -899,7 +897,7 @@ namespace VexFlowSharp.Api
         ///
         /// Port of VexFlow's Factory.StaveTie() from factory.ts.
         /// </summary>
-        public StaveTie StaveTie(TieNotes tieNotes, string? text = null, int? direction = null)
+        public StaveTie StaveTie(TieNotes tieNotes, string text = null, int? direction = null)
         {
             var tie = new StaveTie(tieNotes, text);
             if (direction.HasValue) tie.SetDirection(direction.Value);
@@ -925,7 +923,7 @@ namespace VexFlowSharp.Api
         ///
         /// Port of VexFlow's Factory.VibratoBracket() from factory.ts.
         /// </summary>
-        public VibratoBracket VibratoBracket(Note? from, Note? to, int? line = null, int? code = null, bool? harsh = null)
+        public VibratoBracket VibratoBracket(Note from, Note to, int? line = null, int? code = null, bool? harsh = null)
         {
             var bracket = new VibratoBracket(from, to);
             if (line.HasValue)  bracket.SetLine(line.Value);
@@ -1078,7 +1076,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a Voice from a VexFlow 5-style params object and add it to the voices list.</summary>
-        public Voice Voice(FactoryVoiceOptions? options)
+        public Voice Voice(FactoryVoiceOptions options)
         {
             options ??= new FactoryVoiceOptions();
             if (options.Time.HasValue)
@@ -1125,7 +1123,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a GraceNoteGroup from a VexFlow 5-style params object. Does NOT add to renderQ.</summary>
-        public GraceNoteGroup GraceNoteGroup(FactoryGraceNoteGroupOptions? options)
+        public GraceNoteGroup GraceNoteGroup(FactoryGraceNoteGroupOptions options)
         {
             options ??= new FactoryGraceNoteGroupOptions();
             return GraceNoteGroup(options.Notes, options.Slur);
@@ -1149,7 +1147,7 @@ namespace VexFlowSharp.Api
         /// Create an Accidental from a VexFlow 5-style params object.
         /// Does NOT add to renderQ — caller attaches to note.
         /// </summary>
-        public Accidental Accidental(FactoryAccidentalOptions? options)
+        public Accidental Accidental(FactoryAccidentalOptions options)
         {
             options ??= new FactoryAccidentalOptions();
             var accid = new Accidental(options.Type);
@@ -1181,7 +1179,7 @@ namespace VexFlowSharp.Api
         /// Create an Annotation from a VexFlow 5-style params object.
         /// Does NOT add to renderQ — caller attaches to note.
         /// </summary>
-        public Annotation Annotation(FactoryAnnotationOptions? options)
+        public Annotation Annotation(FactoryAnnotationOptions options)
         {
             options ??= new FactoryAnnotationOptions();
 
@@ -1225,7 +1223,7 @@ namespace VexFlowSharp.Api
         /// Create a FretHandFinger from a VexFlow 5-style params object.
         /// Does NOT add to renderQ — caller attaches to note.
         /// </summary>
-        public FretHandFinger Fingering(FactoryFingeringOptions? options)
+        public FretHandFinger Fingering(FactoryFingeringOptions options)
         {
             options ??= new FactoryFingeringOptions();
 
@@ -1256,7 +1254,7 @@ namespace VexFlowSharp.Api
         /// Create a StringNumber from a VexFlow 5-style params object.
         /// Does NOT add to renderQ — caller attaches to note.
         /// </summary>
-        public StringNumber StringNumber(FactoryStringNumberOptions? options)
+        public StringNumber StringNumber(FactoryStringNumberOptions options)
         {
             options ??= new FactoryStringNumberOptions();
 
@@ -1291,7 +1289,7 @@ namespace VexFlowSharp.Api
         /// Create an Articulation from a VexFlow 5-style params object.
         /// Does NOT add to renderQ — caller attaches to note.
         /// </summary>
-        public Articulation Articulation(FactoryArticulationOptions? options)
+        public Articulation Articulation(FactoryArticulationOptions options)
         {
             options ??= new FactoryArticulationOptions();
 
@@ -1319,9 +1317,9 @@ namespace VexFlowSharp.Api
         /// </summary>
         public Ornament Ornament(
             string type,
-            ModifierPosition? position  = null,
-            string? upperAccidental     = null,
-            string? lowerAccidental     = null,
+            ModifierPosition? position = null,
+            string upperAccidental     = null,
+            string lowerAccidental     = null,
             bool?   delayed             = null)
         {
             var ornament = new Ornament(type);
@@ -1337,7 +1335,7 @@ namespace VexFlowSharp.Api
         /// Create an Ornament from a VexFlow 5-style params object.
         /// Does NOT add to renderQ — caller attaches to note.
         /// </summary>
-        public Ornament Ornament(FactoryOrnamentOptions? options)
+        public Ornament Ornament(FactoryOrnamentOptions options)
         {
             options ??= new FactoryOrnamentOptions();
 
@@ -1358,11 +1356,11 @@ namespace VexFlowSharp.Api
         /// </summary>
         public ChordSymbol ChordSymbol(
             double? fontSize = null,
-            string? fontFamily = null,
-            string? fontWeight = null,
-            string? fontStyle = null,
-            string? hJustify = null,
-            string? vJustify = null)
+            string fontFamily = null,
+            string fontWeight = null,
+            string fontStyle = null,
+            string hJustify = null,
+            string vJustify = null)
         {
             var chordSymbol = new ChordSymbol();
             chordSymbol.SetHorizontal(hJustify ?? "center");
@@ -1380,7 +1378,7 @@ namespace VexFlowSharp.Api
         /// Create a ChordSymbol from a VexFlow 5-style params object.
         /// Does NOT add to renderQ — caller attaches to note.
         /// </summary>
-        public ChordSymbol ChordSymbol(FactoryChordSymbolOptions? options)
+        public ChordSymbol ChordSymbol(FactoryChordSymbolOptions options)
         {
             options ??= new FactoryChordSymbolOptions();
 
@@ -1431,7 +1429,7 @@ namespace VexFlowSharp.Api
         /// Create a Vibrato from a VexFlow 5-style params object.
         /// Does NOT add to renderQ — caller attaches to note.
         /// </summary>
-        public Vibrato Vibrato(FactoryVibratoOptions? options)
+        public Vibrato Vibrato(FactoryVibratoOptions options)
         {
             options ??= new FactoryVibratoOptions();
             var vibrato = new Vibrato();
@@ -1453,7 +1451,7 @@ namespace VexFlowSharp.Api
         /// Create a PedalMarking and add to renderQ.
         /// Port of VexFlow's Factory.PedalMarking() from factory.ts.
         /// </summary>
-        public PedalMarking PedalMarking(List<StaveNote>? notes = null, string style = "mixed")
+        public PedalMarking PedalMarking(List<StaveNote> notes = null, string style = "mixed")
         {
             var pedal = new PedalMarking(notes ?? new List<StaveNote>());
             pedal.SetType(style);
@@ -1463,7 +1461,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a PedalMarking from a VexFlow 5-style params object and add to renderQ.</summary>
-        public PedalMarking PedalMarking(FactoryPedalMarkingOptions? options)
+        public PedalMarking PedalMarking(FactoryPedalMarkingOptions options)
         {
             options ??= new FactoryPedalMarkingOptions();
 
@@ -1503,7 +1501,7 @@ namespace VexFlowSharp.Api
         }
 
         /// <summary>Create a NoteSubGroup from a VexFlow 5-style params object. Does NOT add to renderQ.</summary>
-        public NoteSubGroup NoteSubGroup(FactoryNoteSubGroupOptions? options)
+        public NoteSubGroup NoteSubGroup(FactoryNoteSubGroupOptions options)
         {
             options ??= new FactoryNoteSubGroupOptions();
             return NoteSubGroup(options.Notes);
@@ -1531,7 +1529,7 @@ namespace VexFlowSharp.Api
         /// Port of VexFlow's Factory.EasyScore() from factory.ts.
         /// Note: EasyScore is a stub until Plan 05-04.
         /// </summary>
-        public EasyScore EasyScore(EasyScoreOptions? options = null)
+        public EasyScore EasyScore(EasyScoreOptions options = null)
         {
             return new EasyScore(this, options);
         }
@@ -1543,7 +1541,7 @@ namespace VexFlowSharp.Api
         ///
         /// Port of VexFlow's Factory.Formatter() from factory.ts.
         /// </summary>
-        public Formatter Formatter(FormatterOptions? options = null)
+        public Formatter Formatter(FormatterOptions options = null)
         {
             return new Formatter(options);
         }

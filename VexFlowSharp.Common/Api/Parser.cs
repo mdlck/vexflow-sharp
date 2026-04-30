@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -49,7 +47,7 @@ namespace VexFlowSharp.Api
     public class ParserState
     {
         /// <summary>Flattened list of matched strings (nulls for optional non-matches).</summary>
-        public List<object?> Matches { get; set; } = new List<object?>();
+        public List<object> Matches { get; set; } = new List<object>();
     }
 
     // ── Rule ─────────────────────────────────────────────────────────────────
@@ -66,7 +64,7 @@ namespace VexFlowSharp.Api
         /// Regex pattern string for a lexer rule.
         /// When set, the parser matches this token at the current position.
         /// </summary>
-        public string? Token { get; set; }
+        public string Token { get; set; }
 
         /// <summary>When true, do not skip trailing whitespace after matching the token.</summary>
         public bool NoSpace { get; set; } = false;
@@ -74,7 +72,7 @@ namespace VexFlowSharp.Api
         // ── Parser rule fields ────────────────────────────────────────────────
 
         /// <summary>Array of sub-rule functions to match in sequence (or as alternatives with Or).</summary>
-        public RuleFunction[]? Expect { get; set; }
+        public RuleFunction[] Expect { get; set; }
 
         /// <summary>Match zero or more times (always succeeds; position reset if zero matches).</summary>
         public bool ZeroOrMore { get; set; } = false;
@@ -89,7 +87,7 @@ namespace VexFlowSharp.Api
         public bool Or { get; set; } = false;
 
         /// <summary>Trigger function called after a successful rule match.</summary>
-        public TriggerFunction? Run { get; set; }
+        public TriggerFunction Run { get; set; }
     }
 
     // ── ParseResult ───────────────────────────────────────────────────────────
@@ -111,17 +109,17 @@ namespace VexFlowSharp.Api
         public int IncrementPos { get; set; }
 
         /// <summary>The captured token string (for lexer matches). Null for parser matches.</summary>
-        public string? MatchedString { get; set; }
+        public string MatchedString { get; set; }
 
         // Parser result fields
         /// <summary>Flattened match list built by the expect() method.</summary>
-        public List<object?> Matches { get; set; } = new List<object?>();
+        public List<object> Matches { get; set; } = new List<object>();
 
         /// <summary>Number of successful sub-matches.</summary>
         public int NumMatches { get; set; }
 
-        /// <summary>Grouped sub-results (list of ParseResult or List&lt;object?&gt;).</summary>
-        public List<object?> Results { get; set; } = new List<object?>();
+        /// <summary>Grouped sub-results (list of ParseResult or List&lt;object&gt;).</summary>
+        public List<object> Results { get; set; } = new List<object>();
 
         /// <summary>Position of the first parse error. -1 if no error.</summary>
         public int ErrorPos { get; set; } = -1;
@@ -197,9 +195,9 @@ namespace VexFlowSharp.Api
         ///
         /// Port of VexFlow's flattenMatches() from parser.ts lines 57-64.
         /// </summary>
-        private static List<object?> FlattenMatches(List<object?> results)
+        private static List<object> FlattenMatches(List<object> results)
         {
-            var flat = new List<object?>();
+            var flat = new List<object>();
             foreach (var r in results)
             {
                 if (r is ParseResult pr)
@@ -220,7 +218,7 @@ namespace VexFlowSharp.Api
                         flat.Add(null);
                     }
                 }
-                else if (r is List<object?> list)
+                else if (r is List<object> list)
                 {
                     // Nested list from oneOrMore/zeroOrMore
                     flat.AddRange(FlattenMatches(list));
@@ -240,7 +238,7 @@ namespace VexFlowSharp.Api
         /// </summary>
         private ParseResult ExpectOne(Rule rule, bool maybe = false)
         {
-            var results = new List<object?>();
+            var results = new List<object>();
             int savedPos = pos;
 
             bool allMatches = true;
@@ -292,7 +290,7 @@ namespace VexFlowSharp.Api
         /// </summary>
         private ParseResult ExpectOneOrMore(Rule rule, bool maybe = false)
         {
-            var results = new List<object?>();
+            var results = new List<object>();
             int savedPos = pos;
             int numMatches = 0;
             bool more = true;
@@ -373,7 +371,7 @@ namespace VexFlowSharp.Api
             }
 
             // Build the flat matches list from sub-results
-            var matches = new List<object?>();
+            var matches = new List<object>();
             result.Matches = matches;
             if (result.Results != null && result.Results.Count > 0)
             {

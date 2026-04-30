@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -27,7 +25,7 @@ namespace VexFlowSharp
         public double Y { get; set; }
 
         /// <summary>Optional custom glyph code override.</summary>
-        public string? CustomGlyphCode { get; set; }
+        public string CustomGlyphCode { get; set; }
 
         /// <summary>Glyph font scale (default: Tables.NOTATION_FONT_SCALE).</summary>
         public double GlyphFontScale { get; set; } = Tables.NOTATION_FONT_SCALE;
@@ -39,7 +37,7 @@ namespace VexFlowSharp
         public bool IsRest { get; set; }
 
         /// <summary>Custom element style override.</summary>
-        public ElementStyle? CustomStyle { get; set; }
+        public ElementStyle CustomStyle { get; set; }
 
         /// <summary>Stem direction (Stem.UP or Stem.DOWN).</summary>
         public int StemDirection { get; set; } = Stem.UP;
@@ -67,13 +65,13 @@ namespace VexFlowSharp
         protected double x;
         protected double y;
         protected string glyphCode;
-        protected Glyph? glyph;
+        protected Glyph glyph;
         protected double glyphFontScale;
         protected bool displaced;
         protected string noteType;
         protected string duration;
         protected bool isRest;
-        protected ElementStyle? customStyle;
+        protected ElementStyle customStyle;
         protected int stemDirection;
         protected double xShift;
         protected bool customGlyph;
@@ -193,7 +191,7 @@ namespace VexFlowSharp
         /// <summary>Get glyph text metrics used by VexFlow 5 layout calculations.</summary>
         public GlyphMetrics GetTextMetrics()
         {
-            var metrics = glyph?.GetMetrics();
+            var metrics = glyph.GetMetrics();
             if (metrics != null) return metrics;
 
             double width = GetWidth();
@@ -225,7 +223,7 @@ namespace VexFlowSharp
         /// </summary>
         public double GetWidth()
         {
-            var metrics = glyph?.GetMetrics();
+            var metrics = glyph.GetMetrics();
             if (metrics != null && metrics.Width > 0)
                 return metrics.Width;
 
@@ -243,7 +241,7 @@ namespace VexFlowSharp
         }
 
         /// <summary>Return a bounding box for this notehead glyph.</summary>
-        public override BoundingBox? GetBoundingBox()
+        public override BoundingBox GetBoundingBox()
         {
             double headX = GetAbsoluteX();
             if (glyph != null)

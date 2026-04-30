@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -29,7 +27,7 @@ namespace VexFlowSharp
         private static readonly Dictionary<string, ElementStyle> styleCache = new Dictionary<string, ElementStyle>();
         private static readonly Dictionary<string, MetricsFontInfo> fontCache = new Dictionary<string, MetricsFontInfo>();
 
-        private static readonly Dictionary<string, object?> defaults = new Dictionary<string, object?>
+        private static readonly Dictionary<string, object> defaults = new Dictionary<string, object>
         {
             ["pointerRect"] = false,
             ["fontFamily"] = "Bravura,Academico",
@@ -38,10 +36,10 @@ namespace VexFlowSharp
             ["fontWeight"] = "normal",
             ["fontStyle"] = "normal",
 
-            ["Accidental"] = new Dictionary<string, object?>
+            ["Accidental"] = new Dictionary<string, object>
             {
-                ["cautionary"] = new Dictionary<string, object?> { ["fontSize"] = 20.0 },
-                ["grace"] = new Dictionary<string, object?> { ["fontSize"] = 20.0 },
+                ["cautionary"] = new Dictionary<string, object> { ["fontSize"] = 20.0 },
+                ["grace"] = new Dictionary<string, object> { ["fontSize"] = 20.0 },
                 ["noteheadAccidentalPadding"] = 1.0,
                 ["leftPadding"] = 2.0,
                 ["accidentalSpacing"] = 3.0,
@@ -49,10 +47,10 @@ namespace VexFlowSharp
                 ["parenRightPadding"] = 2.0,
             },
 
-            ["Annotation"] = new Dictionary<string, object?> { ["fontSize"] = 10.0 },
-            ["Barline"] = new Dictionary<string, object?>
+            ["Annotation"] = new Dictionary<string, object> { ["fontSize"] = 10.0 },
+            ["Barline"] = new Dictionary<string, object>
             {
-                ["repeat"] = new Dictionary<string, object?>
+                ["repeat"] = new Dictionary<string, object>
                 {
                     ["thinBarShiftBegin"] = 3.0,
                     ["thinBarShiftEnd"] = -5.0,
@@ -60,16 +58,16 @@ namespace VexFlowSharp
                     ["dotRadius"] = 2.0,
                 },
             },
-            ["Bend"] = new Dictionary<string, object?>
+            ["Bend"] = new Dictionary<string, object>
             {
                 ["fontSize"] = 10.0,
-                ["line"] = new Dictionary<string, object?>
+                ["line"] = new Dictionary<string, object>
                 {
                     ["strokeStyle"] = "#777777",
                     ["lineWidth"] = 1.0,
                 },
             },
-            ["ChordSymbol"] = new Dictionary<string, object?>
+            ["ChordSymbol"] = new Dictionary<string, object>
             {
                 ["fontSize"] = 12.0,
                 ["spacing"] = 0.05,
@@ -77,7 +75,7 @@ namespace VexFlowSharp
                 ["superscriptOffset"] = -0.4,
                 ["superSubRatio"] = 0.6,
             },
-            ["Dot"] = new Dictionary<string, object?>
+            ["Dot"] = new Dictionary<string, object>
             {
                 ["radius"] = 2.0,
                 ["width"] = 5.0,
@@ -85,21 +83,21 @@ namespace VexFlowSharp
                 ["graceScale"] = 0.5,
                 ["graceWidth"] = 3.0,
             },
-            ["Curve"] = new Dictionary<string, object?>
+            ["Curve"] = new Dictionary<string, object>
             {
                 ["thickness"] = 2.0,
                 ["xShift"] = 0.0,
                 ["yShift"] = 10.0,
                 ["cpHeight"] = 10.0,
             },
-            ["Crescendo"] = new Dictionary<string, object?>
+            ["Crescendo"] = new Dictionary<string, object>
             {
                 ["height"] = 15.0,
                 ["line"] = 0.0,
                 ["lineOffset"] = -3.0,
                 ["yOffset"] = 1.0,
             },
-            ["FretHandFinger"] = new Dictionary<string, object?>
+            ["FretHandFinger"] = new Dictionary<string, object>
             {
                 ["fontSize"] = 9.0,
                 ["fontWeight"] = "bold",
@@ -111,25 +109,25 @@ namespace VexFlowSharp
                 ["belowYShift"] = 10.0,
                 ["rightXShift"] = 1.0,
             },
-            ["Formatter"] = new Dictionary<string, object?>
+            ["Formatter"] = new Dictionary<string, object>
             {
                 ["softmaxFactor"] = Tables.SOFTMAX_FACTOR,
                 ["maxIterations"] = 5.0,
             },
-            ["GraceNote"] = new Dictionary<string, object?> { ["fontScale"] = 2.0 / 3.0 },
-            ["GraceTabNote"] = new Dictionary<string, object?>
+            ["GraceNote"] = new Dictionary<string, object> { ["fontScale"] = 2.0 / 3.0 },
+            ["GraceTabNote"] = new Dictionary<string, object>
             {
                 ["fontScale"] = 2.0 / 3.0,
                 ["yShift"] = 0.3,
             },
-            ["KeySignature"] = new Dictionary<string, object?>
+            ["KeySignature"] = new Dictionary<string, object>
             {
                 ["accidentalSpacing"] = 1.0,
                 ["naturalCollisionSpacing"] = 2.0,
                 ["flatFallbackWidth"] = 8.0,
                 ["sharpFallbackWidth"] = 10.0,
             },
-            ["MultiMeasureRest"] = new Dictionary<string, object?>
+            ["MultiMeasureRest"] = new Dictionary<string, object>
             {
                 ["fontSize"] = Tables.NOTATION_FONT_SCALE,
                 ["numberLine"] = -0.5,
@@ -143,8 +141,8 @@ namespace VexFlowSharp
                 ["symbolLineOffset"] = -1.0,
                 ["numberBaselineRatio"] = 0.5,
             },
-            ["NoteHead"] = new Dictionary<string, object?> { ["minPadding"] = 2.0 },
-            ["Ornament"] = new Dictionary<string, object?>
+            ["NoteHead"] = new Dictionary<string, object> { ["minPadding"] = 2.0 },
+            ["Ornament"] = new Dictionary<string, object>
             {
                 ["accidentalUpperPadding"] = 3.0,
                 ["accidentalLowerPadding"] = 3.0,
@@ -153,20 +151,20 @@ namespace VexFlowSharp
                 ["lineSpacing"] = 1.0,
                 ["beamedLineSpacing"] = 0.5,
             },
-            ["PedalMarking"] = new Dictionary<string, object?>
+            ["PedalMarking"] = new Dictionary<string, object>
             {
                 ["bracketHeight"] = 10.0,
                 ["textMarginRight"] = 6.0,
                 ["bracketLineWidth"] = 1.0,
-                ["text"] = new Dictionary<string, object?>
+                ["text"] = new Dictionary<string, object>
                 {
                     ["fontSize"] = 12.0,
                     ["fontStyle"] = "italic",
                 },
             },
-            ["Repetition"] = new Dictionary<string, object?>
+            ["Repetition"] = new Dictionary<string, object>
             {
-                ["text"] = new Dictionary<string, object?>
+                ["text"] = new Dictionary<string, object>
                 {
                     ["fontSize"] = 12.0,
                     ["fontWeight"] = "bold",
@@ -174,10 +172,10 @@ namespace VexFlowSharp
                     ["offsetY"] = 25.0,
                     ["spacing"] = 5.0,
                 },
-                ["coda"] = new Dictionary<string, object?> { ["offsetY"] = 25.0 },
-                ["segno"] = new Dictionary<string, object?> { ["offsetY"] = 10.0 },
+                ["coda"] = new Dictionary<string, object> { ["offsetY"] = 25.0 },
+                ["segno"] = new Dictionary<string, object> { ["offsetY"] = 10.0 },
             },
-            ["Stave"] = new Dictionary<string, object?>
+            ["Stave"] = new Dictionary<string, object>
             {
                 ["strokeStyle"] = "black",
                 ["fontSize"] = 8.0,
@@ -193,7 +191,7 @@ namespace VexFlowSharp
                 ["endPaddingMin"] = 5.0,
                 ["unalignedNotePadding"] = 10.0,
             },
-            ["StaveConnector"] = new Dictionary<string, object?>
+            ["StaveConnector"] = new Dictionary<string, object>
             {
                 ["width"] = 3.0,
                 ["singleLineWidth"] = 1.0,
@@ -208,10 +206,10 @@ namespace VexFlowSharp
                 ["boldDoubleLeftWidth"] = 3.5,
                 ["boldDoubleRightWidth"] = 3.0,
                 ["boldDoubleThickLineOffset"] = 2.0,
-                ["text"] = new Dictionary<string, object?> { ["fontSize"] = 16.0 },
+                ["text"] = new Dictionary<string, object> { ["fontSize"] = 16.0 },
             },
-            ["StaveLine"] = new Dictionary<string, object?> { ["fontSize"] = 10.0 },
-            ["StaveSection"] = new Dictionary<string, object?>
+            ["StaveLine"] = new Dictionary<string, object> { ["fontSize"] = 10.0 },
+            ["StaveSection"] = new Dictionary<string, object>
             {
                 ["fontSize"] = 10.0,
                 ["fontWeight"] = "bold",
@@ -219,18 +217,18 @@ namespace VexFlowSharp
                 ["padding"] = 2.0,
                 ["strokeStyle"] = "black",
             },
-            ["StaveNote"] = new Dictionary<string, object?> { ["pointerRect"] = true },
-            ["StaveTempo"] = new Dictionary<string, object?>
+            ["StaveNote"] = new Dictionary<string, object> { ["pointerRect"] = true },
+            ["StaveTempo"] = new Dictionary<string, object>
             {
                 ["fontSize"] = 14.0,
                 ["xShift"] = 10.0,
                 ["spacing"] = 3.0,
                 ["dotOffsetY"] = 2.0,
-                ["glyph"] = new Dictionary<string, object?> { ["fontSize"] = 25.0 },
-                ["name"] = new Dictionary<string, object?> { ["fontWeight"] = "bold" },
+                ["glyph"] = new Dictionary<string, object> { ["fontSize"] = 25.0 },
+                ["name"] = new Dictionary<string, object> { ["fontWeight"] = "bold" },
             },
-            ["StaveText"] = new Dictionary<string, object?> { ["fontSize"] = 16.0 },
-            ["StaveTie"] = new Dictionary<string, object?>
+            ["StaveText"] = new Dictionary<string, object> { ["fontSize"] = 16.0 },
+            ["StaveTie"] = new Dictionary<string, object>
             {
                 ["fontSize"] = 10.0,
                 ["cp1"] = 8.0,
@@ -243,8 +241,8 @@ namespace VexFlowSharp
                 ["closeNoteCp1"] = 2.0,
                 ["closeNoteCp2"] = 8.0,
             },
-            ["Stem"] = new Dictionary<string, object?> { ["strokeStyle"] = "black" },
-            ["StringNumber"] = new Dictionary<string, object?>
+            ["Stem"] = new Dictionary<string, object> { ["strokeStyle"] = "black" },
+            ["StringNumber"] = new Dictionary<string, object>
             {
                 ["fontSize"] = 10.0,
                 ["fontWeight"] = "bold",
@@ -264,7 +262,7 @@ namespace VexFlowSharp
                 ["extensionGap"] = 3.0,
                 ["legLength"] = 10.0,
             },
-            ["System"] = new Dictionary<string, object?>
+            ["System"] = new Dictionary<string, object>
             {
                 ["x"] = 10.0,
                 ["y"] = 10.0,
@@ -273,21 +271,21 @@ namespace VexFlowSharp
                 ["formatIterations"] = 0.0,
                 ["alpha"] = 0.5,
             },
-            ["Stroke"] = new Dictionary<string, object?>
+            ["Stroke"] = new Dictionary<string, object>
             {
                 ["spacing"] = 5.0,
-                ["text"] = new Dictionary<string, object?>
+                ["text"] = new Dictionary<string, object>
                 {
                     ["fontSize"] = 10.0,
                     ["fontStyle"] = "italic",
                     ["fontWeight"] = "bold",
                 },
             },
-            ["TabNote"] = new Dictionary<string, object?>
+            ["TabNote"] = new Dictionary<string, object>
             {
-                ["text"] = new Dictionary<string, object?> { ["fontSize"] = 9.0 },
+                ["text"] = new Dictionary<string, object> { ["fontSize"] = 9.0 },
             },
-            ["TabStave"] = new Dictionary<string, object?>
+            ["TabStave"] = new Dictionary<string, object>
             {
                 ["strokeStyle"] = "#999999",
                 ["fontSize"] = 8.0,
@@ -295,14 +293,14 @@ namespace VexFlowSharp
                 ["numLines"] = 6.0,
                 ["topTextPosition"] = 1.0,
             },
-            ["TabTie"] = new Dictionary<string, object?>
+            ["TabTie"] = new Dictionary<string, object>
             {
                 ["fontSize"] = 10.0,
                 ["cp1"] = 9.0,
                 ["cp2"] = 11.0,
                 ["yShift"] = 3.0,
             },
-            ["TextBracket"] = new Dictionary<string, object?>
+            ["TextBracket"] = new Dictionary<string, object>
             {
                 ["fontSize"] = 15.0,
                 ["fontStyle"] = "italic",
@@ -310,27 +308,27 @@ namespace VexFlowSharp
                 ["bracketHeight"] = 8.0,
                 ["textHeightOffsetHack"] = 1.0,
             },
-            ["TextDynamics"] = new Dictionary<string, object?>
+            ["TextDynamics"] = new Dictionary<string, object>
             {
                 ["glyphFontSize"] = Tables.NOTATION_FONT_SCALE,
                 ["line"] = 0.0,
                 ["lineOffset"] = -3.0,
             },
-            ["TextNote"] = new Dictionary<string, object?>
+            ["TextNote"] = new Dictionary<string, object>
             {
-                ["text"] = new Dictionary<string, object?> { ["fontSize"] = 12.0 },
+                ["text"] = new Dictionary<string, object> { ["fontSize"] = 12.0 },
             },
-            ["TextFormatter"] = new Dictionary<string, object?>
+            ["TextFormatter"] = new Dictionary<string, object>
             {
                 ["defaultAdvanceWidthEm"] = 0.5,
                 ["defaultResolution"] = 1000.0,
                 ["ptToPx"] = 4.0 / 3.0,
             },
-            ["TickContext"] = new Dictionary<string, object?>
+            ["TickContext"] = new Dictionary<string, object>
             {
                 ["padding"] = 1.0,
             },
-            ["TabSlide"] = new Dictionary<string, object?>
+            ["TabSlide"] = new Dictionary<string, object>
             {
                 ["fontSize"] = 10.0,
                 ["fontStyle"] = "italic",
@@ -341,32 +339,32 @@ namespace VexFlowSharp
                 ["labelYShift"] = -1.0,
                 ["slideEndpointOffset"] = 3.0,
             },
-            ["Tremolo"] = new Dictionary<string, object?> { ["spacing"] = 7.0 },
-            ["Tuplet"] = new Dictionary<string, object?>
+            ["Tremolo"] = new Dictionary<string, object> { ["spacing"] = 7.0 },
+            ["Tuplet"] = new Dictionary<string, object>
             {
                 ["pointerRect"] = true,
                 ["yOffset"] = 0.0,
                 ["textYOffset"] = 2.0,
-                ["bracket"] = new Dictionary<string, object?>
+                ["bracket"] = new Dictionary<string, object>
                 {
                     ["padding"] = 5.0,
                     ["lineWidth"] = 1.0,
                     ["legLength"] = 10.0,
                 },
             },
-            ["Vibrato"] = new Dictionary<string, object?>
+            ["Vibrato"] = new Dictionary<string, object>
             {
                 ["width"] = 20.0,
                 ["rightShift"] = 7.0,
                 ["textLineIncrement"] = 1.0,
                 ["yShift"] = 5.0,
             },
-            ["VibratoBracket"] = new Dictionary<string, object?>
+            ["VibratoBracket"] = new Dictionary<string, object>
             {
                 ["stopNoteOffset"] = 5.0,
                 ["tieEndOffset"] = 10.0,
             },
-            ["Volta"] = new Dictionary<string, object?>
+            ["Volta"] = new Dictionary<string, object>
             {
                 ["fontSize"] = 9.0,
                 ["fontWeight"] = "bold",
@@ -379,7 +377,7 @@ namespace VexFlowSharp
             },
         };
 
-        public static void Clear(string? key = null)
+        public static void Clear(string key = null)
         {
             if (key == null)
             {
@@ -400,14 +398,14 @@ namespace VexFlowSharp
 
         public static string GetFontFamily() => GetString("fontFamily", "Bravura,Academico");
 
-        public static object? Get(string key, object? defaultValue = null)
+        public static object Get(string key, object defaultValue = null)
         {
             var keyParts = new List<string>(key.Split('.'));
             var lastKeyPart = keyParts[keyParts.Count - 1];
             keyParts.RemoveAt(keyParts.Count - 1);
 
-            Dictionary<string, object?>? current = defaults;
-            object? result = defaultValue;
+            Dictionary<string, object> current = defaults;
+            object result = defaultValue;
             var index = 0;
 
             while (current != null)
@@ -418,7 +416,7 @@ namespace VexFlowSharp
                 if (index >= keyParts.Count) break;
 
                 var keyPart = keyParts[index++];
-                current = current.TryGetValue(keyPart, out var child) ? child as Dictionary<string, object?> : null;
+                current = current.TryGetValue(keyPart, out var child) ? child as Dictionary<string, object> : null;
             }
 
             return result;

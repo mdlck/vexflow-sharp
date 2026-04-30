@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -13,7 +11,7 @@ namespace VexFlowSharp
     {
         public new const string CATEGORY = "Flag";
 
-        public Flag(string code, double point, FontData? fontData = null)
+        public Flag(string code, double point, FontData fontData = null)
             : base(code, point, fontData)
         {
         }
@@ -29,7 +27,7 @@ namespace VexFlowSharp
             return metrics;
         }
 
-        private void OpenFlagGroup(RenderContext ctx, string? cls)
+        private void OpenFlagGroup(RenderContext ctx, string cls)
         {
             var groupClass = string.IsNullOrEmpty(cls) ? "flag" : "flag " + cls;
             ctx.OpenGroup(groupClass, GetAttribute("id"));

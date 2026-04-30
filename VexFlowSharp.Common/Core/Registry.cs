@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -11,8 +9,8 @@ namespace VexFlowSharp
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
-        public string? Value { get; set; }
-        public string? OldValue { get; set; }
+        public string Value { get; set; }
+        public string OldValue { get; set; }
     }
 
     /// <summary>
@@ -20,7 +18,7 @@ namespace VexFlowSharp
     /// </summary>
     public class Registry
     {
-        private static Registry? defaultRegistry;
+        private static Registry defaultRegistry;
 
         private readonly Dictionary<string, Dictionary<string, Dictionary<string, Element>>> index =
             new Dictionary<string, Dictionary<string, Dictionary<string, Element>>>
@@ -30,7 +28,7 @@ namespace VexFlowSharp
             { "class", new Dictionary<string, Dictionary<string, Element>>() },
         };
 
-        public static Registry? GetDefaultRegistry() => defaultRegistry;
+        public static Registry GetDefaultRegistry() => defaultRegistry;
 
         public static void EnableDefaultRegistry(Registry registry)
         {
@@ -83,7 +81,7 @@ namespace VexFlowSharp
             }
         }
 
-        public Registry Register(Element elem, string? id = null)
+        public Registry Register(Element elem, string id = null)
         {
             id ??= elem.GetAttribute("id");
             if (string.IsNullOrEmpty(id))
@@ -103,7 +101,7 @@ namespace VexFlowSharp
             return this;
         }
 
-        public Element? GetElementById(string id)
+        public Element GetElementById(string id)
         {
             return index.TryGetValue("id", out var byValue)
                 && byValue.TryGetValue(id, out var byId)

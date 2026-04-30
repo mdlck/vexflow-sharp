@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 //
@@ -101,7 +99,7 @@ namespace VexFlowSharp
         /// </summary>
         /// <param name="notes">Notes in the tuplet group (must be non-empty).</param>
         /// <param name="options">Optional configuration.</param>
-        public Tuplet(List<Note> notes, TupletOptions? options = null)
+        public Tuplet(List<Note> notes, TupletOptions options = null)
         {
             if (notes == null) throw new ArgumentNullException(nameof(notes));
             if (notes.Count == 0)
@@ -402,7 +400,7 @@ namespace VexFlowSharp
             {
                 var metrics = glyph.GetMetrics();
                 glyph.Render(ctx, notationStartX + xOffset, yPos + shiftY);
-                xOffset += metrics?.Width ?? 0;
+                xOffset += metrics.Width;
             }
 
             // Draw ratio colon + denominator if ratioed
@@ -426,7 +424,7 @@ namespace VexFlowSharp
                 {
                     var metrics = glyph.GetMetrics();
                     glyph.Render(ctx, notationStartX + xOffset, yPos + shiftY);
-                    xOffset += metrics?.Width ?? 0;
+                    xOffset += metrics.Width;
                 }
             }
 
@@ -476,11 +474,11 @@ namespace VexFlowSharp
         {
             double total = 0;
             foreach (var g in glyphs)
-                total += g.GetMetrics()?.Width ?? 0;
+                total += g.GetMetrics().Width;
             return total;
         }
 
-        public override BoundingBox? GetBoundingBox()
+        public override BoundingBox GetBoundingBox()
         {
             if (boundingBox != null) return boundingBox;
             var glyphSpan = CalculateGlyphSpan();

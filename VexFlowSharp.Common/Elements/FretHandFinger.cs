@@ -1,5 +1,3 @@
-#nullable enable annotations
-
 // VexFlowSharp — C# port of VexFlow (https://vexflow.com)
 // MIT License
 
@@ -61,7 +59,7 @@ namespace VexFlowSharp
             SetWidth(TextFormatter.Create(font.Family, font.Size).GetWidthForTextInPx(finger));
         }
 
-        public static bool Format(List<FretHandFinger>? nums, ModifierContextState state)
+        public static bool Format(List<FretHandFinger> nums, ModifierContextState state)
         {
             if (nums == null || nums.Count == 0) return false;
 
@@ -69,7 +67,7 @@ namespace VexFlowSharp
             double rightShift = state.RightShift;
             var numsList = new List<(Note Note, FretHandFinger Num, ModifierPosition Pos, double Line, double ShiftL, double ShiftR)>();
 
-            Note? prevNote = null;
+            Note prevNote = null;
             double shiftLeft = 0;
             double shiftRight = 0;
             double textHeight = Metrics.GetDouble("FretHandFinger.fontSize");
@@ -105,7 +103,7 @@ namespace VexFlowSharp
             double xWidthL = 0;
             double xWidthR = 0;
             double? lastLine = null;
-            Note? lastNote = null;
+            Note lastNote = null;
 
             foreach (var item in numsList)
             {
